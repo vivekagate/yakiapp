@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { HashLocationStrategy, LocationStrategy, PathLocationStrategy } from '@angular/common';
 import { BrowserModule, Title } from '@angular/platform-browser';
+import { SidebarMenuModule } from 'angular-sidebar-menu';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {GridsterModule} from "angular-gridster2";
@@ -68,6 +69,7 @@ const APP_CONTAINERS = [
   declarations: [AppComponent, ...APP_CONTAINERS],
     imports: [
         GridsterModule,
+        SidebarMenuModule,
         BrowserModule,
         FontAwesomeModule,
         BrowserAnimationsModule,

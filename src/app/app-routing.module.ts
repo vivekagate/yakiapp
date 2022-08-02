@@ -22,6 +22,16 @@ const routes: Routes = [
           import('./views/apps/applications/applications.module').then((m) => m.ApplicationsModule)
       },
       {
+        path: 'deployments',
+        loadChildren: () =>
+            import('./views/apps/applications/applications.module').then((m) => m.ApplicationsModule)
+      },
+      {
+        path: 'pods',
+        loadChildren: () =>
+            import('./views/apps/applications/applications.module').then((m) => m.ApplicationsModule)
+      },
+      {
         path: 'logs',
         loadChildren: () =>
           import('./views/apps/logs/logs.module').then((m) => m.LogsModule)

@@ -5,15 +5,10 @@ export const navItems: INavData[] = [
     title: true,
     name: 'Developer View'
   },
-  // {
-  //   name: 'App Dashboard',
-  //   url: '/dashboard',
-  //   iconComponent: { name: 'cil-speedometer' },
-  // },
   {
     name: 'Apps',
     url: '/applications',
-    iconComponent: { name: 'cil-file' },
+    iconComponent: { name: 'cil-browser' },
   },
   {
     title: true,
@@ -27,7 +22,7 @@ export const navItems: INavData[] = [
   {
     name: 'Services',
     url: '/applications',
-    iconComponent: { name: 'cil-file' },
+    iconComponent: { name: 'cil-filter-frames' },
   },
   {
     name: 'Config Maps',

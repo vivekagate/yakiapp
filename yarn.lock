@@ -2077,6 +2077,13 @@ angular-gridster2@^14.1.0:
   dependencies:
     tslib "^2.3.0"
 
+angular-sidebar-menu@^1.5.0:
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/angular-sidebar-menu/-/angular-sidebar-menu-1.5.0.tgz#bf970f04aae43c133d6ac9635d25437d59d5508b"
+  integrity sha512-vsSAcHWAoyWimKkGu3bmra96oWelYpi9w8Z4tdqPA/06Qt8OUwYJdfGcaFEhtg3/4CyoT4ysGSegRibP6z+VCg==
+  dependencies:
+    tslib "^2.0.0"
+
 ansi-colors@4.1.3:
   version "4.1.3"
   resolved "https://registry.yarnpkg.com/ansi-colors/-/ansi-colors-4.1.3.tgz#37611340eb2243e70cc604cad35d63270d48781b"
@@ -3391,6 +3398,11 @@ follow-redirects@^1.0.0:
   version "1.15.1"
   resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.15.1.tgz#0ca6a452306c9b276e4d3127483e29575e207ad5"
   integrity sha512-yLAMQs+k0b2m7cVxpS1VKJVvoz7SS9Td1zss3XRwXj+ZDH00RJgnuLx7E44wx02kQLrdM3aOOy+FpzS7+8OizA==
+
+font-awesome@^4.7.0:
+  version "4.7.0"
+  resolved "https://registry.yarnpkg.com/font-awesome/-/font-awesome-4.7.0.tgz#8fa8cf0411a1a31afd07b06d2902bb9fc815a133"
+  integrity sha512-U6kGnykA/6bFmg1M/oT9EkFeIYv7JlX3bozwQJWiiLz6L0w3F5vBVPxHlwyX/vtNq1ckcpRKOB9f2Qal/VtFpg==
 
 forwarded@0.2.0:
   version "0.2.0"

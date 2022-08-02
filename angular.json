@@ -36,6 +36,8 @@
               "src/assets"
             ],
             "styles": [
+              "node_modules/font-awesome/css/font-awesome.css",
+              "node_modules/angular-sidebar-menu/themes/admin-lte.scss",
               "src/scss/styles.scss"
             ],
             "scripts": [],
@@ -108,6 +110,8 @@
               "src/assets"
             ],
             "styles": [
+              "node_modules/font-awesome/css/font-awesome.css",
+              "node_modules/angular-sidebar-menu/themes/admin-lte.scss",
               "src/scss/styles.scss"
             ],
             "scripts": []

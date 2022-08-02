@@ -1,47 +1,85 @@
 <!--sidebar-->
-<c-sidebar
-  #sidebar="cSidebar"
-  class="d-print-none sidebar sidebar-fixed bg-general"
-  id="sidebar"
-  visible
->
-  <c-sidebar-brand
-    [brandFull]="{
-      src: 'assets/img/brand/yaki-base.png',
-      height: 100,
-      alt: 'CoreUI Logo'
-    }"
-    [brandNarrow]="{
-      src: 'assets/img/brand/coreui-signet-white.svg',
-      width: 46,
-      height: 46,
-      alt: 'CoreUI Logo'
-    }"
-    routerLink="./"
-  >
-  </c-sidebar-brand>
-    <perfect-scrollbar [config]="perfectScrollbarConfig">
-  <!--  [perfectScrollbar]="perfectScrollbarConfig"-->
-  <c-sidebar-nav
-    [navItems]="navItems"
-  >
-  </c-sidebar-nav>
-    </perfect-scrollbar>
-  <c-sidebar-toggler
-    *ngIf="!sidebar.narrow"
-    toggle="unfoldable"
-    cSidebarToggle="sidebar"
-  ></c-sidebar-toggler>
-</c-sidebar>
+<!--<c-sidebar-->
+<!--  #sidebar="cSidebar"-->
+<!--  class="d-print-none sidebar sidebar-fixed bg-general"-->
+<!--  id="sidebar"-->
+<!--  visible-->
+<!--&gt;-->
+<!--  <c-sidebar-brand-->
+<!--    [brandFull]="{-->
+<!--      src: 'assets/img/brand/yaki-base.png',-->
+<!--      height: 100,-->
+<!--      alt: 'Yaki Logo'-->
+<!--    }"-->
+<!--    [brandNarrow]="{-->
+<!--      src: 'assets/img/brand/yaki-base.png',-->
+<!--      width: 46,-->
+<!--      height: 46,-->
+<!--      alt: 'Yaki Logo'-->
+<!--    }"-->
+<!--    routerLink="./"-->
+<!--  >-->
+<!--  </c-sidebar-brand>-->
+<!--    <perfect-scrollbar [config]="perfectScrollbarConfig">-->
+<!--  &lt;!&ndash;  [perfectScrollbar]="perfectScrollbarConfig"&ndash;&gt;-->
+<!--  <c-sidebar-nav-->
+<!--    [navItems]="navItems"-->
+<!--  >-->
+<!--  </c-sidebar-nav>-->
+<!--    </perfect-scrollbar>-->
 
-<!--main-->
-<div class="wrapper d-flex flex-column min-vh-100 bg-light dark:bg-transparent">
-  <!--app-header-->
-  <app-default-header style="margin-bottom: 0rem !important;" class="mb-4 d-print-none header header-sticky" position="sticky" sidebarId="sidebar"></app-default-header>
-  <!--app-body-->
-  <div class="body flex-grow-1 px-3">
-    <router-outlet></router-outlet>
-  </div>
-  <!--app footer-->
-  <app-default-footer class="bg-general"></app-default-footer>
+
+<!--  <c-sidebar-toggler-->
+<!--    *ngIf="!sidebar.narrow"-->
+<!--    toggle="unfoldable"-->
+<!--    cSidebarToggle="sidebar"-->
+<!--  ></c-sidebar-toggler>-->
+<!--</c-sidebar>-->
+<div class="main-wrapper" [ngClass]="{ 'main-wrapper--navigation-open': true }">
+  <nav class="main-navigation">
+    <div [hidden]="currentSidebarMode !== 'expanded'">
+      <fa-icon class="sidebar-toggle" [icon]="faPlus" (click)="mainNavigationOpened = !mainNavigationOpened"></fa-icon>&nbsp;
+      <img src="assets/img/brand/yaki-base.png" alt="Yaki Logo" style="width: 15rem;">
+    </div>
+    <asm-angular-sidebar-menu
+            [menu]="menu"
+            [mode]="currentSidebarMode"
+            toggleIconClasses="fa fa-angle-left"
+            iconClasses="fa fa-circle-o"
+            class="bg-general"
+    >
+<!--      <div class="input-search" [ngClass]="{ 'input-search&#45;&#45;focus': inputSearchFocus }">-->
+<!--        <input-->
+<!--                matInput-->
+<!--                placeholder="Search..."-->
+<!--                type="text"-->
+<!--                (keyup)="currentSearch = $any($event.target).value"-->
+<!--                (focusin)="inputSearchFocus = true"-->
+<!--                (focusout)="inputSearchFocus = false"-->
+<!--        />-->
+<!--        <i class="fa fa-search"></i>-->
+<!--      </div>-->
+    </asm-angular-sidebar-menu>
+  </nav>
+
+  <header class="main-header">
+    <fa-icon class="sidebar-toggle" [icon]="faBars" (click)="onSidebarModeChanged()"></fa-icon>&nbsp;
+    <app-default-header class="align-content-end"></app-default-header>
+  </header>
+
+  <main class="main-content">
+    <div>Main content</div>
+      <router-outlet></router-outlet>
+  </main>
 </div>
+<!--main-->
+<!--<div class="wrapper d-flex flex-column min-vh-100 bg-light dark:bg-transparent" style="display: none">-->
+<!--  &lt;!&ndash;app-header&ndash;&gt;-->
+<!--  <app-default-header style="margin-bottom: 0rem !important;" class="mb-4 d-print-none header header-sticky" position="sticky" sidebarId="sidebar"></app-default-header>-->
+<!--  &lt;!&ndash;app-body&ndash;&gt;-->
+<!--  <div class="body flex-grow-1 px-3">-->
+<!--    <router-outlet></router-outlet>-->
+<!--  </div>-->
+<!--  &lt;!&ndash;app footer&ndash;&gt;-->
+<!--  <app-default-footer class="bg-general"></app-default-footer>-->
+<!--</div>-->
