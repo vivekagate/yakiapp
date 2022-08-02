@@ -3,7 +3,7 @@ import { INavData } from '@coreui/angular';
 export const navItems: INavData[] = [
   {
     title: true,
-    name: 'Developer Space'
+    name: 'Developer View'
   },
   // {
   //   name: 'App Dashboard',
@@ -12,6 +12,35 @@ export const navItems: INavData[] = [
   // },
   {
     name: 'Apps',
+    url: '/applications',
+    iconComponent: { name: 'cil-file' },
+  },
+  {
+    title: true,
+    name: 'Developer View'
+  },
+  {
+    name: 'Deployments',
+    url: '/applications',
+    iconComponent: { name: 'cil-file' },
+  },
+  {
+    name: 'Services',
+    url: '/applications',
+    iconComponent: { name: 'cil-file' },
+  },
+  {
+    name: 'Config Maps',
+    url: '/applications',
+    iconComponent: { name: 'cil-file' },
+  },
+  {
+    name: 'Cron Jobs',
+    url: '/applications',
+    iconComponent: { name: 'cil-file' },
+  },
+  {
+    name: 'Daemon Sets',
     url: '/applications',
     iconComponent: { name: 'cil-file' },
   },
