@@ -1,0 +1,30 @@
+<c-row ngPreserveWhitespaces>
+  <c-col xs="12">
+    <c-card class="mb-4">
+      <c-card-header>
+        <strong>Environment Variables across Pods</strong>
+      </c-card-header>
+      <c-card-body style="height: 80vh">
+        <table [hover]="true" cTable color="dark">
+          <thead>
+          <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Value</th>
+            <th scope="col">Application</th>
+          </tr>
+          </thead>
+          <tbody>
+
+          </tbody>
+        </table>
+<!--        <gridster [options]="options" #grid>-->
+<!--          <gridster-item [item]=item *ngFor="let item of logs_viewport">-->
+<!--            <div class="gridster-item-content">-->
+<!--              <app-terminal [name]="item['name']" id="{{item['name']}}" #logterminal></app-terminal>-->
+<!--            </div>-->
+<!--          </gridster-item>-->
+<!--        </gridster>-->
+      </c-card-body>
+    </c-card>
+  </c-col>
+</c-row>

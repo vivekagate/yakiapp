@@ -1,0 +1,9 @@
+<div id="terminal">
+  <div [hidden]="mode === 'single'" style="background: #4f5d73;color: white;font-family: 'Roboto Thin';font-size: 12px;">{{name}}</div>
+  <div #terminalholder  class="bg-general" style="width: 100%;height: 75vh; font-family: 'Roboto Thin';font-size: 13px;overflow-y: scroll;">
+    <div *ngFor="let logline of loglines">
+      <span style="color: {{logline.color}}">[{{logline.source}}]&nbsp;</span> <span>{{logline.log}}</span>
+    </div>
+  </div>
+<!--  <textarea (keydown)="onkeypress($event)" #terminalwindow [value]="content" ></textarea>-->
+</div>

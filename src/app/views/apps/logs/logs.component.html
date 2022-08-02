@@ -1,0 +1,20 @@
+<c-row ngPreserveWhitespaces>
+  <c-col xs="12">
+    <c-card class="mb-4">
+      <c-card-header>
+        <strong>Logs for Application: {{appname}}</strong>
+        <button class="button-sm button-app" (click)="clear()">Clear</button>
+        <button class="button-sm button-app" (click)="liveTail()">Live Tail</button>
+      </c-card-header>
+      <c-card-body style="height: 80vh">
+        <gridster [options]="options" #grid>
+          <gridster-item [item]=item *ngFor="let item of logs_viewport">
+            <div class="gridster-item-content">
+              <app-terminal [name]="item['name']" id="{{item['name']}}" #logterminal [mode]="mode"></app-terminal>
+            </div>
+          </gridster-item>
+        </gridster>
+      </c-card-body>
+    </c-card>
+  </c-col>
+</c-row>
