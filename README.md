@@ -13,9 +13,13 @@ There are already a number of different IDEs. Yaki offers an alternative to the 
 - No Telemetry (Except for checking for updates)
 - No Sign up or Email address needed.
 
-## Get Started
+## Free vs Paid
 
-If you are interested in making a tauri app, please visit the [documentation website](https://tauri.studio). This README is directed towards those who are interested in contributing to the core library. But if you just want a quick overview about where `tauri` is at in its development, here's a quick burndown:
+The source code for Yaki is Open source and is available for anyone to build. If you build it, you can use it for free. Out of the box, the IDE runs for 30 minutes and then shuts down. The instructios for disabling this check are given [here]
+
+In case you wish to go directly to the binaries, they can be downloaded [here](https://yaki.nirops.com/#downloads) These binaries run for 30 minutes and then shut down. By paying a nominal fee, you will be provided a key that allows you to keep using the software for perpetuity.
+There is no subscription or any hidden cost beyond that. 
+
 
 ### Platforms
 
