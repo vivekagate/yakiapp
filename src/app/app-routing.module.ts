@@ -6,7 +6,7 @@ import { DefaultLayoutComponent } from './containers';
 const routes: Routes = [
   {
     path: '',
-    redirectTo: 'applications',
+    redirectTo: 'pods',
     pathMatch: 'full'
   },
   {
@@ -23,13 +23,19 @@ const routes: Routes = [
       },
       {
         path: 'deployments',
+        data: {
+          resource: 'deployments'
+        },
         loadChildren: () =>
-            import('./views/apps/applications/applications.module').then((m) => m.ApplicationsModule)
+            import('./views/apps/resource/resource.module').then((m) => m.ResourceModule)
       },
       {
         path: 'pods',
+        data: {
+          resource: 'pods'
+        },
         loadChildren: () =>
-            import('./views/apps/applications/applications.module').then((m) => m.ApplicationsModule)
+            import('./views/apps/resource/resource.module').then((m) => m.ResourceModule)
       },
       {
         path: 'logs',

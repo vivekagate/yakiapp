@@ -33,7 +33,7 @@ html, body {
   background-color: rgb(38 38 40 / var(--tw-bg-opacity));
 }
 
-.bg-general, .card-body, .card-header, .card, .header, .body, .header-nav .nav-link, .header-toggler, .sidebar,.sidebar-brand, .table > :not(caption) > * > *, .accordion-header, .accordion-body, .accordion-item {
+.bg-general, .card-body, .card-header, .card, .body, .header, .header-nav .sidebar,.sidebar-brand, .table > :not(caption) > * > *, .accordion-header, .accordion-body, .accordion-item {
   --tw-bg-opacity: 1;
   background-color: rgb(38 38 40 / var(--tw-bg-opacity));
   font-family: 'SF Pro Text', BlinkMacSystemFont, Segoe UI, Ubuntu, sans-serif;
@@ -41,7 +41,7 @@ html, body {
   color: rgb(212, 212, 212);
 }
 
-.bg-general, .card-body, .header,.header-nav .nav-link, .header-toggler, gridster{
+.bg-general, .card-body, gridster{
   background-color: rgb(26 26 28 / 1);
 }
 

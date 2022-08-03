@@ -48,17 +48,6 @@
             iconClasses="fa fa-circle-o"
             class="bg-general"
     >
-<!--      <div class="input-search" [ngClass]="{ 'input-search&#45;&#45;focus': inputSearchFocus }">-->
-<!--        <input-->
-<!--                matInput-->
-<!--                placeholder="Search..."-->
-<!--                type="text"-->
-<!--                (keyup)="currentSearch = $any($event.target).value"-->
-<!--                (focusin)="inputSearchFocus = true"-->
-<!--                (focusout)="inputSearchFocus = false"-->
-<!--        />-->
-<!--        <i class="fa fa-search"></i>-->
-<!--      </div>-->
     </asm-angular-sidebar-menu>
   </nav>
 
@@ -68,9 +57,11 @@
   </header>
 
   <main class="main-content">
-    <div>Main content</div>
       <router-outlet></router-outlet>
   </main>
+  <footer>
+    <app-default-footer class="bg-general"></app-default-footer>
+  </footer>
 </div>
 <!--main-->
 <!--<div class="wrapper d-flex flex-column min-vh-100 bg-light dark:bg-transparent" style="display: none">-->
@@ -81,5 +72,4 @@
 <!--    <router-outlet></router-outlet>-->
 <!--  </div>-->
 <!--  &lt;!&ndash;app footer&ndash;&gt;-->
-<!--  <app-default-footer class="bg-general"></app-default-footer>-->
 <!--</div>-->

@@ -1,5 +1,4 @@
 import {Component} from '@angular/core';
-import {navItems} from './_nav';
 import {Menu, Modes} from "angular-sidebar-menu";
 import {faBars, faPlus} from '@fortawesome/free-solid-svg-icons';
 
@@ -15,10 +14,9 @@ export enum Roles {
 })
 export class DefaultLayoutComponent {
 
-  public navItems = navItems;
   private Roles: Roles.EDITOR | Roles.ADMIN | string | number | undefined;
   mainNavigationOpened = true;
-  currentSidebarMode = Modes.MINI;
+  currentSidebarMode = Modes.EXPANDED;
   currentSearch?: string;
   inputSearchFocus = false;
 
@@ -32,7 +30,7 @@ export class DefaultLayoutComponent {
       id: 'apps',
       label: 'Applications',
       route: '/applications',
-      iconClasses: 'fa fa-rocket',
+      iconClasses: 'fas fa-browser',
     },
     {
       id: 'operations',
@@ -48,6 +46,7 @@ export class DefaultLayoutComponent {
           id: 'nodes',
           label: 'Nodes',
           route: '/nodes',
+          iconClasses: 'fa fa-file'
         },
         {
           id: 'deployments',
@@ -66,7 +65,7 @@ export class DefaultLayoutComponent {
         },
         {
           id: 'config_maps',
-          label: 'Config Maps',
+          label: 'Config Maps & Secrets',
           route: '/configmaps',
         },
         {
@@ -95,13 +94,11 @@ export class DefaultLayoutComponent {
   ];
 
 
-  public perfectScrollbarConfig = {
-    suppressScrollX: true,
-  };
   faBars = faBars;
   faPlus = faPlus;
 
   constructor() {
+    console.log('Menu is this' + this.menu);
     console.log(this.menu);
   }
 

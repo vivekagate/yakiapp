@@ -4,7 +4,8 @@
   display: grid;
   grid-template-areas:
     'nav header'
-    'nav content';
+    'nav content'
+    'nav footer';
   grid-template-columns: 0 auto;
   grid-template-rows: 50px auto;
   height: 100vh;
@@ -52,6 +53,7 @@
 
 .main-content {
   grid-area: content;
+  overflow: auto;
   padding: 2rem;
 }
 
@@ -60,6 +62,10 @@
   .asm-menu--mode-mini .input-search {
     display: none !important;
   }
+}
+
+.main-footer {
+  grid-area: footer;
 }
 
 .main-navigation {

@@ -1,0 +1,196 @@
+<c-row ngPreserveWhitespaces>
+    <c-col xs="12">
+        <c-card class="mb-4">
+            <c-card-header>
+                <strong>{{resource.name}}</strong>
+            </c-card-header>
+            <c-card-body style="padding: 0">
+            </c-card-body>
+        </c-card>
+    </c-col>
+    <c-spinner color="secondary" [hidden]="!isLoading" class="center"></c-spinner>
+    <ag-grid-angular
+            style="width: 100%; height: 100%"
+            class="ag-theme-alpine-dark"
+            [columnDefs]="columnDefs"
+            [defaultColDef]="defaultColDef"
+            [rowData]="rowData$ | async"
+            [rowSelection]="'multiple'"
+            [animateRows]="true"
+            (gridReady)="onGridReady($event)"
+            (rowClicked)="onSelect($event)"
+    ></ag-grid-angular>
+</c-row>
+
+<!--<c-sidebar-->
+<!--    #sidebar="cSidebar"-->
+<!--    class="d-print-none sidebar sidebar-fixed bg-general sidebar-overlaid sidebar-end sidebar-app long-content"-->
+<!--    id="sidebar"-->
+<!--    [visible]="!isSideBarHidden"-->
+<!--    size="xl"-->
+<!--&gt;-->
+
+<!--    <c-card class="mb-4">-->
+<!--        <c-card-header>-->
+<!--            <div>-->
+<!--        <span (click)="isSideBarHidden=true;">-->
+<!--            <b><fa-icon [icon]="faClose" class="pointy"></fa-icon></b>-->
+<!--            <b><fa-icon [icon]="faClose" class="pointy"></fa-icon></b>-->
+<!--        </span>-->
+<!--                &nbsp;&nbsp;&nbsp;-->
+<!--                <strong>{{selectedapp?.deployment?.metadata?.name}}</strong>-->
+<!--                <span class="fa-pull-right">-->
+<!--          <button class="btn-sm button-app" (click)="taillogs(selectedapp?.deployment?.metadata?.name)">-->
+<!--            <fa-icon [icon]="faTailLog"></fa-icon>&nbsp;-->
+<!--            Logs-->
+<!--          </button>&nbsp;-->
+<!--          <button class="btn-sm button-app" (click)="restart(selectedapp?.deployment?.metadata?.name)">-->
+<!--            <fa-icon [icon]="faRestart"></fa-icon>&nbsp;-->
+<!--            Restart-->
+<!--          </button>&nbsp;-->
+<!--          <button class="btn-sm button-app" (click)="restart(selectedapp?.deployment?.metadata?.name)">-->
+<!--            <fa-icon [icon]="faTerminal"></fa-icon>&nbsp;-->
+<!--            Shell-->
+<!--          </button>&nbsp;-->
+<!--          <span (click)="isSideBarHidden=true;">-->
+<!--            <b><fa-icon [icon]="faClose" class="pointy"></fa-icon></b>-->
+<!--            <b><fa-icon [icon]="faClose" class="pointy"></fa-icon></b>-->
+<!--          </span>-->
+<!--        </span>-->
+<!--            </div>-->
+<!--        </c-card-header>-->
+<!--        <c-card-body style="padding: 0">-->
+<!--            <c-spinner color="secondary" [hidden]="!isLoading" class="center"></c-spinner>-->
+<!--            <c-accordion [flush]="true" [alwaysOpen]="true">-->
+<!--                <c-accordion-item visible>-->
+<!--                    <ng-template cTemplateId="accordionHeader">-->
+<!--                        Overview-->
+<!--                    </ng-template>-->
+<!--                    <ng-template cTemplateId="accordionBody">-->
+<!--                        <table [hover]="true" cTable color="dark">-->
+<!--                            <tbody>-->
+<!--                            <tr>-->
+<!--                                <td>Image</td>-->
+<!--                                <td>{{selectedapp?.deployment?.spec?.template?.spec?.containers[0].image}}</td>-->
+<!--                            </tr>-->
+<!--                            <tr>-->
+<!--                                <td>Status</td>-->
+<!--                                <td>-->
+<!--                  <span-->
+<!--                          [hidden]="selectedapp?.deployment?.status?.replicas === selectedapp?.deployment?.status?.availableReplicas"-->
+<!--                          class="link-danger">-->
+<!--                    <fa-icon [icon]="faClose"></fa-icon>&nbsp;-->
+<!--                    Unhealthy-->
+<!--                  </span>-->
+<!--                                    <span [hidden]="selectedapp?.deployment?.status?.unavailableReplicas > 0" class="link-success">-->
+<!--                    <fa-icon [icon]="faCheck"></fa-icon>&nbsp;-->
+<!--                    Running-->
+<!--                  </span>-->
+<!--                            </tr>-->
+<!--                            <tr>-->
+<!--                                <td>Restarts</td>-->
+<!--                                <td></td>-->
+<!--                            </tr>-->
+<!--                            <tr>-->
+<!--                                <td>Last Restart</td>-->
+<!--                                <td></td>-->
+<!--                            </tr>-->
+<!--                            <tr>-->
+<!--                                <td>Instances (Healthy / Total)</td>-->
+<!--                                <td>{{selectedapp?.deployment?.status?.replicas || 0}} / {{selectedapp?.deployment?.status?.availableReplicas || 0}}</td>-->
+<!--                            </tr>-->
+<!--                            <tr>-->
+<!--                                <td>Max Instances (If HPA)</td>-->
+<!--                                <td>{{selectedapp?.deployment?.status?.availableReplicas}}</td>-->
+<!--                            </tr>-->
+<!--                            <tr>-->
+<!--                                <td>Min Instances (If HPA)</td>-->
+<!--                                <td>{{selectedapp?.deployment?.status?.availableReplicas}}</td>-->
+<!--                            </tr>-->
+<!--                            </tbody>-->
+<!--                        </table>-->
+<!--                    </ng-template>-->
+<!--                </c-accordion-item>-->
+<!--                <c-accordion-item visible>-->
+<!--                    <ng-template cTemplateId="accordionHeader">-->
+<!--                        Resources (Last refresh: {{isMetricsLoading ? '&#45;&#45;' : getCurrentDate()}})-->
+<!--                    </ng-template>-->
+<!--                    <ng-template cTemplateId="accordionBody">-->
+
+<!--                        <table [hover]="true" cTable color="dark">-->
+<!--                            <tbody>-->
+<!--                            <tr>-->
+<!--                                <td>CPU</td>-->
+<!--                                <td>-->
+<!--                                    <c-progress class="mb-3" height="11" [cTooltip]="cpuDetails"-->
+<!--                                                cTooltipPlacement="bottom">-->
+<!--                                        <c-progress-bar [value]="selectedapp?.total_cpu_percent"-->
+<!--                                                        [color]="getColor(selectedapp?.total_cpu_percent)">{{selectedapp?.total_cpu_percent}}-->
+<!--                                            %-->
+<!--                                        </c-progress-bar>-->
+<!--                                    </c-progress>-->
+<!--                                    <ng-template #cpuDetails>-->
+<!--                                        <table [hover]="true" cTable color="dark">-->
+<!--                                            <tbody>-->
+<!--                                            <tr>-->
+<!--                                                <td>Max CPU</td>-->
+<!--                                                <td>{{selectedapp?.deployment?.spec?.template?.spec?.containers[0].resources?.limits?.cpu_in_nanocore}}</td>-->
+<!--                                            </tr>-->
+<!--                                            <tr>-->
+<!--                                                <td>Current CPU</td>-->
+<!--                                                <td>{{selectedapp?.total_cpu}}</td>-->
+<!--                                            </tr>-->
+<!--                                            </tbody>-->
+<!--                                        </table>-->
+<!--                                    </ng-template>-->
+<!--                                </td>-->
+<!--                            </tr>-->
+<!--                            <tr>-->
+<!--                                <td>Memory</td>-->
+<!--                                <td>-->
+<!--                                    <c-progress class="mb-3" height="11" [cTooltip]="memoryDetails" cTooltipPlacement="bottom">-->
+<!--                                        <c-progress-bar [value]="selectedapp?.total_memory_percent"-->
+<!--                                                        [color]="getColor(selectedapp?.total_memory_percent)">{{selectedapp?.total_memory_percent}}-->
+<!--                                            %-->
+<!--                                        </c-progress-bar>-->
+<!--                                    </c-progress>-->
+<!--                                    <ng-template #memoryDetails>-->
+<!--                                        <table [hover]="true" cTable color="dark">-->
+<!--                                            <tbody>-->
+<!--                                            <tr>-->
+<!--                                                <td>Max Memory</td>-->
+<!--                                                <td>{{selectedapp?.deployment?.spec?.template?.spec?.containers[0].resources?.limits?.memory}}</td>-->
+<!--                                            </tr>-->
+<!--                                            <tr>-->
+<!--                                                <td>Current Memory</td>-->
+<!--                                                <td>{{selectedapp?.total_memory}}</td>-->
+<!--                                            </tr>-->
+<!--                                            </tbody>-->
+<!--                                        </table>-->
+<!--                                    </ng-template>-->
+<!--                                </td>-->
+<!--                            </tr>-->
+<!--                            </tbody>-->
+<!--                        </table>-->
+<!--                    </ng-template>-->
+<!--                </c-accordion-item>-->
+<!--                <c-accordion-item [visible]="false">-->
+<!--                    <ng-template cTemplateId="accordionHeader">-->
+<!--                        Environment Variables ({{isEnvsLoading ? 'Loading...' : envs.length}})-->
+<!--                    </ng-template>-->
+<!--                    <ng-template cTemplateId="accordionBody">-->
+<!--                        <table [hover]="true" cTable color="dark">-->
+<!--                            <tbody>-->
+<!--                            <tr *ngFor="let env of envs">-->
+<!--                                <td>{{env.name}}</td>-->
+<!--                                <td>{{env.value}}</td>-->
+<!--                            </tr>-->
+<!--                            </tbody>-->
+<!--                        </table>-->
+<!--                    </ng-template>-->
+<!--                </c-accordion-item>-->
+
+<!--            </c-accordion>-->
+<!--        </c-card-body>-->
+<!--    </c-card>-->
+<!--</c-sidebar>-->

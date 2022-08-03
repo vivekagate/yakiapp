@@ -1,5 +1,12 @@
 import {Component, NgZone} from '@angular/core';
 import * as _ from 'lodash';
+
+export enum VIEW_MODE {
+  APPS,
+  DEPLOYMENTS,
+  PODS,
+
+}
 @Component({
   selector: 'app-applications',
   templateUrl: './applications.component.html',
@@ -26,6 +33,8 @@ export class ApplicationsComponent implements EventListener{
   selectedNs: {
     name: string
   };
+
+
 
   isLoading = true;
   isEnvsLoading = false;
