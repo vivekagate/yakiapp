@@ -13,7 +13,7 @@ export class ResourceComponent {
   constructor(private resourceData: ResourceData, private aRoute: ActivatedRoute) {
     this.resource = {
       columns: [],
-      command: "",
+      command: [],
       name: 'UNKNOWN'
     };
   }

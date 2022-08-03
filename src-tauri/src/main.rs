@@ -116,6 +116,7 @@ fn execute_sync_command(window: Window, commandstr: &str, appmanager: State<Sing
 fn execute_command(window: Window, commandstr: &str, appmanager: State<SingletonHolder>) {
   const GET_ALL_NS: &str = "get_all_ns";
   const GET_DEPLOYMENTS: &str = "get_deployments";
+  const GET_RESOURCE: &str = "get_resource";
   const GET_PODS_FOR_DEPLOYMENT: &str = "get_pods_for_deployment_async";
   const GET_METRICS_FOR_DEPLOYMENT: &str = "get_metrics_for_deployment";
   const RESTART_DEPLOYMENTS: &str = "restart_deployments";
@@ -138,6 +139,12 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
       let namespace = cmd_hldr.args.get("ns").unwrap();
       let deploys = kube::get_all_deployments(&window, &current_cluster, namespace, GET_DEPLOYMENTS);
       kube::populate_deployments(&window, namespace, deploys);
+    });
+  } else if cmd_hldr.command == GET_RESOURCE {
+    let hndl = thread::spawn( move || {
+      let namespace = cmd_hldr.args.get("ns").unwrap();
+      let kind = cmd_hldr.args.get("kind").unwrap();
+      let _ = kube::get_resource(&window, &current_cluster, namespace, kind, GET_RESOURCE);
     });
   }  else if cmd_hldr.command == GET_PODS_FOR_DEPLOYMENT {
     let hndl = thread::spawn( move || {

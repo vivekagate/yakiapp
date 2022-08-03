@@ -22,6 +22,14 @@ const routes: Routes = [
           import('./views/apps/applications/applications.module').then((m) => m.ApplicationsModule)
       },
       {
+        path: 'nodes',
+        data: {
+          resource: 'nodes'
+        },
+        loadChildren: () =>
+            import('./views/apps/resource/resource.module').then((m) => m.ResourceModule)
+      },
+      {
         path: 'deployments',
         data: {
           resource: 'deployments'
@@ -33,6 +41,38 @@ const routes: Routes = [
         path: 'pods',
         data: {
           resource: 'pods'
+        },
+        loadChildren: () =>
+            import('./views/apps/resource/resource.module').then((m) => m.ResourceModule)
+      },
+      {
+        path: 'services',
+        data: {
+          resource: 'services'
+        },
+        loadChildren: () =>
+            import('./views/apps/resource/resource.module').then((m) => m.ResourceModule)
+      },
+      {
+        path: 'cronjobs',
+        data: {
+          resource: 'cronjobs'
+        },
+        loadChildren: () =>
+            import('./views/apps/resource/resource.module').then((m) => m.ResourceModule)
+      },
+      {
+        path: 'configmaps',
+        data: {
+          resource: 'configmaps'
+        },
+        loadChildren: () =>
+            import('./views/apps/resource/resource.module').then((m) => m.ResourceModule)
+      },
+      {
+        path: 'daemonsets',
+        data: {
+          resource: 'daemonsets'
         },
         loadChildren: () =>
             import('./views/apps/resource/resource.module').then((m) => m.ResourceModule)

@@ -39,14 +39,14 @@ export class DefaultLayoutComponent {
     {
       id: 'operations_view',
       label: 'Operations View',
-      iconClasses: 'fa fa-share',
+      iconClasses: 'fa fa-eye',
       roles: [],
       children: [
         {
           id: 'nodes',
           label: 'Nodes',
           route: '/nodes',
-          iconClasses: 'fa fa-file'
+          iconClasses: 'fa fa-server'
         },
         {
           id: 'deployments',

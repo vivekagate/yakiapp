@@ -69,7 +69,6 @@ const APP_CONTAINERS = [
 @NgModule({
     declarations: [AppComponent, ...APP_CONTAINERS],
     imports: [
-        AgGridModule,
         GridsterModule,
         SidebarMenuModule,
         BrowserModule,
@@ -102,6 +101,7 @@ const APP_CONTAINERS = [
         FormsModule,
         SpinnerModule,
         TableModule,
+        AgGridModule,
     ],
     providers: [
         {
