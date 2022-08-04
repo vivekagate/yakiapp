@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
 import { DefaultLayoutComponent } from './containers';
+import {ResourceModule} from "./views/apps/resource/resource.module";
 
 const routes: Routes = [
   {
@@ -26,40 +27,35 @@ const routes: Routes = [
         data: {
           resource: 'nodes'
         },
-        loadChildren: () =>
-            import('./views/apps/resource/resource.module').then((m) => m.ResourceModule)
+        loadChildren: () => ResourceModule
       },
       {
         path: 'deployments',
         data: {
           resource: 'deployments'
         },
-        loadChildren: () =>
-            import('./views/apps/resource/resource.module').then((m) => m.ResourceModule)
+        loadChildren: () => ResourceModule
       },
       {
         path: 'pods',
         data: {
           resource: 'pods'
         },
-        loadChildren: () =>
-            import('./views/apps/resource/resource.module').then((m) => m.ResourceModule)
+        loadChildren: () => ResourceModule
       },
       {
         path: 'services',
         data: {
           resource: 'services'
         },
-        loadChildren: () =>
-            import('./views/apps/resource/resource.module').then((m) => m.ResourceModule)
+        loadChildren: () => ResourceModule
       },
       {
         path: 'cronjobs',
         data: {
           resource: 'cronjobs'
         },
-        loadChildren: () =>
-            import('./views/apps/resource/resource.module').then((m) => m.ResourceModule)
+        loadChildren: () => ResourceModule
       },
       {
         path: 'configmaps',

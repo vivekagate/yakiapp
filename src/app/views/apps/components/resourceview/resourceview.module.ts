@@ -36,6 +36,7 @@ import {FontAwesomeModule} from "@fortawesome/angular-fontawesome";
         FormModule,
         SidebarModule,
         FontAwesomeModule,
+        AccordionModule,
     ],
     exports: [
         ResourceviewComponent

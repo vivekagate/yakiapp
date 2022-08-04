@@ -1,6 +1,9 @@
-import {Component} from '@angular/core';
+import {Component, HostListener} from '@angular/core';
 import {Menu, Modes} from "angular-sidebar-menu";
 import {faBars, faPlus} from '@fortawesome/free-solid-svg-icons';
+import {NgEventBus} from "ng-event-bus";
+import {TauriAdapter} from "../../providers/data/tauri-adapter.service";
+import {MetaData} from "ng-event-bus/lib/meta-data";
 
 export enum Roles {
   ADMIN,
@@ -97,7 +100,7 @@ export class DefaultLayoutComponent {
   faBars = faBars;
   faPlus = faPlus;
 
-  constructor() {
+  constructor(private eventBus: NgEventBus, private beService: TauriAdapter) {
     console.log('Menu is this' + this.menu);
     console.log(this.menu);
   }
@@ -108,5 +111,11 @@ export class DefaultLayoutComponent {
     }else if (this.currentSidebarMode === Modes.MINI) {
       this.currentSidebarMode = Modes.EXPANDED;
     }
+  }
+
+
+  @HostListener('document:keydown.escape')
+  handleEscape() {
+    this.eventBus.cast(this.beService.ngeventbus.app_events, this.beService.ngevent.escape_hit);
   }
 }

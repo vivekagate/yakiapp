@@ -70,7 +70,7 @@
 
 .main-navigation {
   grid-area: nav;
-  background: #222d32;
+  background: rgb(23, 23, 23, 1);
 
   .input-search {
     display: flex;
@@ -97,4 +97,8 @@
       margin: 0 10px;
     }
   }
+}
+
+.asm-menu-anchor:active {
+  color: rgb(232, 232, 232);
 }

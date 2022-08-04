@@ -117,8 +117,20 @@ export class TauriAdapter {
     }
   }
 
+  executeCommandInCurrentNs(cmd: string, args: object, force_refresh = false) {
+    const nargs = Object.assign(args, {
+      ns: this.storage.ns
+    });
+    this.executeCommand(cmd, nargs, force_refresh);
+  }
+
   executeCommand(cmd: string, args: object, force_refresh = false){
     const result = this.cache.get(`app_${cmd}_result`);
+    // @ts-ignore
+    // if (args && !args['ns']) {
+    //   // @ts-ignore
+    //   args['ns'] = this.storage.ns;
+    // }
     if (result && !force_refresh) {
       const elMap = this.eventListeners.get(this.response_channel["app_command_result"]);
       if (elMap) {
@@ -139,6 +151,14 @@ export class TauriAdapter {
         });
       }, 50);
     }
+  }
+
+  executeSyncCommandInCurrentNs(cmd: string, args: object, callback: (res: any)=>void = (res)=>{}){
+    const nargs = Object.assign(args, {
+      ns: this.storage.ns
+    });
+
+    this.executeSyncCommand(cmd, nargs, callback);
   }
 
   executeSyncCommand(cmd: string, args: object, callback: (res: any)=>void = (res)=>{}){

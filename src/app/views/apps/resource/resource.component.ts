@@ -20,9 +20,16 @@ export class ResourceComponent {
 
   ngOnInit() {
     this.aRoute.data.subscribe(data => {
-      console.log(data);
       this.initResource(data['resource']);
     })
+  }
+
+  ngOnDestroy() {
+    this.resource = {
+      columns: [],
+      command: [],
+      name: 'UNKNOWN'
+    };
   }
 
   private initResource(datum: string) {

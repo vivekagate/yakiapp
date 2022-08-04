@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
 import {AgGridColumn} from "ag-grid-angular";
 import {TauriAdapter} from "../../../providers/data/tauri-adapter.service";
+import * as _ from 'lodash';
+import {Router} from "@angular/router";
 
 export interface Command {
     command: string;
@@ -9,22 +11,34 @@ export interface Command {
 
 export interface Action {
     name: string;
-    displayName: string;
+    displayName?: string;
     icon: string;
+    callback: any;
 }
 
+export interface Attribute {
+    name: string;
+    resource_field: string;
+}
+
+export interface Section {
+    name: string;
+    attributes: Attribute[];
+    hidden?: boolean;
+}
 export interface Resource {
     name?: string;
     columns: AgGridColumn[];
     command?: Command[];
     actions?: Action[];
+    sections?: Section[];
 }
 
 @Injectable({
     providedIn: 'any'
 })
 export class ResourceData {
-    constructor(private beService: TauriAdapter) {
+    constructor(private beService: TauriAdapter, private router: Router) {
         this.resourceMap = new Map();
         this.resourceMap.set('pods', this.getPodResourceDefinition());
         this.resourceMap.set('deployments', this.getDeploymentResourceDefinition());
@@ -162,22 +176,31 @@ export class ResourceData {
                 {
                     name: 'logs',
                     displayName: 'Logs',
-                    icon: 'fa-file-code-o'
+                    icon: 'fa-file-code-o',
+                    callback: (resource: any) => {
+                        console.log('Get Logs');
+                    }
                 },
                 {
                     name: 'restart',
                     displayName: 'Restart',
-                    icon: 'fa-term'
+                    icon: 'fa-term',
+                    callback: (resource: any) => {
+                        console.log('Restart');
+                    }
                 },
                 {
                     name: 'shell',
                     displayName: 'Shell',
-                    icon: 'fa-term'
+                    icon: 'fa-term',
+                    callback: (resource: any) => {
+                        console.log('Open Shell');
+                    }
                 },
             ]
         }
     }
-    
+
     private getNodeResourceDefinition(): Resource {
         return {
             columns: this.getColumnDef(this.nodeDef),
@@ -189,7 +212,30 @@ export class ResourceData {
                     }
                 }
             ],
-            name: "Nodes"
+            name: "Nodes",
+            sections: [
+                {
+                    name: 'Overview',
+                    attributes: [
+                        {
+                            name: 'Creation TS',
+                            resource_field: 'metadata.creationTimestamp'
+                        },
+                        {
+                            name: 'OS Image',
+                            resource_field: 'status.nodeInfo.osImage'
+                        },
+                        {
+                            name: 'Kubelet Version',
+                            resource_field: 'status.nodeInfo.kubeletVersion'
+                        },
+                        {
+                            name: 'Container Runtime Version',
+                            resource_field: 'status.nodeInfo.containerRuntimeVersion'
+                        },
+                    ]
+                }
+            ]
         }
     }
 
@@ -209,17 +255,32 @@ export class ResourceData {
                 {
                     name: 'logs',
                     displayName: 'Logs',
-                    icon: 'fa-file-code-o'
+                    icon: 'fa-file-code-o',
+                    callback: (resource: any)=>{
+                        const appname = _.get(resource, 'metadata.name');
+                        console.log('Requesting logs for: ' + appname);
+                        this.beService.storage = {
+                            appname: appname,
+                        }
+                        this.router.navigateByUrl('/logs');
+                    }
                 },
                 {
                     name: 'restart',
                     displayName: 'Restart',
-                    icon: 'fa-term'
+                    icon: 'fa-term',
+                    callback: (resource: any)=>{
+                        const appname = _.get(resource, 'metadata.name');
+                        this.beService.executeCommandInCurrentNs(this.beService.commands.restart_deployments, {
+                            deployment: appname,
+                        });
+                    }
                 },
                 {
                     name: 'shell',
                     displayName: 'Shell',
-                    icon: 'fa-term'
+                    icon: 'fa-term',
+                    callback: ()=>{}
                 },
             ]
         }

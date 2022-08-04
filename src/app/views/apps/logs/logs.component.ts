@@ -99,9 +99,8 @@ export class LogsComponent implements EventListener{
     if (this.data.storage && this.data.storage.appname) {
       this.appname = this.data.storage.appname;
       console.log(this.data.storage.appname);
-      this.data.executeSyncCommand(this.data.commands.get_pods_for_deployment, {
+      this.data.executeSyncCommandInCurrentNs(this.data.commands.get_pods_for_deployment, {
         deployment: this.data.storage.appname,
-        ns: this.data.storage.ns
       }, (res) => {
         if (res) {
           try{
