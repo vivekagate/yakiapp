@@ -29,24 +29,24 @@ import {
 } from './containers';
 
 import {
-  AvatarModule,
-  BadgeModule,
-  BreadcrumbModule,
-  ButtonGroupModule,
-  ButtonModule,
-  CardModule,
-  DropdownModule,
-  FooterModule,
-  FormModule,
-  GridModule,
-  HeaderModule,
-  ListGroupModule,
-  NavModule,
-  ProgressModule,
-  SharedModule,
-  SidebarModule,
-  TabsModule,
-  UtilitiesModule,
+    AvatarModule,
+    BadgeModule,
+    BreadcrumbModule,
+    ButtonGroupModule,
+    ButtonModule,
+    CardModule,
+    DropdownModule,
+    FooterModule,
+    FormModule,
+    GridModule,
+    HeaderModule,
+    ListGroupModule,
+    NavModule,
+    ProgressModule,
+    SharedModule,
+    SidebarModule, SpinnerModule, TableModule,
+    TabsModule,
+    UtilitiesModule,
 } from '@coreui/angular';
 
 import { IconModule, IconSetService } from '@coreui/icons-angular';
@@ -54,6 +54,7 @@ import {TauriAdapter} from "./providers/data/tauri-adapter.service";
 import {FontAwesomeModule} from "@fortawesome/angular-fontawesome";
 import {Cache} from "./providers/cache/cache";
 import {NgEventBus} from "ng-event-bus";
+import {AgGridModule} from "ag-grid-angular";
 
 const DEFAULT_PERFECT_SCROLLBAR_CONFIG: PerfectScrollbarConfigInterface = {
   suppressScrollX: true,
@@ -66,7 +67,7 @@ const APP_CONTAINERS = [
 ];
 
 @NgModule({
-  declarations: [AppComponent, ...APP_CONTAINERS],
+    declarations: [AppComponent, ...APP_CONTAINERS],
     imports: [
         GridsterModule,
         SidebarMenuModule,
@@ -98,21 +99,26 @@ const APP_CONTAINERS = [
         ListGroupModule,
         CardModule,
         FormsModule,
+        SpinnerModule,
+        TableModule,
+        AgGridModule,
     ],
-  providers: [
-    {
-      provide: LocationStrategy,
-      useClass: HashLocationStrategy,
-    },
-    {
-      provide: PERFECT_SCROLLBAR_CONFIG,
-      useValue: DEFAULT_PERFECT_SCROLLBAR_CONFIG,
-    },
-    IconSetService,
-    Title,
-    TauriAdapter, Cache, NgEventBus
-  ],
-  bootstrap: [AppComponent],
+    providers: [
+        {
+            provide: LocationStrategy,
+            useClass: HashLocationStrategy,
+        },
+        {
+            provide: PERFECT_SCROLLBAR_CONFIG,
+            useValue: DEFAULT_PERFECT_SCROLLBAR_CONFIG,
+        },
+        IconSetService,
+        Title,
+        TauriAdapter, Cache, NgEventBus
+    ],
+    bootstrap: [AppComponent],
+    exports: [
+    ]
 })
 export class AppModule {
 }

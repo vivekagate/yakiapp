@@ -6,7 +6,7 @@ import { DefaultLayoutComponent } from './containers';
 const routes: Routes = [
   {
     path: '',
-    redirectTo: 'applications',
+    redirectTo: 'pods',
     pathMatch: 'full'
   },
   {
@@ -22,14 +22,60 @@ const routes: Routes = [
           import('./views/apps/applications/applications.module').then((m) => m.ApplicationsModule)
       },
       {
-        path: 'deployments',
+        path: 'nodes',
+        data: {
+          resource: 'nodes'
+        },
         loadChildren: () =>
-            import('./views/apps/applications/applications.module').then((m) => m.ApplicationsModule)
+            import('./views/apps/resource/resource.module').then((m) => m.ResourceModule)
+      },
+      {
+        path: 'deployments',
+        data: {
+          resource: 'deployments'
+        },
+        loadChildren: () =>
+            import('./views/apps/resource/resource.module').then((m) => m.ResourceModule)
       },
       {
         path: 'pods',
+        data: {
+          resource: 'pods'
+        },
         loadChildren: () =>
-            import('./views/apps/applications/applications.module').then((m) => m.ApplicationsModule)
+            import('./views/apps/resource/resource.module').then((m) => m.ResourceModule)
+      },
+      {
+        path: 'services',
+        data: {
+          resource: 'services'
+        },
+        loadChildren: () =>
+            import('./views/apps/resource/resource.module').then((m) => m.ResourceModule)
+      },
+      {
+        path: 'cronjobs',
+        data: {
+          resource: 'cronjobs'
+        },
+        loadChildren: () =>
+            import('./views/apps/resource/resource.module').then((m) => m.ResourceModule)
+      },
+      {
+        path: 'configmaps',
+        data: {
+          resource: 'configmaps'
+        },
+        loadChildren: () =>
+            import('./views/apps/resource/resource.module').then((m) => m.ResourceModule)
+      },
+      {
+        path: 'daemonsets',
+        data: {
+          resource: 'daemonsets'
+        },
+        loadChildren: () =>
+            import('./views/apps/resource/resource.module').then((m) => m.ResourceModule)
       },
       {
         path: 'logs',
