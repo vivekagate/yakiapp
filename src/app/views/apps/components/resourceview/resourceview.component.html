@@ -3,6 +3,7 @@
         <c-card class="mb-4">
             <c-card-header>
                 <strong>{{resource.name}}</strong>
+                <c-spinner color="secondary" [hidden]="!isLoading"></c-spinner>
             </c-card-header>
             <c-card-body style="padding: 0">
             </c-card-body>

@@ -83,11 +83,11 @@ export class ResourceviewComponent implements EventListener {
 
         this.subscription = this.eventBus.on(this.beService.ngeventbus.app_events).subscribe((meta: MetaData) => {
             if (meta.data === this.beService.ngevent.cluster_changed) {
-                this.ngZone.run(() => {
-                    this.rowData$ = from([]);
-                    this.aggrid.api.setRowData([]);
-                })
+                this.isLoading = true;
+                this.clearTable();
             }else if (meta.data === this.beService.ngevent.ns_changed) {
+                this.isLoading = true;
+                this.clearTable();
                 this.initialize();
             }else if (meta.data === this.beService.ngevent.escape_hit) {
                 if ( ! this.isSideBarHidden) {
@@ -101,6 +101,13 @@ export class ResourceviewComponent implements EventListener {
         this.resource.command?.forEach((cmd) => {
             this.beService.executeCommandInCurrentNs(cmd.command, cmd.arguments,true);
         });
+    }
+
+    clearTable(): void {
+        this.ngZone.run(() => {
+            this.rowData$ = from([]);
+            this.aggrid.api.setRowData([]);
+        })
     }
 
     getName(): string {
