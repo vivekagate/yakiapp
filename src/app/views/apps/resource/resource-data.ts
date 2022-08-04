@@ -1,16 +1,23 @@
 import { Injectable } from '@angular/core';
 import {AgGridColumn} from "ag-grid-angular";
 import {TauriAdapter} from "../../../providers/data/tauri-adapter.service";
-import {ValueGetterFunc} from "ag-grid-community";
 
 export interface Command {
     command: string;
     arguments: {};
 }
+
+export interface Action {
+    name: string;
+    displayName: string;
+    icon: string;
+}
+
 export interface Resource {
     name?: string;
     columns: AgGridColumn[];
     command?: Command[];
+    actions?: Action[];
 }
 
 @Injectable({
@@ -108,22 +115,6 @@ export class ResourceData {
         ['Memory', (d: any) => d.data.status],
     ];
 
-
-    private getPodResourceDefinition(): Resource {
-        return {
-            columns: this.getColumnDef(this.podDef),
-            command: [
-                {
-                    command: this.beService.commands.get_resource,
-                    arguments: {
-                        kind: 'pod'
-                    }
-                }
-            ],
-            name: "Pods"
-        }
-    }
-
     private getColumneDef(name: string, field: string ): AgGridColumn {
         const col = new AgGridColumn();
         col.field = field;
@@ -154,6 +145,39 @@ export class ResourceData {
         return colDef;
     }
 
+
+    private getPodResourceDefinition(): Resource {
+        return {
+            columns: this.getColumnDef(this.podDef),
+            command: [
+                {
+                    command: this.beService.commands.get_resource,
+                    arguments: {
+                        kind: 'pod'
+                    }
+                }
+            ],
+            name: "Pods",
+            actions: [
+                {
+                    name: 'logs',
+                    displayName: 'Logs',
+                    icon: 'fa-file-code-o'
+                },
+                {
+                    name: 'restart',
+                    displayName: 'Restart',
+                    icon: 'fa-term'
+                },
+                {
+                    name: 'shell',
+                    displayName: 'Shell',
+                    icon: 'fa-term'
+                },
+            ]
+        }
+    }
+    
     private getNodeResourceDefinition(): Resource {
         return {
             columns: this.getColumnDef(this.nodeDef),
@@ -180,7 +204,24 @@ export class ResourceData {
                     }
                 }
             ],
-            name: "Deployments"
+            name: "Deployments",
+            actions: [
+                {
+                    name: 'logs',
+                    displayName: 'Logs',
+                    icon: 'fa-file-code-o'
+                },
+                {
+                    name: 'restart',
+                    displayName: 'Restart',
+                    icon: 'fa-term'
+                },
+                {
+                    name: 'shell',
+                    displayName: 'Shell',
+                    icon: 'fa-term'
+                },
+            ]
         }
     }
 
