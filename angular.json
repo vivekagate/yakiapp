@@ -38,6 +38,8 @@
             "styles": [
               "node_modules/font-awesome/css/font-awesome.css",
               "node_modules/angular-sidebar-menu/themes/admin-lte.scss",
+              "ag-grid-community/styles/ag-grid.css",
+              "ag-grid-community/styles/ag-theme-alpine.css",
               "src/scss/styles.scss"
             ],
             "scripts": [],
@@ -112,6 +114,8 @@
             "styles": [
               "node_modules/font-awesome/css/font-awesome.css",
               "node_modules/angular-sidebar-menu/themes/admin-lte.scss",
+              "ag-grid-community/styles/ag-grid.css",
+              "ag-grid-community/styles/ag-theme-alpine.css",
               "src/scss/styles.scss"
             ],
             "scripts": []

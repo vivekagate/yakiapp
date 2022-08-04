@@ -71,17 +71,6 @@ impl EventHolder {
 }
 
 #[derive(Serialize, Default)]
-pub struct DeploymentHolder {
-    pub deployment: Deployment,
-}
-
-impl DeploymentHolder {
-    fn new() -> Self {
-        Default::default()
-    }
-}
-
-#[derive(Serialize, Default)]
 pub struct KNamespace {
     pub name: String,
     pub creation_ts: i64,
@@ -208,7 +197,7 @@ pub fn get_all_deployments(
     cluster: &str,
     namespace: &String,
     cmd: &str,
-) -> Vec<DeploymentHolder> {
+) -> ObjectList<Deployment> {
     let res = _get_all_deployments(cluster, namespace).unwrap();
     let json = serde_json::to_string(&res).unwrap();
     window
@@ -265,7 +254,7 @@ pub fn get_resource(window: &Window, cluster: &str, namespace: &String, kind: &S
         .unwrap();
 }
 
-pub fn populate_deployments(window: &Window, namespace: &String, deploys: Vec<DeploymentHolder>) {
+pub fn populate_deployments(window: &Window, namespace: &String, deploys: ObjectList<Deployment>) {
     _populate_deployments(window, namespace, deploys);
 }
 
@@ -273,7 +262,7 @@ pub fn populate_deployments(window: &Window, namespace: &String, deploys: Vec<De
 async fn _populate_deployments(
     window: &Window,
     ns: &String,
-    deploys: Vec<DeploymentHolder>,
+    deploys: ObjectList<Deployment>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // for mut d in deploys {
     //   if d.available_replicas < d.replicas || d.unavailable_replicas > 0 {
@@ -315,18 +304,12 @@ async fn _populate_deployments(
 async fn _get_all_deployments(
     cluster: &str,
     namespace: &String,
-) -> Result<Vec<DeploymentHolder>, Box<dyn std::error::Error>> {
+) -> Result<ObjectList<Deployment>, Box<dyn std::error::Error>> {
     let client = init_client(cluster);
     let deploy_request: Api<Deployment> = Api::namespaced(client.await.unwrap(), namespace);
 
     let lp = ListParams::default();
-    let mut deploys: Vec<DeploymentHolder> = Vec::new();
-    for p in deploy_request.list(&lp).await? {
-        if let Some(ref status) = p.status {
-            debug !("Found Deployment: {}, Replicas: {:?}, Ready Replicas: {:?}, Unavailable Replicas: {:?}", p.name_any(), status.replicas, status.ready_replicas, status.unavailable_replicas);
-            deploys.push(DeploymentHolder { deployment: p });
-        }
-    }
+    let deploys: ObjectList<Deployment> = deploy_request.list(&lp).await?;
     Ok(deploys)
 }
 

@@ -8,38 +8,52 @@
             </c-card-body>
         </c-card>
     </c-col>
-    <c-spinner color="secondary" [hidden]="!isLoading" class="center"></c-spinner>
-    <ag-grid-angular
-            style="width: 100%; height: 100%"
+    <ag-grid-angular #aggrid
+            style="width: 100%; height: 80vh"
             class="ag-theme-alpine-dark"
             [columnDefs]="columnDefs"
             [defaultColDef]="defaultColDef"
-            [rowData]="rowData$ | async"
-            [rowSelection]="'multiple'"
+            [rowData]="rowData"
+            [rowSelection]="'single'"
             [animateRows]="true"
             (gridReady)="onGridReady($event)"
             (rowClicked)="onSelect($event)"
     ></ag-grid-angular>
+<!--    <table [hover]="true" cTable color="dark" [hidden]="isLoading">-->
+<!--        <thead>-->
+<!--        <tr>-->
+<!--            <th *ngFor="let col of columnDefs">{{col.headerName}}</th>-->
+<!--        </tr>-->
+<!--        </thead>-->
+<!--        <tbody>-->
+<!--        <tr *ngFor="let val of rowData;let i = index">-->
+<!--            <td>{{val['flat'].columnDefs[i]?.field}}</td>-->
+<!--            <td>-->
+<!--            </td>-->
+<!--        </tr>-->
+<!--        </tbody>-->
+<!--    </table>-->
+
 </c-row>
 
-<!--<c-sidebar-->
-<!--    #sidebar="cSidebar"-->
-<!--    class="d-print-none sidebar sidebar-fixed bg-general sidebar-overlaid sidebar-end sidebar-app long-content"-->
-<!--    id="sidebar"-->
-<!--    [visible]="!isSideBarHidden"-->
-<!--    size="xl"-->
-<!--&gt;-->
+<c-sidebar
+    #sidebar="cSidebar"
+    class="d-print-none sidebar sidebar-fixed bg-general sidebar-overlaid sidebar-end sidebar-app long-content"
+    id="sidebar"
+    [visible]="!isSideBarHidden"
+    size="xl"
+>
 
-<!--    <c-card class="mb-4">-->
-<!--        <c-card-header>-->
-<!--            <div>-->
-<!--        <span (click)="isSideBarHidden=true;">-->
-<!--            <b><fa-icon [icon]="faClose" class="pointy"></fa-icon></b>-->
-<!--            <b><fa-icon [icon]="faClose" class="pointy"></fa-icon></b>-->
-<!--        </span>-->
-<!--                &nbsp;&nbsp;&nbsp;-->
-<!--                <strong>{{selectedapp?.deployment?.metadata?.name}}</strong>-->
-<!--                <span class="fa-pull-right">-->
+    <c-card class="mb-4">
+        <c-card-header>
+            <div>
+        <span (click)="isSideBarHidden=true;">
+            <b><fa-icon [icon]="faClose" class="pointy"></fa-icon></b>
+            <b><fa-icon [icon]="faClose" class="pointy"></fa-icon></b>
+        </span>
+                &nbsp;&nbsp;&nbsp;
+                <strong>{{selectedapp?.metadata?.name}}</strong>
+                <span class="fa-pull-right">
 <!--          <button class="btn-sm button-app" (click)="taillogs(selectedapp?.deployment?.metadata?.name)">-->
 <!--            <fa-icon [icon]="faTailLog"></fa-icon>&nbsp;-->
 <!--            Logs-->
@@ -52,13 +66,13 @@
 <!--            <fa-icon [icon]="faTerminal"></fa-icon>&nbsp;-->
 <!--            Shell-->
 <!--          </button>&nbsp;-->
-<!--          <span (click)="isSideBarHidden=true;">-->
-<!--            <b><fa-icon [icon]="faClose" class="pointy"></fa-icon></b>-->
-<!--            <b><fa-icon [icon]="faClose" class="pointy"></fa-icon></b>-->
-<!--          </span>-->
-<!--        </span>-->
-<!--            </div>-->
-<!--        </c-card-header>-->
+          <span (click)="isSideBarHidden=true;">
+            <b><fa-icon [icon]="faClose" class="pointy"></fa-icon></b>
+            <b><fa-icon [icon]="faClose" class="pointy"></fa-icon></b>
+          </span>
+        </span>
+            </div>
+        </c-card-header>
 <!--        <c-card-body style="padding: 0">-->
 <!--            <c-spinner color="secondary" [hidden]="!isLoading" class="center"></c-spinner>-->
 <!--            <c-accordion [flush]="true" [alwaysOpen]="true">-->
@@ -192,5 +206,5 @@
 
 <!--            </c-accordion>-->
 <!--        </c-card-body>-->
-<!--    </c-card>-->
-<!--</c-sidebar>-->
+    </c-card>
+</c-sidebar>

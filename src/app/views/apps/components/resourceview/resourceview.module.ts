@@ -18,6 +18,7 @@ import { IconModule } from '@coreui/icons-angular';
 import { ChartjsModule } from '@coreui/angular-chartjs';
 import {ResourceviewComponent} from "./resourceview.component";
 import {AgGridModule} from "ag-grid-angular";
+import {FontAwesomeModule} from "@fortawesome/angular-fontawesome";
 
 
 @NgModule({
@@ -31,6 +32,10 @@ import {AgGridModule} from "ag-grid-angular";
         SharedModule,
         SpinnerModule,
         AgGridModule,
+        TableModule,
+        FormModule,
+        SidebarModule,
+        FontAwesomeModule,
     ],
     exports: [
         ResourceviewComponent

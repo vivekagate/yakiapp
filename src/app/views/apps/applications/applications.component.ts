@@ -14,6 +14,7 @@ export enum VIEW_MODE {
 })
 export class ApplicationsComponent implements EventListener{
   deployments: {
+    metadata: any;
     deployment: any,
     name: string,
     replicas: number,
@@ -24,7 +25,7 @@ export class ApplicationsComponent implements EventListener{
     restart_ts: number,
     reason: string,
     ns: string,
-    status: string
+    status: any
   }[];
   error: string | undefined;
   namespaces: {
@@ -152,32 +153,32 @@ export class ApplicationsComponent implements EventListener{
           this.namespaces = results;
         });
       } else if (cmd === this.beService.commands.get_deployments) {
-        results.forEach((res: any) => {
-          if ((res.deployment.status.availableReplicas === 0) && (res.deployment.status.replicas > 0)) {
+        results.items.forEach((res: any) => {
+          if ((res.status.availableReplicas === 0) && (res.status.replicas > 0)) {
             res.status = 'down';
             res.reason = '--';
-          }else if (res.deployment.status.availableReplicas === res.deployment.status.replicas) {
+          }else if (res.status.availableReplicas === res.status.replicas) {
             res.status = 'up';
           }else{
             res.status = 'down';
             res.reason = '--';
           }
 
-          let max_cpu = _.get(res, 'deployment.spec.template.spec.containers[0].resources.limits.cpu', '');
+          let max_cpu = _.get(res, 'spec.template.spec.containers[0].resources.limits.cpu', '');
           if (max_cpu) {
             if (max_cpu.indexOf('m') >= 0) {
-              res.deployment.spec.template.spec.containers[0].resources.limits.cpu_in_nanocore = Number(max_cpu.replace('m', '')) * 1000000;
+              res.spec.template.spec.containers[0].resources.limits.cpu_in_nanocore = Number(max_cpu.replace('m', '')) * 1000000;
             } else if (max_cpu.indexOf('n') >= 0) {
-              res.deployment.spec.template.spec.containers[0].resources.limits.cpu_in_nanocore = Number(max_cpu.replace('n', ''));
+              res.spec.template.spec.containers[0].resources.limits.cpu_in_nanocore = Number(max_cpu.replace('n', ''));
             } else {
-              res.deployment.spec.template.spec.containers[0].resources.limits.cpu_in_nanocore = Number(max_cpu) * 1000000000;
+              res.spec.template.spec.containers[0].resources.limits.cpu_in_nanocore = Number(max_cpu) * 1000000000;
             }
           } else {
-            _.set(res, 'deployment.spec.template.spec.containers[0].resources.limits.cpu_in_nanocore', 'N/A');
+            _.set(res, 'spec.template.spec.containers[0].resources.limits.cpu_in_nanocore', 'N/A');
           }
         })
         this.ngZone.run(() => {
-          this.deployments = results;
+          this.deployments = results.items;
           this.isLoading = false;
         });
       } else if (cmd === this.beService.commands.get_pods_for_deployment_async) {

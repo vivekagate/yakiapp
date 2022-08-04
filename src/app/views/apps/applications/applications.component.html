@@ -21,24 +21,24 @@
     </tr>
     </thead>
     <tbody>
-    <tr *ngFor="let val of deployments" (click)="onSelect(val.deployment.metadata.name)">
+    <tr *ngFor="let val of deployments" (click)="onSelect(val.metadata.name)">
       <th scope="row">
         <c-form-check>
           <input type="checkbox"/>
         </c-form-check>
       </th>
-      <td>{{val.deployment.metadata.name}}</td>
-      <td>{{val.deployment?.status?.availableReplicas || 0}}/{{val.deployment?.status?.replicas || 0}}</td>
+      <td>{{val.metadata?.name}}</td>
+      <td>{{val.status?.availableReplicas || 0}}/{{val.status?.replicas || 0}}</td>
       <td>
-        <span [hidden]="val.deployment?.status?.replicas === val?.deployment?.status?.availableReplicas" class="link-danger">
+        <span [hidden]="val.status?.replicas === val?.status?.availableReplicas" class="link-danger">
                     <fa-icon [icon]="faCross"></fa-icon>&nbsp;
                     Unhealthy
         </span>
-        <span [hidden]="val.deployment?.status?.unavailableReplicas > 0 || !val.deployment?.status?.replicas" class="link-success">
+        <span [hidden]="val.status?.unavailableReplicas > 0 || !val.status?.replicas" class="link-success">
                     <fa-icon [icon]="faCheck"></fa-icon>&nbsp;
                     Running
         </span>
-        <span [hidden]="val.deployment?.status?.replicas > 0 || val.deployment?.status?.unavailableReplicas > 0 || val.deployment?.status?.availableReplicas > 0" class="link-secondary">
+        <span [hidden]="val.status?.replicas > 0 || val.status?.unavailableReplicas > 0 || val.status?.availableReplicas > 0" class="link-secondary">
                     <fa-icon [icon]="faStopped"></fa-icon>&nbsp;
                     Stopped
         </span>
