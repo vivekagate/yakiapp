@@ -3,6 +3,7 @@ import {AgGridColumn} from "ag-grid-angular";
 import {TauriAdapter} from "../../../providers/data/tauri-adapter.service";
 import * as _ from 'lodash';
 import {Router} from "@angular/router";
+// import * as moment from 'moment';
 
 export interface Command {
     command: string;
@@ -99,11 +100,12 @@ export class ResourceData {
 
     serviceDef = [
         ['Name', 'metadata.name'],
-        ['Status', (d: any) => d.data.status],
-        ['CPU Request', 'status.capacity.cpu'],
-        ['CPU Allocatable', 'status.allocatable.cpu'],
-        ['Memory Request', 'status.capacity.memory'],
-        ['Memory Allocatable', 'status.allocatable.memory'],
+        ['Age', (d: any) => d.data.metadata.creationTimestamp],
+        ['Type', 'spec.type'],
+        ['ClusterIP', 'spec.clusterIP'],
+        ['Port', 'spec.ports.0.port'],
+        ['Target Port', 'spec.ports.0.targetPort'],
+        ['Node Port', 'spec.ports.0.nodePort'],
     ];
 
     daemonSetDef = [
@@ -259,9 +261,9 @@ export class ResourceData {
                     callback: (resource: any)=>{
                         const appname = _.get(resource, 'metadata.name');
                         console.log('Requesting logs for: ' + appname);
-                        this.beService.storage = {
-                            appname: appname,
-                        }
+                        this.beService.storage = Object.assign(this.beService.storage, {
+                            appname: appname
+                        })
                         this.router.navigateByUrl('/logs');
                     }
                 },

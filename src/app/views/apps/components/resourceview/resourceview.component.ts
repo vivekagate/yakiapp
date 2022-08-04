@@ -82,7 +82,12 @@ export class ResourceviewComponent implements EventListener {
         this.initialize();
 
         this.subscription = this.eventBus.on(this.beService.ngeventbus.app_events).subscribe((meta: MetaData) => {
-            if (meta.data === this.beService.ngevent.ns_changed) {
+            if (meta.data === this.beService.ngevent.cluster_changed) {
+                this.ngZone.run(() => {
+                    this.rowData$ = from([]);
+                    this.aggrid.api.setRowData([]);
+                })
+            }else if (meta.data === this.beService.ngevent.ns_changed) {
                 this.initialize();
             }else if (meta.data === this.beService.ngevent.escape_hit) {
                 if ( ! this.isSideBarHidden) {

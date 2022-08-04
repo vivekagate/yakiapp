@@ -109,12 +109,12 @@ export class DefaultHeaderComponent extends HeaderComponent implements EventList
 
   onClusterChanged() {
     console.log('Changing cluster to: ' + this.selectedCluster.name);
+    this.eventBus.cast(this.beService.ngeventbus.app_events, this.beService.ngevent.cluster_changed);
     this.beService.executeSyncCommand(this.beService.commands.set_current_cluster_context, {
       cluster: this.selectedCluster.name.trim()
     }, (res) => {
       console.log(res);
       this.getAllNamespaces(true);
-      this.eventBus.cast(this.beService.ngeventbus.app_events, this.beService.ngevent.cluster_changed);
     });
   }
 
