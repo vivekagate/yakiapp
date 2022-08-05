@@ -95,15 +95,34 @@ export class ResourceData {
     nodeDef = [
         ['Name', 'metadata.name'],
         ['Status', (params: any) => {
+            const conditions: any[] = params.data.status.conditions;
+            let value = 'N/A'
+            if (conditions && conditions.length > 0) {
+                for (const condition of conditions) {
+                    if (condition.status === 'True') {
+                        value = condition.type;
+                        break;
+                    }
+                }
+            }
             let eGui = document.createElement('span');
-            eGui.innerHTML = `${params.data.status}`
+            if (value !== 'Ready') {
+                eGui.classList.add('link-danger');
+                eGui.innerHTML = `${value}&nbsp;&nbsp;<i class='fa fa-warning'></i>`
+            }else{
+                eGui.innerHTML = `${value}`
+            }
             return eGui;
         }],
         ['Age', this.getAge],
-        ['CPU Request', 'status.capacity.cpu'],
-        ['CPU Allocatable', 'status.allocatable.cpu'],
-        ['Memory Request', 'status.capacity.memory'],
-        ['Memory Allocatable', 'status.allocatable.memory'],
+        ['CPU', (params: any) => {
+            return 'Calculating...';
+            // 'status.allocatable.cpu'
+        }],
+        ['Memory', (params: any) => {
+            return 'Calculating...';
+            // 'status.allocatable.cpu'
+        }],
     ];
 
     podDef = [
@@ -169,22 +188,40 @@ export class ResourceData {
             return eGui;
         }],
         ['Age', this.getAge],
-        ['CPU', 'status.capacity.cpu'],
+        ['CPU', (params: any) => {
+            const containers = params.data.spec.containers;
+            let value = 0;
+            let color = '';
+            if (containers && containers.length > 0) {
+                try{
+                    if (containers[0].resources.limits.cpu && containers[0].resources.requests.cpu) {
+                        let max = Number(containers[0].resources.limits.cpu);
+                        let requested = Number()
+                        if (value > 60) {
+                            color = 'link-warning';
+                        }else if (value > 80) {
+                            color = 'link-danger';
+                        }
+                    }
+                }catch(e){
+                    value = 0;
+                }
+            }
+            let eGui = document.createElement('span');
+            if (color) {
+                eGui.classList.add(color);
+            }
+            eGui.innerHTML = `${value}&nbsp;&nbsp;<i class='fa fa-battery-1 fa-rotate-270'></i>`
+            return eGui;
+        }],
         ['Memory', 'status.capacity.memory'],
     ];
 
     configMapDef = [
         ['Name', 'metadata.name'],
-        ['Status', (params: any) => {
-            let eGui = document.createElement('span');
-            eGui.innerHTML = `${params.data.status}`
-            return eGui;
-        }],
+        ['Data', ''],
+        ['Type', ''],
         ['Age', this.getAge],
-        ['CPU Request', 'status.capacity.cpu'],
-        ['CPU Allocatable', 'status.allocatable.cpu'],
-        ['Memory Request', 'status.capacity.memory'],
-        ['Memory Allocatable', 'status.allocatable.memory'],
     ];
 
     cronJobDef = [

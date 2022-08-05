@@ -2,8 +2,10 @@ mod metrics;
 
 use futures::{StreamExt, TryStreamExt};
 use k8s_openapi::api::apps::v1::{DaemonSet, Deployment, ReplicaSet, StatefulSet};
-use k8s_openapi::api::core::v1::{ConfigMap, Namespace, Node, PersistentVolume, Pod, Secret, Service};
 use k8s_openapi::api::batch::v1::CronJob;
+use k8s_openapi::api::core::v1::{
+    ConfigMap, Namespace, Node, PersistentVolume, Pod, Secret, Service,
+};
 use kube::api::{LogParams, ObjectList};
 use kube::config::{KubeConfigOptions, Kubeconfig};
 use kube::{
@@ -149,30 +151,15 @@ async fn init_client(cluster: &str) -> Result<Client, Error> {
 }
 
 pub fn get_all_ns(window: &Window, cluster: &str, cmd: &str) {
-    let res = _get_all_ns(cluster);
-    match res {
-        Ok(res) => {
-            let json = serde_json::to_string(&res).unwrap();
-            debug!("Retrieve all namespaces: {}", json);
-            &window
-                .emit(
-                    "app::command_result",
-                    CommandResult {
-                        command: String::from(cmd),
-                        data: json,
-                    },
-                )
-                .unwrap();
-        }
-        Err(err) => {
-            debug!("Failed to retrieve namespace: {}", err);
-            utils::send_error(window, err.to_string());
-        }
-    }
+    _get_all_ns(window, cmd, cluster);
 }
 
 #[tokio::main]
-async fn _get_all_ns(cluster: &str) -> Result<Vec<KNamespace>, Box<dyn std::error::Error>> {
+async fn _get_all_ns(
+    window: &Window,
+    cmd: &str,
+    cluster: &str,
+) -> Result<Vec<KNamespace>, Box<dyn std::error::Error>> {
     let client = init_client(cluster);
     let mut kns_list: Vec<KNamespace> = Vec::new();
     let ns_request: Api<Namespace> = Api::all(client.await.unwrap());
@@ -184,6 +171,8 @@ async fn _get_all_ns(cluster: &str) -> Result<Vec<KNamespace>, Box<dyn std::erro
             creation_ts: 0,
         })
     }
+    let json = serde_json::to_string(&kns_list).unwrap();
+    _dispatch_to_frontend(window, cmd, json);
     Ok(kns_list)
 }
 
@@ -198,7 +187,7 @@ pub fn get_all_deployments(
     namespace: &String,
     cmd: &str,
 ) -> ObjectList<Deployment> {
-    let res = _get_all_deployments(cluster, namespace).unwrap();
+    let res = _get_all_deployments(window, cmd, cluster, namespace).unwrap();
     let json = serde_json::to_string(&res).unwrap();
     window
         .emit(
@@ -214,41 +203,38 @@ pub fn get_all_deployments(
 }
 
 pub fn get_resource(window: &Window, cluster: &str, namespace: &String, kind: &String, cmd: &str) {
-    let mut json = "".parse().unwrap();
     if kind == "deployment" {
-        let res = _get_all_deployments(cluster, namespace).unwrap();
-        json = serde_json::to_string(&res).unwrap();
+        _get_all_deployments(&window, cmd, cluster, namespace);
     } else if kind == "namespace" {
-        let res = _get_all_ns(cluster).unwrap();
-        json = serde_json::to_string(&res).unwrap();
+        _get_all_ns(&window, cmd, cluster);
     } else if kind == "pod" {
-        let res = _get_all_pods(cluster, namespace).unwrap();
-        json = serde_json::to_string(&res).unwrap();
+        _get_all_pods(&window, cmd, cluster, namespace);
     } else if kind == "node" {
-        let res = _get_all_nodes(cluster).unwrap();
-        json = serde_json::to_string(&res).unwrap();
+        _get_all_nodes(&window, cmd, cluster);
+        _get_all_node_metrics(&window, cmd, cluster);
     } else if kind == "cronjob" {
-        let res = _get_all_cron_jobs(cluster, namespace).unwrap();
-        json = serde_json::to_string(&res).unwrap();
+        _get_all_cron_jobs(&window, cmd, cluster, namespace);
+    } else if kind == "configmap" {
+        _get_all_config_maps(&window, cmd, cluster, namespace);
+        _get_all_secrets(&window, cmd, cluster, namespace);
     } else if kind == "service" {
-        let res = _get_all_services(cluster, namespace).unwrap();
-        json = serde_json::to_string(&res).unwrap();
+        _get_all_services(&window, cmd, cluster, namespace);
     } else if kind == "daemonset" {
-        let res = _get_all_daemon_sets(cluster, namespace).unwrap();
-        json = serde_json::to_string(&res).unwrap();
+        _get_all_daemon_sets(&window, cmd, cluster, namespace);
     } else if kind == "persistentvolume" {
-        let res = _get_all_persistent_volume(cluster, namespace).unwrap();
-        json = serde_json::to_string(&res).unwrap();
+        _get_all_persistent_volume(&window, cmd, cluster, namespace);
     } else if kind == "statefulset" {
-        let res = _get_all_stateful_sets(cluster, namespace).unwrap();
-        json = serde_json::to_string(&res).unwrap();
+        _get_all_stateful_sets(&window, cmd, cluster, namespace);
     }
+}
+
+fn _dispatch_to_frontend(window: &Window, cmd: &str, data: String) {
     window
         .emit(
             "app::command_result",
             CommandResult {
                 command: String::from(cmd),
-                data: json,
+                data,
             },
         )
         .unwrap();
@@ -302,6 +288,8 @@ async fn _populate_deployments(
 
 #[tokio::main]
 async fn _get_all_deployments(
+    window: &Window,
+    cmd: &str,
     cluster: &str,
     namespace: &String,
 ) -> Result<ObjectList<Deployment>, Box<dyn std::error::Error>> {
@@ -310,11 +298,15 @@ async fn _get_all_deployments(
 
     let lp = ListParams::default();
     let deploys: ObjectList<Deployment> = deploy_request.list(&lp).await?;
+    let json = serde_json::to_string(&deploys).unwrap();
+    _dispatch_to_frontend(window, cmd, json);
     Ok(deploys)
 }
 
 #[tokio::main]
 async fn _get_all_pods(
+    window: &Window,
+    cmd: &str,
     cluster: &str,
     namespace: &String,
 ) -> Result<ObjectList<Pod>, Box<dyn std::error::Error>> {
@@ -323,11 +315,15 @@ async fn _get_all_pods(
 
     let lp = ListParams::default();
     let pods: ObjectList<Pod> = kube_request.list(&lp).await?;
+    let json = serde_json::to_string(&pods).unwrap();
+    _dispatch_to_frontend(window, cmd, json);
     Ok(pods)
 }
 
 #[tokio::main]
 async fn _get_all_services(
+    window: &Window,
+    cmd: &str,
     cluster: &str,
     namespace: &String,
 ) -> Result<ObjectList<Service>, Box<dyn std::error::Error>> {
@@ -335,12 +331,16 @@ async fn _get_all_services(
     let kube_request: Api<Service> = Api::namespaced(client.await.unwrap(), namespace);
 
     let lp = ListParams::default();
-    let secrets: ObjectList<Service> = kube_request.list(&lp).await?;
-    Ok(secrets)
+    let services: ObjectList<Service> = kube_request.list(&lp).await?;
+    let json = serde_json::to_string(&services).unwrap();
+    _dispatch_to_frontend(window, cmd, json);
+    Ok(services)
 }
 
 #[tokio::main]
 async fn _get_all_config_maps(
+    window: &Window,
+    cmd: &str,
     cluster: &str,
     namespace: &String,
 ) -> Result<ObjectList<ConfigMap>, Box<dyn std::error::Error>> {
@@ -349,11 +349,15 @@ async fn _get_all_config_maps(
 
     let lp = ListParams::default();
     let config_maps: ObjectList<ConfigMap> = kube_request.list(&lp).await?;
+    let json = serde_json::to_string(&config_maps).unwrap();
+    _dispatch_to_frontend(window, cmd, json);
     Ok(config_maps)
 }
 
 #[tokio::main]
 async fn _get_all_cron_jobs(
+    window: &Window,
+    cmd: &str,
     cluster: &str,
     namespace: &String,
 ) -> Result<ObjectList<CronJob>, Box<dyn std::error::Error>> {
@@ -361,12 +365,16 @@ async fn _get_all_cron_jobs(
     let kube_request: Api<CronJob> = Api::namespaced(client.await.unwrap(), namespace);
 
     let lp = ListParams::default();
-    let config_maps: ObjectList<CronJob> = kube_request.list(&lp).await?;
-    Ok(config_maps)
+    let cron_jobs: ObjectList<CronJob> = kube_request.list(&lp).await?;
+    let json = serde_json::to_string(&cron_jobs).unwrap();
+    _dispatch_to_frontend(window, cmd, json);
+    Ok(cron_jobs)
 }
 
 #[tokio::main]
 async fn _get_all_secrets(
+    window: &Window,
+    cmd: &str,
     cluster: &str,
     namespace: &String,
 ) -> Result<ObjectList<Secret>, Box<dyn std::error::Error>> {
@@ -375,11 +383,15 @@ async fn _get_all_secrets(
 
     let lp = ListParams::default();
     let secrets: ObjectList<Secret> = kube_request.list(&lp).await?;
+    let json = serde_json::to_string(&secrets).unwrap();
+    _dispatch_to_frontend(window, cmd, json);
     Ok(secrets)
 }
 
 #[tokio::main]
 async fn _get_all_daemon_sets(
+    window: &Window,
+    cmd: &str,
     cluster: &str,
     namespace: &String,
 ) -> Result<ObjectList<DaemonSet>, Box<dyn std::error::Error>> {
@@ -387,12 +399,16 @@ async fn _get_all_daemon_sets(
     let kube_request: Api<DaemonSet> = Api::namespaced(client.await.unwrap(), namespace);
 
     let lp = ListParams::default();
-    let secrets: ObjectList<DaemonSet> = kube_request.list(&lp).await?;
-    Ok(secrets)
+    let daemon_sets: ObjectList<DaemonSet> = kube_request.list(&lp).await?;
+    let json = serde_json::to_string(&daemon_sets).unwrap();
+    _dispatch_to_frontend(window, cmd, json);
+    Ok(daemon_sets)
 }
 
 #[tokio::main]
 async fn _get_all_replica_sets(
+    window: &Window,
+    cmd: &str,
     cluster: &str,
     namespace: &String,
 ) -> Result<ObjectList<ReplicaSet>, Box<dyn std::error::Error>> {
@@ -400,12 +416,16 @@ async fn _get_all_replica_sets(
     let kube_request: Api<ReplicaSet> = Api::namespaced(client.await.unwrap(), namespace);
 
     let lp = ListParams::default();
-    let secrets: ObjectList<ReplicaSet> = kube_request.list(&lp).await?;
-    Ok(secrets)
+    let replica_sets: ObjectList<ReplicaSet> = kube_request.list(&lp).await?;
+    let json = serde_json::to_string(&replica_sets).unwrap();
+    _dispatch_to_frontend(window, cmd, json);
+    Ok(replica_sets)
 }
 
 #[tokio::main]
 async fn _get_all_stateful_sets(
+    window: &Window,
+    cmd: &str,
     cluster: &str,
     namespace: &String,
 ) -> Result<ObjectList<StatefulSet>, Box<dyn std::error::Error>> {
@@ -413,24 +433,48 @@ async fn _get_all_stateful_sets(
     let kube_request: Api<StatefulSet> = Api::namespaced(client.await.unwrap(), namespace);
 
     let lp = ListParams::default();
-    let secrets: ObjectList<StatefulSet> = kube_request.list(&lp).await?;
-    Ok(secrets)
+    let stateful_sets: ObjectList<StatefulSet> = kube_request.list(&lp).await?;
+    let json = serde_json::to_string(&stateful_sets).unwrap();
+    _dispatch_to_frontend(window, cmd, json);
+    Ok(stateful_sets)
 }
 
 #[tokio::main]
 async fn _get_all_nodes(
+    window: &Window,
+    cmd: &str,
     cluster: &str,
 ) -> Result<ObjectList<Node>, Box<dyn std::error::Error>> {
     let client = init_client(cluster);
     let kube_request: Api<Node> = Api::all(client.await.unwrap());
 
     let lp = ListParams::default();
-    let secrets: ObjectList<Node> = kube_request.list(&lp).await?;
-    Ok(secrets)
+    let nodes: ObjectList<Node> = kube_request.list(&lp).await?;
+    let json = serde_json::to_string(&nodes).unwrap();
+    _dispatch_to_frontend(window, cmd, json);
+    Ok(nodes)
+}
+
+#[tokio::main]
+async fn _get_all_node_metrics(
+    window: &Window,
+    cmd: &str,
+    cluster: &str,
+) -> Result<ObjectList<Node>, Box<dyn std::error::Error>> {
+    let client = init_client(cluster);
+    let kube_request: Api<Node> = Api::all(client.await.unwrap());
+
+    let lp = ListParams::default();
+    let nodes: ObjectList<Node> = kube_request.list(&lp).await?;
+    let json = serde_json::to_string(&nodes).unwrap();
+    _dispatch_to_frontend(window, cmd, json);
+    Ok(nodes)
 }
 
 #[tokio::main]
 async fn _get_all_persistent_volume(
+    window: &Window,
+    cmd: &str,
     cluster: &str,
     namespace: &String,
 ) -> Result<ObjectList<PersistentVolume>, Box<dyn std::error::Error>> {
@@ -438,8 +482,10 @@ async fn _get_all_persistent_volume(
     let kube_request: Api<PersistentVolume> = Api::namespaced(client.await.unwrap(), namespace);
 
     let lp = ListParams::default();
-    let secrets: ObjectList<PersistentVolume> = kube_request.list(&lp).await?;
-    Ok(secrets)
+    let persistent_volumes: ObjectList<PersistentVolume> = kube_request.list(&lp).await?;
+    let json = serde_json::to_string(&persistent_volumes).unwrap();
+    _dispatch_to_frontend(window, cmd, json);
+    Ok(persistent_volumes)
 }
 
 pub fn stream_cpu_memory_for_pod(
