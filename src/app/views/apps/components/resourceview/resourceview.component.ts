@@ -42,7 +42,14 @@ export class ResourceviewComponent implements EventListener {
 
     @Input()
     resource: Resource;
-    defaultColDef: ColDef;
+    defaultColDef: ColDef = {
+        editable: false,
+        sortable: true,
+        flex: 1,
+        minWidth: 100,
+        filter: true,
+        resizable: true,
+    };
 
     rowData$: Observable<any> = from([]);
     rowData = [];
@@ -64,7 +71,6 @@ export class ResourceviewComponent implements EventListener {
 
     constructor(private beService: TauriAdapter, private ngZone: NgZone, private eventBus: NgEventBus) {
         this.columnDefs = [];
-        this.defaultColDef = {};
         this.rowData$ = new Observable<any[]>;
         this.resource = {columns: [], command: [], name: ""};
         this.beService.registerListener(this.beService.response_channel.app_command_result, this);
@@ -130,7 +136,7 @@ export class ResourceviewComponent implements EventListener {
             if (results.items) {
                 results.items.forEach((item: any) => {
                     item.flat = flatten(item);
-                    console.log(JSON.stringify(item.flat));
+                    // console.log(JSON.stringify(item.flat));
                 })
                 this.ngZone.run(() => {
                     // @ts-ignore
@@ -157,7 +163,6 @@ export class ResourceviewComponent implements EventListener {
         //         this.resetMetrics();
         //     }
         // });
-        console.log(app);
         this.selectedapp = app.data;
         this.isSideBarHidden = !this.isSideBarHidden;
         if (!this.isSideBarHidden) {

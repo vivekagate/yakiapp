@@ -1,8 +1,10 @@
 import { Injectable } from '@angular/core';
-import {AgGridColumn} from "ag-grid-angular";
+import {AgGridColumn, ICellRendererAngularComp} from "ag-grid-angular";
 import {TauriAdapter} from "../../../providers/data/tauri-adapter.service";
 import * as _ from 'lodash';
 import {Router} from "@angular/router";
+import {AgPromise, ICellRendererComp, ICellRendererParams} from "ag-grid-community";
+import {Utilities} from "./utilities";
 // import * as moment from 'moment';
 
 export interface Command {
@@ -35,6 +37,27 @@ export interface Resource {
     sections?: Section[];
 }
 
+export class ResourceValueRenderer implements ICellRendererAngularComp {
+    public cellValue: string | undefined;
+
+    // gets called once before the renderer is used
+    agInit(params: ICellRendererParams): void {
+        console.log(params);
+        this.cellValue = this.getValueToDisplay(params);
+    }
+
+    // gets called whenever the cell refreshes
+    refresh(params: ICellRendererParams): boolean {
+        // set value into cell again
+        this.cellValue = this.getValueToDisplay(params);
+        return true;
+    }
+
+    getValueToDisplay(params: ICellRendererParams) {
+        return params.valueFormatted ? params.valueFormatted : params.value;
+    }
+}
+
 @Injectable({
     providedIn: 'any'
 })
@@ -61,10 +84,22 @@ export class ResourceData {
         return resource;
     }
 
+    getAge = (params: any) => {
+        let eGui = document.createElement('span');
+        let age = Utilities.timeAgo(params.data.metadata.creationTimestamp);
+        eGui.innerHTML = `${age}`
+        return eGui;
+    };
+
 
     nodeDef = [
         ['Name', 'metadata.name'],
-        ['Status', (d: any) => d.data.status],
+        ['Status', (params: any) => {
+            let eGui = document.createElement('span');
+            eGui.innerHTML = `${params.data.status}`
+            return eGui;
+        }],
+        ['Age', this.getAge],
         ['CPU Request', 'status.capacity.cpu'],
         ['CPU Allocatable', 'status.allocatable.cpu'],
         ['Memory Request', 'status.capacity.memory'],
@@ -73,16 +108,79 @@ export class ResourceData {
 
     podDef = [
         ['Name', 'metadata.name'],
-        ['Status', (d: any) => d.data.status],
-        ['CPU Request', 'status.capacity.cpu'],
-        ['CPU Allocatable', 'status.allocatable.cpu'],
-        ['Memory Request', 'status.capacity.memory'],
-        ['Memory Allocatable', 'status.allocatable.memory'],
+        ['Ready', (params: any) => {
+            const cntStatus = params.data.status.containerStatuses;
+            let value = 'N/A';
+            if (cntStatus && cntStatus.length > 0) {
+                if (cntStatus[0].ready) {
+                    value = '1/1'
+                }else{
+                    value = '0/1'
+                }
+            }
+            let eGui = document.createElement('span');
+            eGui.innerHTML = `${value}`
+            return eGui;
+        }],
+        ['Status', (params: any) => {
+            const cntStatus = params.data.status.containerStatuses;
+            let color = '';
+            let status = 'Running';
+            if (cntStatus && cntStatus.length > 0) {
+                    if (cntStatus[0].state?.waiting?.reason) {
+                        color = 'link-danger';
+                        status = cntStatus[0].state?.waiting?.reason;
+                    }
+            }
+            let eGui = document.createElement('span');
+            if (color) {
+                eGui.classList.add(color);
+                eGui.innerHTML = `${status}&nbsp;&nbsp;<i class='fa fa-warning'></i>`
+            }else{
+                eGui.innerHTML = `${status}`
+            }
+            return eGui;
+        }],
+        ['Restarts', (params: any) => {
+            const cntStatus = params.data.status.containerStatuses;
+            let value = 0;
+            let color = '';
+            if (cntStatus && cntStatus.length > 0) {
+                try{
+                    if (cntStatus[0].restartCount) {
+                        value = Number(cntStatus[0].restartCount);
+                        if (value > 0 && value <= 5) {
+                            color = 'link-warning';
+                        }else if (value > 5) {
+                            color = 'link-danger';
+                        }
+                    }
+                }catch(e){
+                    value = 0;
+                }
+            }
+            let eGui = document.createElement('span');
+            if (color) {
+                eGui.classList.add(color);
+                eGui.innerHTML = `${value}&nbsp;&nbsp;<i class='fa fa-warning'></i>`
+            }else{
+                eGui.innerHTML = `${value}`
+            }
+            return eGui;
+        }],
+        ['Age', this.getAge],
+        ['CPU', 'status.capacity.cpu'],
+        ['Memory', 'status.capacity.memory'],
     ];
 
     configMapDef = [
         ['Name', 'metadata.name'],
-        ['Status', (d: any) => d.data.status],
+        ['Status', (params: any) => {
+            let eGui = document.createElement('span');
+            eGui.innerHTML = `${params.data.status}`
+            return eGui;
+        }],
+        ['Age', this.getAge],
         ['CPU Request', 'status.capacity.cpu'],
         ['CPU Allocatable', 'status.allocatable.cpu'],
         ['Memory Request', 'status.capacity.memory'],
@@ -91,7 +189,12 @@ export class ResourceData {
 
     cronJobDef = [
         ['Name', 'metadata.name'],
-        ['Status', (d: any) => d.data.status],
+        ['Status', (params: any) => {
+            let eGui = document.createElement('span');
+            eGui.innerHTML = `${params.data.status}`
+            return eGui;
+        }],
+        ['Age', this.getAge],
         ['CPU Request', 'status.capacity.cpu'],
         ['CPU Allocatable', 'status.allocatable.cpu'],
         ['Memory Request', 'status.capacity.memory'],
@@ -100,7 +203,12 @@ export class ResourceData {
 
     serviceDef = [
         ['Name', 'metadata.name'],
-        ['Age', (d: any) => d.data.metadata.creationTimestamp],
+        ['Age', (params: any) => {
+            let eGui = document.createElement('span');
+            eGui.innerHTML = `${params.data.metadata.creationTimestamp}`
+            return eGui;
+        }],
+        ['Age', this.getAge],
         ['Type', 'spec.type'],
         ['ClusterIP', 'spec.clusterIP'],
         ['Port', 'spec.ports.0.port'],
@@ -110,7 +218,12 @@ export class ResourceData {
 
     daemonSetDef = [
         ['Name', 'metadata.name'],
-        ['Status', (d: any) => d.data.status],
+        ['Status', (params: any) => {
+            let eGui = document.createElement('span');
+            eGui.innerHTML = `${params.data.status}`
+            return eGui;
+        }],
+        ['Age', this.getAge],
         ['CPU Request', 'status.capacity.cpu'],
         ['CPU Allocatable', 'status.allocatable.cpu'],
         ['Memory Request', 'status.capacity.memory'],
@@ -119,16 +232,49 @@ export class ResourceData {
 
     deploymentDef = [
         ['Name', 'metadata.name'],
-        ['Status', (d: any) => d.data.status],
-        ['Pods', (d: any) => {
-            if (d.data.status.availableReplicas) {
-                return d.data.status.availableReplicas + '/' + d.data.status.replicas;
-            } else {
-                return '0/' + d.data.status.replicas
+        ['Status', (params: any) => {
+            const replicas = params.data.status.replicas;
+            const unavailable = params.data.status.unavailableReplicas;
+            const available = params.data.status.availableReplicas;
+            let status = 'Stopped';
+            let icon = 'fa-stop';
+            let color = 'link-secondary';
+            if (!params.data.status.replicas && !params.data.status.availableReplicas) {
+                status = 'Stopped';
+                icon = 'fa-stop';
+                color = 'link-secondary';
+            }else if (replicas === available) {
+                status = 'Running';
+                icon = 'fa-check';
+                color = 'link-success'
+            }else if (unavailable > 0) {
+                status = 'Unhealthy';
+                icon = 'fa-warning';
+                color = 'link-danger';
             }
+            let eGui = document.createElement('span');
+            eGui.classList.add(color);
+            eGui.innerHTML = `<i class='fa ${icon}'></i>&nbsp;${status}`
+            return eGui;
         }],
-        ['CPU', (d: any) => d.data.status],
-        ['Memory', (d: any) => d.data.status],
+        ['Age', this.getAge],
+        ['Pods', (params: any) => {
+            let value = 'N/A';
+            let replicas = 0;
+            if (params.data.status.replicas) {
+                replicas = params.data.status.replicas;
+            }
+            if (params.data.status.availableReplicas) {
+                value = `${params.data.status.availableReplicas}/${replicas}`;
+            } else {
+                value = `0/${replicas}`;
+            }
+            let eGui = document.createElement('span');
+            eGui.innerHTML = `${value}`
+            return eGui;
+        }],
+        ['CPU', 'metadata.name'],
+        ['Memory', 'metadata.name'],
     ];
 
     private getColumneDef(name: string, field: string ): AgGridColumn {
@@ -138,11 +284,16 @@ export class ResourceData {
         return col;
     }
 
-    private getColumneDefWithValueGetter(name: string, valueGetter: any ): AgGridColumn {
+    private getColumneDefWithValueGetter(name: string, valueGetter: (params:any)=>{} ): AgGridColumn {
         const col = new AgGridColumn();
         col.headerName = name;
-        col.valueGetter = valueGetter
+        // col.valueGetter = valueGetter
+        col.cellRenderer = valueGetter
         return col;
+    }
+
+    private instanceOfICellRendererComp(object: any): object is ICellRendererComp {
+        return 'member' in object;
     }
 
     private getColumnDef(args: any) {
@@ -153,6 +304,8 @@ export class ResourceData {
                 let name = col[0];
                 if (typeof col[1] === 'string') {
                     colDef.push(this.getColumneDef(name, col[1]));
+                }else if((typeof col[1] === 'object')){
+                    // colDef.push(this.getColumneDef(name, col[1]));
                 }else{
                     colDef.push(this.getColumneDefWithValueGetter(name, col[1]));
                 }
