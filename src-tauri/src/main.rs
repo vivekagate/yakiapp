@@ -5,7 +5,8 @@
 
 use crate::appmanager::AppManager;
 use crate::cache::CacheManager;
-use crate::kube::{CommandResult, EventHolder};
+use crate::kube::{EventHolder};
+use crate::kube::models::CommandResult;
 use crate::store::DataStoreManager;
 use crate::task::TaskManager;
 use ::kube::api::Object;
@@ -53,7 +54,8 @@ struct SingletonHolder(Mutex<AppManager>);
 
 fn main() {
     init_tauri();
-    debug!("Welcome to Yak");
+    debug!("Welcome to Yaki");
+    // kube::get_kubectl_raw();
 }
 
 fn init_tauri() {
@@ -133,6 +135,8 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
     const GET_ALL_NS: &str = "get_all_ns";
     const GET_DEPLOYMENTS: &str = "get_deployments";
     const GET_RESOURCE: &str = "get_resource";
+    const GET_RESOURCE_WITH_METRICS: &str = "get_resource_with_metrics";
+    const TYPE_METRICS: &str = "type_metrics";
     const GET_PODS_FOR_DEPLOYMENT: &str = "get_pods_for_deployment_async";
     const GET_METRICS_FOR_DEPLOYMENT: &str = "get_metrics_for_deployment";
     const RESTART_DEPLOYMENTS: &str = "restart_deployments";
@@ -143,12 +147,12 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
     const STOP_ALL_METRICS_STREAMS: &str = "stop_all_metrics_streams";
     const APP_START: &str = "app_start";
 
-    let current_cluster = appmanager
+    let current_cluster: String = appmanager
         .0
         .lock()
         .unwrap()
         .cachemanager
-        .get(cache::KEY_CONTEXT, "");
+        .get(cache::KEY_CONTEXT, "").clone();
     debug!("Current cluster: {}", current_cluster);
     let cmd_hldr: CommandHolder = serde_json::from_str(commandstr).unwrap();
     if cmd_hldr.command == GET_ALL_NS {
@@ -168,6 +172,10 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
             let kind = cmd_hldr.args.get("kind").unwrap();
             let _ = kube::get_resource(&window, &current_cluster, namespace, kind, GET_RESOURCE);
         });
+    } else if cmd_hldr.command == GET_RESOURCE_WITH_METRICS {
+        let namespace = cmd_hldr.args.get("ns").unwrap().clone();
+        let kind = cmd_hldr.args.get("kind").unwrap().clone();
+        let _ = kube::get_resource_with_metrics(&window, current_cluster, namespace, kind, GET_RESOURCE_WITH_METRICS.parse().unwrap());
     } else if cmd_hldr.command == GET_PODS_FOR_DEPLOYMENT {
         let hndl = thread::spawn(move || {
             let namespace = cmd_hldr.args.get("ns").unwrap();

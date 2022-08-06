@@ -17,6 +17,7 @@ export class TauriAdapter {
     execute_command: 'execute_command',
     get_deployments: 'get_deployments',
     get_resource: 'get_resource',
+    get_resource_with_metrics: 'get_resource_with_metrics',
     get_pods_for_deployment_async: 'get_pods_for_deployment_async',
     get_metrics_for_deployment: 'get_metrics_for_deployment',
     get_all_ns: 'get_all_ns',

@@ -16,8 +16,6 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import {MetaData} from "ng-event-bus/lib/meta-data";
 import {NgEventBus} from "ng-event-bus";
-import { first } from 'rxjs/operators'
-
 
 export enum COL_TYPE {
     number,
@@ -104,8 +102,12 @@ export class ResourceviewComponent implements EventListener {
     }
 
     initialize(): void {
+        let delay = 0;
         this.resource.command?.forEach((cmd) => {
-            this.beService.executeCommandInCurrentNs(cmd.command, cmd.arguments,true);
+            setTimeout(() => {
+                this.beService.executeCommandInCurrentNs(cmd.command, cmd.arguments,true);
+            }, delay);
+            delay += 1000;
         });
     }
 
@@ -133,17 +135,30 @@ export class ResourceviewComponent implements EventListener {
 
         if (evname === this.beService.response_channel["app_command_result"]) {
             let cmd = _.get(payload, 'command');
+            const mmap = new Map();
+            if (!results.items && results.resource && results.metrics) {
+                results.items = JSON.parse(results.resource).items;
+                const metrics = JSON.parse(results.metrics);
+                metrics.items.forEach((m: any) => {
+                    mmap.set(m.metadata.name, m);
+                })
+            }
+
             if (results.items) {
                 results.items.forEach((item: any) => {
+                    if (item.spec.containers && item.spec.containers.length > 0){
+                        const metric = mmap.get(item.metadata.name);
+                        if (metric && metric.containers && metric.containers.length > 0) {
+                            item.spec.containers[0].resources.usage = metric.containers[0].usage;
+                        }
+                    }
                     item.flat = flatten(item);
-                    // console.log(JSON.stringify(item.flat));
-                })
+                });
+
                 this.ngZone.run(() => {
                     // @ts-ignore
                     this.rowData$ = from(results.items);
                     this.rowData = results.items;
-                        console.log(results.items);
-                        console.log(this.columnDefs);
                     this.isLoading = false;
                 });
             }
