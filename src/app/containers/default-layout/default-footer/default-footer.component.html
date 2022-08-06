@@ -1,6 +1,6 @@
 <!--<c-footer>-->
   <div class="ms-auto">
-    <button class="btn-sm button-app" (click)="onUpgrade()">
+    <button class="btn-sm button-app" (click)="onUpgrade()" [hidden]="isValidLicense">
       <fa-icon [icon]="faCreditcard"></fa-icon>&nbsp;
       Upgrade
     </button>&nbsp;&nbsp;&nbsp;
@@ -10,3 +10,21 @@
     <a href="mailto:nirops.contact@gmail.com?subject=Feedback for Yaki" target="_blank">Send feedback</a>
   </div>
 <!--</c-footer>-->
+
+<ng-template #modal_eula let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title" id="modal-basic-title">End User License Accept</h4>
+    <button type="button" class="close" aria-label="Close" (click)="modal.dismiss('Cross click')">
+      <span aria-hidden="true">×</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <ul>
+      <li>Use this application at your own risk.
+      </li>
+    </ul>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-outline-dark" (click)="modal.close('Save click')">Accept</button>
+  </div>
+</ng-template>

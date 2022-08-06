@@ -1,92 +1,166 @@
-use std::path::{Path, PathBuf};
-use std::{env, fs};
+use log::{debug, error, info};
+use rusqlite::{Connection, Result};
 use std::error::Error;
 use std::fs::File;
-use log::{debug, error, info};
-use sqlite3::{Connection, State};
+use std::path::{Path, PathBuf};
+use std::{env, fs};
+
+pub const LICENSE_PUBLIC_KEY: &str = "LICENSE_PUBLIC_KEY";
+pub const LICENSE_STRING_KEY: &str = "LICENSE_STRING_KEY";
+pub const KEY_EULA_ACCEPT: &str = "KEY_EULA_ACCEPT";
+
+pub const LICENSE_PUBLIC_KEY_VALUE: &str = "rsa_string";
+
+
+#[derive(Debug)]
+pub struct Preference {
+    pub(crate) key: String,
+    pub(crate) value: String,
+}
 
 pub struct DataStoreManager {
-  connection: Connection
+    connection: Connection,
 }
 
 impl DataStoreManager {
-  pub(crate) fn save(&self, key: String, value: String) {
-    // let mut statement = self.connection
-    //   .prepare("INSERT INTO users VALUES (?, ?)")
-    //   .unwrap()
-    //   .bind(1, key)
-    //   .unwrap();
-  }
+    pub(crate) fn save(&self, pref: Preference) -> Option<bool> {
+        let status = self.connection.execute(
+            "INSERT INTO preferences (key, value) VALUES (?1, ?2)",
+            (&pref.key, &pref.value),
+        );
+        match status {
+            Ok(rows) => {
+                if rows == 0 {
+                    Some(false)
+                } else {
+                    Some(true)
+                }
+            }
+            _ => Some(false),
+        }
+    }
 
-  pub(crate) fn query(&self, key: String, default: String) -> String{
-    let mut statement = self.connection
-      .prepare("SELECT value FROM preferences WHERE key = ?")
-      .unwrap();
+    pub(crate) fn upsert(&self, pref: Preference) -> Option<bool> {
+        let key_copy = pref.key.clone();
+        let exist = self.query(pref.key, None);
+        match exist {
+            Some(val) => Some(true),
+            None => {
+                let status = self.connection.execute(
+                    "INSERT INTO preferences (key, value) VALUES (?1, ?2)",
+                    (&key_copy, &pref.value),
+                );
+                match status {
+                    Ok(rows) => {
+                        if rows == 0 {
+                            Some(false)
+                        } else {
+                            Some(true)
+                        }
+                    }
+                    _ => Some(false),
+                }
+            }
+        }
+    }
 
-    statement.bind(1, &*key).unwrap();
-    while let State::Row = statement.next().unwrap() {
-      let value = &statement.read::<String>(0).unwrap();
-      if value == "" {
-        return default;
-      }else{
-        return value.to_string();
-      }
-    };
+    pub(crate) fn query(&self, key: String, default: Option<String>) -> Option<String> {
+        let mut stmt = self
+            .connection
+            .prepare("SELECT key, value FROM preferences WHERE key = ?")
+            .ok()
+            .unwrap();
 
-    return default;
-  }
+        let pref_iter = stmt
+            .query_map([&key], |row| {
+                Ok(Preference {
+                    key: row.get(0)?,
+                    value: row.get(1)?,
+                })
+            })
+            .ok();
+
+        match pref_iter {
+            Some(mut pref_iter) => {
+                let mut result = pref_iter.next();
+                let res = match result {
+                    Some(val) => {
+                        match val {
+                            Ok(pref) => {
+                                Some(pref.value)
+                            },
+                            Err(e) => {
+                                default
+                            }
+                        }
+                    },
+                    _ => {
+                        default
+                    }
+                };
+                res
+            }
+            None => default
+        }
+    }
 }
 
 pub fn initialize() -> DataStoreManager {
-  let sm = _intialize();
-  let sm = match sm {
-    Ok(sm) => { sm }
-    Err(error) => { panic!("Failed to initialize: {:?}", error) }
-  };
-  sm
+    let sm = _intialize();
+    let sm = match sm {
+        Ok(sm) => sm,
+        Err(error) => {
+            panic!("Failed to initialize: {:?}", error)
+        }
+    };
+    sm
 }
 
 fn create_dir_if_absent() {
-  debug!("Creating new directory");
-  let mut folder_path: PathBuf = dirs::home_dir().unwrap();
-  folder_path.push(PathBuf::from(".nirops"));
-  let folder_name = folder_path.into_os_string().into_string().unwrap();
-  let res = fs::create_dir_all(folder_name);
+    debug!("Creating new directory");
+    let mut folder_path: PathBuf = dirs::home_dir().unwrap();
+    folder_path.push(PathBuf::from(".nirops"));
+    let folder_name = folder_path.into_os_string().into_string().unwrap();
+    let res = fs::create_dir_all(folder_name);
 }
 
 fn create_file_if_absent() {
-  debug!("Creating new data file");
+    debug!("Creating new data file");
 
-  let filename = get_file_name();
+    let filename = get_file_name();
 
-  if !Path::new(&filename).exists() {
-    File::create(filename);
-  }else{
-    debug!("Data file found.");
-  }
+    if !Path::new(&filename).exists() {
+        File::create(filename);
+    } else {
+        debug!("Data file found.");
+    }
 }
 
 fn get_file_name() -> String {
-  let mut file_path: PathBuf = dirs::home_dir().unwrap();
-  const OS: &str = env::consts::OS;
-  debug!("OS Found: {}",OS);
-  if OS == "windows" {
-    file_path.push(PathBuf::from(".nirops\\yaki_data"));
-  } else {
-    file_path.push(PathBuf::from(".nirops/yaki_data"));
-  }
-  file_path.into_os_string().into_string().unwrap()
+    let mut file_path: PathBuf = dirs::home_dir().unwrap();
+    const OS: &str = env::consts::OS;
+    debug!("OS Found: {}", OS);
+    if OS == "windows" {
+        file_path.push(PathBuf::from(".nirops\\yaki_data"));
+    } else {
+        file_path.push(PathBuf::from(".nirops/yaki_data"));
+    }
+    file_path.into_os_string().into_string().unwrap()
 }
 
 fn _intialize() -> Result<DataStoreManager, Box<dyn Error>> {
-  create_dir_if_absent();
-  create_file_if_absent();
-  let filename = get_file_name();
-  let sm = DataStoreManager{
-    connection: sqlite3::open(Path::new(&filename)).unwrap()
-  };
-  const sql_init_statements: &str = "\
-  CREATE TABLE IF NOT EXISTS preferences (key TEXT, value TEXT);";
-  sm.connection.execute(sql_init_statements).unwrap();
-  Ok(sm)
+    create_dir_if_absent();
+    create_file_if_absent();
+    let filename = get_file_name();
+    let sm = DataStoreManager {
+        connection: Connection::open(Path::new(&filename)).unwrap(),
+    };
+    const sql_init_statements: &str = "\
+    CREATE TABLE IF NOT EXISTS preferences (key TEXT, value TEXT);";
+    sm.connection.execute(sql_init_statements, ()).unwrap();
+    sm.upsert(Preference {
+        key: LICENSE_PUBLIC_KEY.parse().unwrap(),
+        value: LICENSE_PUBLIC_KEY_VALUE.parse().unwrap(),
+    });
+    Ok(sm)
 }

@@ -2,7 +2,7 @@ import {Component, Input, NgZone, ViewChild} from "@angular/core";
 import {EventListener} from "../../../../providers/types";
 import {AgGridAngular, AgGridColumn} from "ag-grid-angular";
 import {ColDef, GridReadyEvent, RowClickedEvent} from "ag-grid-community";
-import {from, Observable, of} from "rxjs";
+import {from, Observable, of, Subscription} from "rxjs";
 import {Resource} from "../../resource/resource-data";
 import * as _ from "lodash";
 import {flatten} from "flat";
@@ -14,12 +14,15 @@ import {
     faFileLines,
     faSpinner, faStop, faXmark
 } from "@fortawesome/free-solid-svg-icons";
+import {MetaData} from "ng-event-bus/lib/meta-data";
+import {NgEventBus} from "ng-event-bus";
 
 export enum COL_TYPE {
     number,
     string,
 
 }
+
 @Component({
     selector: 'app-resourceview',
     templateUrl: './resourceview.component.html',
@@ -37,7 +40,14 @@ export class ResourceviewComponent implements EventListener {
 
     @Input()
     resource: Resource;
-    defaultColDef: ColDef;
+    defaultColDef: ColDef = {
+        editable: false,
+        sortable: true,
+        flex: 1,
+        minWidth: 100,
+        filter: true,
+        resizable: true,
+    };
 
     rowData$: Observable<any> = from([]);
     rowData = [];
@@ -55,10 +65,10 @@ export class ResourceviewComponent implements EventListener {
     faCross = faXmark;
     // faCheck = faCheck;
     faStopped = faStop;
+    subscription: Subscription | undefined;
 
-    constructor(private beService: TauriAdapter, private ngZone: NgZone) {
+    constructor(private beService: TauriAdapter, private ngZone: NgZone, private eventBus: NgEventBus) {
         this.columnDefs = [];
-        this.defaultColDef = {};
         this.rowData$ = new Observable<any[]>;
         this.resource = {columns: [], command: [], name: ""};
         this.beService.registerListener(this.beService.response_channel.app_command_result, this);
@@ -66,22 +76,47 @@ export class ResourceviewComponent implements EventListener {
 
     ngOnDestroy(): void {
         this.beService.unRegisterListener(this);
+        this.subscription?.unsubscribe();
     }
 
     ngOnInit(): void {
         this.ngZone.run(() => {
             this.columnDefs = this.resource.columns;
         });
-        this.resource.command?.forEach((cmd) => {
-            const args = Object.assign({
-                ns: this.beService.storage.ns
-            }, cmd.arguments);
+        this.initialize();
 
-            this.beService.executeCommand(cmd.command, args,true);
-        })
+        this.subscription = this.eventBus.on(this.beService.ngeventbus.app_events).subscribe((meta: MetaData) => {
+            if (meta.data === this.beService.ngevent.cluster_changed) {
+                this.isLoading = true;
+                this.clearTable();
+            }else if (meta.data === this.beService.ngevent.ns_changed) {
+                this.isLoading = true;
+                this.clearTable();
+                this.initialize();
+            }else if (meta.data === this.beService.ngevent.escape_hit) {
+                if ( ! this.isSideBarHidden) {
+                    this.isSideBarHidden = true;
+                }
+            }
+        });
     }
 
+    initialize(): void {
+        let delay = 0;
+        this.resource.command?.forEach((cmd) => {
+            setTimeout(() => {
+                this.beService.executeCommandInCurrentNs(cmd.command, cmd.arguments,true);
+            }, delay);
+            delay += 1000;
+        });
+    }
 
+    clearTable(): void {
+        this.ngZone.run(() => {
+            this.rowData$ = from([]);
+            this.aggrid.api.setRowData([]);
+        })
+    }
 
     getName(): string {
         return "";
@@ -100,16 +135,30 @@ export class ResourceviewComponent implements EventListener {
 
         if (evname === this.beService.response_channel["app_command_result"]) {
             let cmd = _.get(payload, 'command');
+            const mmap = new Map();
+            if (!results.items && results.resource && results.metrics) {
+                results.items = JSON.parse(results.resource).items;
+                const metrics = JSON.parse(results.metrics);
+                metrics.items.forEach((m: any) => {
+                    mmap.set(m.metadata.name, m);
+                })
+            }
+
             if (results.items) {
                 results.items.forEach((item: any) => {
+                    if (item.spec.containers && item.spec.containers.length > 0){
+                        const metric = mmap.get(item.metadata.name);
+                        if (metric && metric.containers && metric.containers.length > 0) {
+                            item.spec.containers[0].resources.usage = metric.containers[0].usage;
+                        }
+                    }
                     item.flat = flatten(item);
-                })
+                });
+
                 this.ngZone.run(() => {
                     // @ts-ignore
                     this.rowData$ = from(results.items);
                     this.rowData = results.items;
-                        console.log(results.items);
-                        console.log(this.columnDefs);
                     this.isLoading = false;
                 });
             }
@@ -129,7 +178,6 @@ export class ResourceviewComponent implements EventListener {
         //         this.resetMetrics();
         //     }
         // });
-        console.log(app);
         this.selectedapp = app.data;
         this.isSideBarHidden = !this.isSideBarHidden;
         if (!this.isSideBarHidden) {
@@ -149,5 +197,18 @@ export class ResourceviewComponent implements EventListener {
 
     onGridReady($event: GridReadyEvent<any>) {
 
+    }
+
+    onAction(name: string) {
+        const action = this.resource.actions?.filter(ac => ac.name === name)[0];
+        action?.callback(this.selectedapp);
+    }
+
+    getAttrValue(resource_field: string) {
+        if (this.selectedapp) {
+            return this.selectedapp?.flat[resource_field];
+        }else{
+            return 'N/A';
+        }
     }
 }

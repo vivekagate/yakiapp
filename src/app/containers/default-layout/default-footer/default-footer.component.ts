@@ -1,6 +1,10 @@
-import { Component } from '@angular/core';
+import {Component, ViewChild} from '@angular/core';
 import { FooterComponent } from '@coreui/angular';
 import {faPaperPlane, faBug, faCreditCard} from "@fortawesome/free-solid-svg-icons";
+import {TauriAdapter} from "../../../providers/data/tauri-adapter.service";
+import * as _ from "lodash";
+import {EventListener} from "../../../providers/types";
+import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 
 
 @Component({
@@ -8,15 +12,51 @@ import {faPaperPlane, faBug, faCreditCard} from "@fortawesome/free-solid-svg-ico
   templateUrl: './default-footer.component.html',
   styleUrls: ['./default-footer.component.scss'],
 })
-export class DefaultFooterComponent extends FooterComponent {
+export class DefaultFooterComponent extends FooterComponent implements EventListener{
   faEmail = faPaperPlane;
   faGithub = faBug;
   faCreditcard = faCreditCard;
-  constructor() {
+
+  isValidLicense = false;
+  @ViewChild("modal_eula")
+  private content: HTMLElement | undefined;
+
+  constructor(private beService: TauriAdapter, private modalService: NgbModal) {
     super();
+    this.beService.registerListener(this.beService.events.app_events_channel, this);
   }
 
   onUpgrade() {
 
+  }
+
+  getName(): string {
+    return 'default-footer.component.ts';
+  }
+
+  handleEvent(ev: any): void {
+    const evname = ev.name;
+    const payload = ev.payload;
+
+    if (evname === this.beService.events.app_events_channel) {
+      console.log(payload.event);
+      if (payload.event === this.beService.events.valid_license_found) {
+        this.isValidLicense = true;
+      }else if (payload.event === this.beService.events.no_license_found) {
+        this.isValidLicense = false;
+      }else if (payload.event === this.beService.events.eula_not_accepted) {
+        this.showEula();
+      }
+    }
+  }
+
+  private showEula() {
+    this.modalService.open(this.content, {ariaLabelledBy: 'modal-basic-title'}).result.then((result) => {
+      this.beService.executeSyncCommand(this.beService.commands.eula_accepted, {}, () => {
+        console.log('EULA Accepted');
+      });
+    }, (reason) => {
+      // this.closeResult = `Dismissed ${this.getDismissReason(reason)}`;
+    });
   }
 }

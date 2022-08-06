@@ -240,7 +240,7 @@ export class ApplicationsComponent implements EventListener{
 
   onSelect(app: string) {
     this.deployments.forEach((d) => {
-      if (d.deployment.metadata.name === app) {
+      if (d.metadata.name === app) {
         this.selectedapp = d;
         this.resetMetrics();
       }

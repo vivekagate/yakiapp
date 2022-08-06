@@ -11,12 +11,14 @@ export class TauriAdapter {
   public storage: any;
   public commands = {
     execute_sync_command: 'execute_sync_command',
+    eula_accepted: 'eula_accepted',
     get_pods_for_deployment: 'get_pods_for_deployment',
 
 
     execute_command: 'execute_command',
     get_deployments: 'get_deployments',
     get_resource: 'get_resource',
+    get_resource_with_metrics: 'get_resource_with_metrics',
     get_pods_for_deployment_async: 'get_pods_for_deployment_async',
     get_metrics_for_deployment: 'get_metrics_for_deployment',
     get_all_ns: 'get_all_ns',
@@ -35,6 +37,11 @@ export class TauriAdapter {
   public events = {
     app_events_channel: 'app_events_channel',
     no_cluster_found: 'no_cluster_found',
+    no_license_found: 'no_license_found',
+    eula_accepted: 'eula_accepted',
+    eula_not_accepted: 'eula_not_accepted',
+
+    valid_license_found: 'valid_license_found',
     app_error: 'app::error'
   }
 
@@ -117,8 +124,20 @@ export class TauriAdapter {
     }
   }
 
+  executeCommandInCurrentNs(cmd: string, args: object, force_refresh = false) {
+    const nargs = Object.assign(args, {
+      ns: this.storage.ns
+    });
+    this.executeCommand(cmd, nargs, force_refresh);
+  }
+
   executeCommand(cmd: string, args: object, force_refresh = false){
     const result = this.cache.get(`app_${cmd}_result`);
+    // @ts-ignore
+    // if (args && !args['ns']) {
+    //   // @ts-ignore
+    //   args['ns'] = this.storage.ns;
+    // }
     if (result && !force_refresh) {
       const elMap = this.eventListeners.get(this.response_channel["app_command_result"]);
       if (elMap) {
@@ -139,6 +158,14 @@ export class TauriAdapter {
         });
       }, 50);
     }
+  }
+
+  executeSyncCommandInCurrentNs(cmd: string, args: object, callback: (res: any)=>void = (res)=>{}){
+    const nargs = Object.assign(args, {
+      ns: this.storage.ns
+    });
+
+    this.executeSyncCommand(cmd, nargs, callback);
   }
 
   executeSyncCommand(cmd: string, args: object, callback: (res: any)=>void = (res)=>{}){
