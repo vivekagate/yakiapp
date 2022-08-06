@@ -1,8 +1,11 @@
-mod metrics;
-mod kubectl;
 mod common;
+mod kubectl;
+mod metrics;
 pub(crate) mod models;
 
+use crate::kube::common::{dispatch_to_frontend, init_client};
+use crate::kube::metrics::{get_all_pods, get_pod_metrics, get_pods_with_metrics};
+use crate::kube::models::CommandResult;
 use futures::{StreamExt, TryStreamExt};
 use k8s_openapi::api::apps::v1::{DaemonSet, Deployment, ReplicaSet, StatefulSet};
 use k8s_openapi::api::batch::v1::CronJob;
@@ -23,9 +26,6 @@ use std::thread;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::Window;
 use tokio::time::{sleep, Duration};
-use crate::kube::common::{dispatch_to_frontend, init_client};
-use crate::kube::metrics::{get_all_pods, get_pod_metrics, get_pods_with_metrics};
-use crate::kube::models::CommandResult;
 
 use crate::utils;
 
@@ -54,7 +54,6 @@ impl Metric {
         Default::default()
     }
 }
-
 
 #[derive(Clone, serde::Serialize, Default)]
 pub struct EventHolder {
@@ -186,7 +185,13 @@ pub fn get_all_deployments(
     res
 }
 
-pub fn get_resource_with_metrics(window: &Window, cluster: String, namespace: String, kind: String, cmd: String) {
+pub fn get_resource_with_metrics(
+    window: &Window,
+    cluster: String,
+    namespace: String,
+    kind: String,
+    cmd: String,
+) {
     let window_copy1 = window.clone();
     let window_copy = window.clone();
     let cmd_copy = cmd.clone();
@@ -516,8 +521,22 @@ async fn _stream_cpu_memory_for_pod(
     loop {
         let metrics = podMetrics.get(pod).await;
         let result = metrics.unwrap();
-        let memory = &result.containers.as_ref().unwrap().get(0).unwrap().usage.memory;
-        let cpu = &result.containers.as_ref().unwrap().get(0).unwrap().usage.cpu;
+        let memory = &result
+            .containers
+            .as_ref()
+            .unwrap()
+            .get(0)
+            .unwrap()
+            .usage
+            .memory;
+        let cpu = &result
+            .containers
+            .as_ref()
+            .unwrap()
+            .get(0)
+            .unwrap()
+            .usage
+            .cpu;
         let memory_string = format!("{:?}", memory)
             .replace("Quantity(\"", "")
             .replace("\")", "");
@@ -600,8 +619,22 @@ async fn _get_metrics_for_deployment(
                     Api::namespaced(client.await.unwrap(), ns);
                 let metrics = podMetrics.get(&pod.name_any()).await;
                 let result = metrics.unwrap();
-                let memory = &result.containers.as_ref().unwrap().get(0).unwrap().usage.memory;
-                let cpu = &result.containers.as_ref().unwrap().get(0).unwrap().usage.cpu;
+                let memory = &result
+                    .containers
+                    .as_ref()
+                    .unwrap()
+                    .get(0)
+                    .unwrap()
+                    .usage
+                    .memory;
+                let cpu = &result
+                    .containers
+                    .as_ref()
+                    .unwrap()
+                    .get(0)
+                    .unwrap()
+                    .usage
+                    .cpu;
                 let memory_string = format!("{:?}", memory)
                     .replace("Quantity(\"", "")
                     .replace("\")", "");

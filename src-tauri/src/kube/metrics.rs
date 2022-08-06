@@ -1,20 +1,18 @@
-use std::collections::HashMap;
-use std::error::Error;
-use std::thread;
+use crate::kube::_get_all_node_metrics;
+use crate::kube::common::{dispatch_to_frontend, init_client};
+use crate::kube::models::ResourceWithMetricsHolder;
 use futures::FutureExt;
+use k8s_openapi::api::core::v1::Pod;
 use k8s_openapi::apimachinery::pkg::api::resource::Quantity;
 use k8s_openapi::{ClusterResourceScope, NamespaceResourceScope};
 use kube::api::{ListParams, ObjectList, ObjectMeta};
+use kube::config::{KubeConfigOptions, Kubeconfig};
 use kube::{Api, Client, Config};
-use kube::config::{Kubeconfig, KubeConfigOptions};
-use crate::kube::common::{dispatch_to_frontend, init_client};
-use k8s_openapi::api::core::v1::{
-    Pod
-};
+use std::collections::HashMap;
+use std::error::Error;
+use std::thread;
 use tauri::async_runtime::JoinHandle;
 use tauri::Window;
-use crate::kube::_get_all_node_metrics;
-use crate::kube::models::ResourceWithMetricsHolder;
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
 pub struct PodMetricsContainer {
@@ -57,21 +55,11 @@ impl k8s_openapi::Metadata for PodMetrics {
     }
 }
 
-pub fn get_all_pods(
-    window: &Window,
-    cmd: &str,
-    cluster: &str,
-    namespace: &String,
-){
+pub fn get_all_pods(window: &Window, cmd: &str, cluster: &str, namespace: &String) {
     _get_all_pods(window, cmd, cluster, namespace);
 }
 
-pub fn get_pod_metrics(
-    window: &Window,
-    cmd: &str,
-    cluster: &str,
-    namespace: &String,
-){
+pub fn get_pod_metrics(window: &Window, cmd: &str, cluster: &str, namespace: &String) {
     _get_metrics(window, cmd, cluster, namespace);
 }
 
@@ -98,7 +86,7 @@ async fn _get_pods_with_metrics(
     let metrics = m_kube_request.list(&lp).await?;
     let json = ResourceWithMetricsHolder {
         resource: serde_json::to_string(&pods).unwrap(),
-        metrics: serde_json::to_string(&metrics).unwrap()
+        metrics: serde_json::to_string(&metrics).unwrap(),
     };
     dispatch_to_frontend(window, cmd, serde_json::to_string(&json).unwrap());
     Ok(())

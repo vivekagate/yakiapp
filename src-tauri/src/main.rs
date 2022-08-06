@@ -5,9 +5,9 @@
 
 use crate::appmanager::AppManager;
 use crate::cache::CacheManager;
-use crate::kube::{EventHolder};
 use crate::kube::models::CommandResult;
-use crate::store::DataStoreManager;
+use crate::kube::EventHolder;
+use crate::store::{DataStoreManager, Preference};
 use crate::task::TaskManager;
 use ::kube::api::Object;
 use regex::Regex;
@@ -79,6 +79,7 @@ fn execute_sync_command(
     const GET_ALL_CLUSTER_CONTEXTS: &str = "get_all_cluster_contexts";
     const GET_CURRENT_CLUSTER_CONTEXT: &str = "get_current_cluster_context";
     const GET_PODS_FOR_DEPLOYMENT: &str = "get_pods_for_deployment";
+    const EULA_ACCEPTED: &str = "eula_accepted";
 
     let current_cluster = appmanager
         .0
@@ -126,6 +127,14 @@ fn execute_sync_command(
     } else if cmd_hldr.command == GET_CURRENT_CLUSTER_CONTEXT {
         let cluster = get_current_cluster();
         res.data = serde_json::to_string(&cluster).unwrap();
+    } else if cmd_hldr.command == EULA_ACCEPTED {
+        let pref = Preference{key: store::KEY_EULA_ACCEPT.to_string(), value: "true".to_string()};
+        appmanager
+            .0
+            .lock()
+            .unwrap()
+            .dsmanager
+            .upsert(pref);
     }
     serde_json::to_string(&res).unwrap()
 }
@@ -152,22 +161,29 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
         .lock()
         .unwrap()
         .cachemanager
-        .get(cache::KEY_CONTEXT, "").clone();
+        .get(cache::KEY_CONTEXT, "")
+        .clone();
+
+    let dsmanager = &appmanager
+        .0
+        .lock()
+        .unwrap()
+        .dsmanager;
     debug!("Current cluster: {}", current_cluster);
     let cmd_hldr: CommandHolder = serde_json::from_str(commandstr).unwrap();
     if cmd_hldr.command == GET_ALL_NS {
-        let hndl = thread::spawn(move || {
+        let _ = thread::spawn(move || {
             kube::get_all_ns(&window, &current_cluster, GET_ALL_NS);
         });
     } else if cmd_hldr.command == GET_DEPLOYMENTS {
-        let hndl = thread::spawn(move || {
+        let _ = thread::spawn(move || {
             let namespace = cmd_hldr.args.get("ns").unwrap();
             let deploys =
                 kube::get_all_deployments(&window, &current_cluster, namespace, GET_DEPLOYMENTS);
             kube::populate_deployments(&window, namespace, deploys);
         });
     } else if cmd_hldr.command == GET_RESOURCE {
-        let hndl = thread::spawn(move || {
+        let _ = thread::spawn(move || {
             let namespace = cmd_hldr.args.get("ns").unwrap();
             let kind = cmd_hldr.args.get("kind").unwrap();
             let _ = kube::get_resource(&window, &current_cluster, namespace, kind, GET_RESOURCE);
@@ -175,9 +191,15 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
     } else if cmd_hldr.command == GET_RESOURCE_WITH_METRICS {
         let namespace = cmd_hldr.args.get("ns").unwrap().clone();
         let kind = cmd_hldr.args.get("kind").unwrap().clone();
-        let _ = kube::get_resource_with_metrics(&window, current_cluster, namespace, kind, GET_RESOURCE_WITH_METRICS.parse().unwrap());
+        let _ = kube::get_resource_with_metrics(
+            &window,
+            current_cluster,
+            namespace,
+            kind,
+            GET_RESOURCE_WITH_METRICS.parse().unwrap(),
+        );
     } else if cmd_hldr.command == GET_PODS_FOR_DEPLOYMENT {
-        let hndl = thread::spawn(move || {
+        let _ = thread::spawn(move || {
             let namespace = cmd_hldr.args.get("ns").unwrap();
             let deployment = cmd_hldr.args.get("deployment").unwrap();
             let deploys = kube::get_pods_for_deployment_async(
@@ -189,7 +211,7 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
             );
         });
     } else if cmd_hldr.command == GET_METRICS_FOR_DEPLOYMENT {
-        let hndl = thread::spawn(move || {
+        let _ = thread::spawn(move || {
             let namespace = cmd_hldr.args.get("ns").unwrap();
             let deployment = cmd_hldr.args.get("deployment").unwrap();
             kube::get_metrics_for_deployment(
@@ -201,13 +223,13 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
             );
         });
     } else if cmd_hldr.command == RESTART_DEPLOYMENTS {
-        let hndl = thread::spawn(move || {
+        let _ = thread::spawn(move || {
             kube::restart_deployment(window, &current_cluster, cmd_hldr.args, RESTART_DEPLOYMENTS);
         });
     } else if cmd_hldr.command == TAIL_LOGS_FOR_POD {
         let (tx, rx): (Sender<String>, mpsc::Receiver<String>) = mpsc::channel();
 
-        let hndl = thread::spawn(move || {
+        let _ = thread::spawn(move || {
             let ns = cmd_hldr.args.get("ns").unwrap();
             let podname = cmd_hldr.args.get("pod").unwrap();
             kube::tail_logs_for_pod(window, &current_cluster, &podname, &ns, &rx);
@@ -215,7 +237,7 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
         });
         appmanager.0.lock().unwrap().taskmanager.add_logs_stream(tx);
     } else if cmd_hldr.command == GET_LOGS_FOR_POD {
-        let hndl = thread::spawn(move || {
+        let _ = thread::spawn(move || {
             let ns = cmd_hldr.args.get("ns").unwrap();
             let podname = cmd_hldr.args.get("pod").unwrap();
             kube::get_logs_for_pod(window, &current_cluster, &podname, &ns);
@@ -226,7 +248,7 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
         let ns = args.get("ns").unwrap().clone();
         let podname = args.get("pod").unwrap().clone();
 
-        let hndl = thread::spawn(move || {
+        let _ = thread::spawn(move || {
             kube::stream_cpu_memory_for_pod(window, &current_cluster, &podname, &ns, &rx);
             debug!("Stream of metrics initiated");
         });
@@ -243,6 +265,8 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
         appmanager.0.lock().unwrap().taskmanager.stopalllstream();
     } else if cmd_hldr.command == APP_START {
         debug!("App started");
+        let license = dsmanager.query(store::LICENSE_STRING_KEY.to_string(), None);
+        let eula = dsmanager.query(store::KEY_EULA_ACCEPT.to_string(), None);
         let hndl = thread::spawn(move || {
             let current = get_current_cluster();
             let clusters: Vec<KCluster> = get_clusters(current);
@@ -269,9 +293,35 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
                     .unwrap();
                 debug!("Clusters found");
             }
+
+            check_license(&window, license);
+            check_eula(&window, eula);
         });
     } else {
         error!("Failed to find command");
+    }
+}
+
+fn check_license(window: &Window, license: Option<String>) {
+    println!("{:?}", license);
+    match license {
+        Some(license) => {
+            utils::dispatch_event_to_frontend(window, "valid_license_found");
+        },
+        None => {
+            utils::dispatch_event_to_frontend(window, "no_license_found");
+        }
+    }
+}
+
+fn check_eula(window: &Window, eula: Option<String>) {
+    match eula {
+        Some(license) => {
+            utils::dispatch_event_to_frontend(window, "eula_accepted");
+        },
+        None => {
+            utils::dispatch_event_to_frontend(window, "eula_not_accepted");
+        }
     }
 }
 

@@ -1,3 +1,4 @@
+use crate::kube::metrics::PodMetrics;
 use anyhow::{bail, Context, Result};
 use futures::{StreamExt, TryStreamExt};
 use k8s_openapi::{
@@ -15,8 +16,7 @@ use kube::{
     Client,
 };
 use tracing::*;
-use tracing::{debug, warn, info, trace};
-use crate::kube::metrics::PodMetrics;
+use tracing::{debug, info, trace, warn};
 
 #[derive(clap::Parser)]
 struct App {
@@ -40,7 +40,7 @@ struct App {
 enum OutputMode {
     // Pretty,
     Yaml,
-    Json
+    Json,
 }
 impl Default for OutputMode {
     fn default() -> Self {
@@ -56,7 +56,10 @@ enum Verb {
     Apply,
 }
 
-fn resolve_api_resource(discovery: &Discovery, name: &str) -> Option<(ApiResource, ApiCapabilities)> {
+fn resolve_api_resource(
+    discovery: &Discovery,
+    name: &str,
+) -> Option<(ApiResource, ApiCapabilities)> {
     // iterate through groups to find matching kind/plural names at recommended versions
     // and then take the minimal match by group.name (equivalent to sorting groups by group.name).
     // this is equivalent to kubectl's api group preference
@@ -84,7 +87,9 @@ impl App {
         } else {
             api.list(&lp).await?.items
         };
-        result.iter_mut().for_each(|x| x.managed_fields_mut().clear()); // hide managed fields
+        result
+            .iter_mut()
+            .for_each(|x| x.managed_fields_mut().clear()); // hide managed fields
         println!("{:?}", result);
         match self.output {
             OutputMode::Yaml => println!("{}", serde_yaml::to_string(&result)?),
@@ -150,8 +155,8 @@ impl App {
     async fn apply(&self, client: Client, discovery: &Discovery) -> Result<()> {
         let ssapply = PatchParams::apply("kubectl-light").force();
         let pth = self.file.clone().expect("apply needs a -f file supplied");
-        let yaml =
-            std::fs::read_to_string(&pth).with_context(|| format!("Failed to read {}", pth.display()))?;
+        let yaml = std::fs::read_to_string(&pth)
+            .with_context(|| format!("Failed to read {}", pth.display()))?;
         for doc in multidoc_deserialize(&yaml)? {
             let obj: DynamicObject = serde_yaml::from_value(doc)?;
             let gvk = if let Some(tm) = &obj.types {
@@ -201,7 +206,6 @@ async fn _exec_kubectl() -> Result<()> {
     Ok(())
 }
 
-
 pub fn exec_kubectl() {
     println!("Executing Kubectl!");
     _exec_kubectl();
@@ -214,8 +218,7 @@ pub fn get_metrics() {
 #[tokio::main]
 async fn _get_metrics() -> Result<()> {
     let client = Client::try_default().await?;
-    let pod_metrics: Api<crate::kube::metrics::PodMetrics> =
-        Api::default_namespaced(client);
+    let pod_metrics: Api<crate::kube::metrics::PodMetrics> = Api::default_namespaced(client);
     let mut lp = ListParams::default();
     let metrics = pod_metrics.list(&lp).await;
     match metrics {
@@ -223,7 +226,7 @@ async fn _get_metrics() -> Result<()> {
             for m in pmetric.items {
                 println!("{:?}", m);
             }
-        },
+        }
         Err(r) => {
             println!("Error!! {:?}", r);
         }

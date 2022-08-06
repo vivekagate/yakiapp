@@ -30,7 +30,7 @@ k8s-openapi = { version = "0.15.0", features = ["v1_24"] }
 serde_json = "1.0"
 serde_yaml = "0.8.26"
 serde = { version = "1.0", features = ["derive"] }
-sqlite3 = "0.24.0"
+rusqlite = { version = "0.28.0", features = ["bundled"] }
 tauri = { version = "1.0.3", features = ["api-all"] }
 time = "0.3.11"
 tokio = { version = "1", features = ["full"] }

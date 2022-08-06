@@ -1,40 +1,107 @@
 use log::{debug, error, info};
-use sqlite3::{Connection, State};
+use rusqlite::{Connection, Result};
 use std::error::Error;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use std::{env, fs};
+
+pub const LICENSE_PUBLIC_KEY: &str = "LICENSE_PUBLIC_KEY";
+pub const LICENSE_STRING_KEY: &str = "LICENSE_STRING_KEY";
+pub const KEY_EULA_ACCEPT: &str = "KEY_EULA_ACCEPT";
+
+pub const LICENSE_PUBLIC_KEY_VALUE: &str = "rsa_string";
+
+
+#[derive(Debug)]
+pub struct Preference {
+    pub(crate) key: String,
+    pub(crate) value: String,
+}
 
 pub struct DataStoreManager {
     connection: Connection,
 }
 
 impl DataStoreManager {
-    pub(crate) fn save(&self, key: String, value: String) {
-        // let mut statement = self.connection
-        //   .prepare("INSERT INTO users VALUES (?, ?)")
-        //   .unwrap()
-        //   .bind(1, key)
-        //   .unwrap();
+    pub(crate) fn save(&self, pref: Preference) -> Option<bool> {
+        let status = self.connection.execute(
+            "INSERT INTO preferences (key, value) VALUES (?1, ?2)",
+            (&pref.key, &pref.value),
+        );
+        match status {
+            Ok(rows) => {
+                if rows == 0 {
+                    Some(false)
+                } else {
+                    Some(true)
+                }
+            }
+            _ => Some(false),
+        }
     }
 
-    pub(crate) fn query(&self, key: String, default: String) -> String {
-        let mut statement = self
-            .connection
-            .prepare("SELECT value FROM preferences WHERE key = ?")
-            .unwrap();
-
-        statement.bind(1, &*key).unwrap();
-        while let State::Row = statement.next().unwrap() {
-            let value = &statement.read::<String>(0).unwrap();
-            if value == "" {
-                return default;
-            } else {
-                return value.to_string();
+    pub(crate) fn upsert(&self, pref: Preference) -> Option<bool> {
+        let key_copy = pref.key.clone();
+        let exist = self.query(pref.key, None);
+        match exist {
+            Some(val) => Some(true),
+            None => {
+                let status = self.connection.execute(
+                    "INSERT INTO preferences (key, value) VALUES (?1, ?2)",
+                    (&key_copy, &pref.value),
+                );
+                match status {
+                    Ok(rows) => {
+                        if rows == 0 {
+                            Some(false)
+                        } else {
+                            Some(true)
+                        }
+                    }
+                    _ => Some(false),
+                }
             }
         }
+    }
 
-        return default;
+    pub(crate) fn query(&self, key: String, default: Option<String>) -> Option<String> {
+        let mut stmt = self
+            .connection
+            .prepare("SELECT key, value FROM preferences WHERE key = ?")
+            .ok()
+            .unwrap();
+
+        let pref_iter = stmt
+            .query_map([&key], |row| {
+                Ok(Preference {
+                    key: row.get(0)?,
+                    value: row.get(1)?,
+                })
+            })
+            .ok();
+
+        match pref_iter {
+            Some(mut pref_iter) => {
+                let mut result = pref_iter.next();
+                let res = match result {
+                    Some(val) => {
+                        match val {
+                            Ok(pref) => {
+                                Some(pref.value)
+                            },
+                            Err(e) => {
+                                default
+                            }
+                        }
+                    },
+                    _ => {
+                        default
+                    }
+                };
+                res
+            }
+            None => default
+        }
     }
 }
 
@@ -86,10 +153,14 @@ fn _intialize() -> Result<DataStoreManager, Box<dyn Error>> {
     create_file_if_absent();
     let filename = get_file_name();
     let sm = DataStoreManager {
-        connection: sqlite3::open(Path::new(&filename)).unwrap(),
+        connection: Connection::open(Path::new(&filename)).unwrap(),
     };
     const sql_init_statements: &str = "\
-  CREATE TABLE IF NOT EXISTS preferences (key TEXT, value TEXT);";
-    sm.connection.execute(sql_init_statements).unwrap();
+    CREATE TABLE IF NOT EXISTS preferences (key TEXT, value TEXT);";
+    sm.connection.execute(sql_init_statements, ()).unwrap();
+    sm.upsert(Preference {
+        key: LICENSE_PUBLIC_KEY.parse().unwrap(),
+        value: LICENSE_PUBLIC_KEY_VALUE.parse().unwrap(),
+    });
     Ok(sm)
 }

@@ -11,6 +11,7 @@ export class TauriAdapter {
   public storage: any;
   public commands = {
     execute_sync_command: 'execute_sync_command',
+    eula_accepted: 'eula_accepted',
     get_pods_for_deployment: 'get_pods_for_deployment',
 
 
@@ -36,6 +37,11 @@ export class TauriAdapter {
   public events = {
     app_events_channel: 'app_events_channel',
     no_cluster_found: 'no_cluster_found',
+    no_license_found: 'no_license_found',
+    eula_accepted: 'eula_accepted',
+    eula_not_accepted: 'eula_not_accepted',
+
+    valid_license_found: 'valid_license_found',
     app_error: 'app::error'
   }
 

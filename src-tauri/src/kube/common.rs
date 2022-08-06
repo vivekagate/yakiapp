@@ -1,8 +1,8 @@
-use futures::TryFutureExt;
-use kube::{Client, Config, Error};
-use kube::config::{Kubeconfig, KubeConfigOptions};
-use tauri::Window;
 use crate::kube::models::CommandResult;
+use futures::TryFutureExt;
+use kube::config::{KubeConfigOptions, Kubeconfig};
+use kube::{Client, Config, Error};
+use tauri::Window;
 
 pub fn dispatch_to_frontend(window: &Window, cmd: &str, data: String) {
     window

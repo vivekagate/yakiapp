@@ -13,7 +13,7 @@ impl CommandResult {
 #[derive(Clone, serde::Serialize, Default)]
 pub struct ResourceWithMetricsHolder {
     pub(crate) resource: String,
-    pub(crate) metrics: String
+    pub(crate) metrics: String,
 }
 
 impl ResourceWithMetricsHolder {
