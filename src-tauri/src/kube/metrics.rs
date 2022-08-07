@@ -1,8 +1,10 @@
 use crate::kube::_get_all_node_metrics;
 use crate::kube::common::{dispatch_to_frontend, init_client};
-use crate::kube::models::ResourceWithMetricsHolder;
+use crate::kube::models::{NodeMetrics, ResourceWithMetricsHolder};
 use futures::FutureExt;
-use k8s_openapi::api::core::v1::Pod;
+use k8s_openapi::api::core::v1::{
+    ConfigMap, Namespace, Node, PersistentVolume, Pod, Secret, Service,
+};
 use k8s_openapi::apimachinery::pkg::api::resource::Quantity;
 use k8s_openapi::{ClusterResourceScope, NamespaceResourceScope};
 use kube::api::{ListParams, ObjectList, ObjectMeta};
@@ -67,6 +69,10 @@ pub fn get_pods_with_metrics(window: &Window, cluster: &str, namespace: &String,
     _get_pods_with_metrics(window, cmd, cluster, namespace);
 }
 
+pub fn get_nodes_with_metrics(window: &Window, cluster: &str, namespace: &String, cmd: &str) {
+    _get_nodes_with_metrics(window, cmd, cluster, namespace);
+}
+
 #[tokio::main]
 async fn _get_pods_with_metrics(
     window: &Window,
@@ -89,6 +95,32 @@ async fn _get_pods_with_metrics(
         metrics: serde_json::to_string(&metrics).unwrap(),
     };
     dispatch_to_frontend(window, cmd, serde_json::to_string(&json).unwrap());
+    Ok(())
+}
+
+#[tokio::main]
+async fn _get_nodes_with_metrics(
+    window: &Window,
+    cmd: &str,
+    cluster: &str,
+    namespace: &String,
+) -> Result<(), Box<dyn Error>> {
+    let client = init_client(cluster).await.unwrap();
+    let metrics_client = client.clone();
+    let kube_request: Api<Node> = Api::all(client);
+
+    let lp = ListParams::default();
+    let nodes: ObjectList<Node> = kube_request.list(&lp).await?;
+
+    let m_kube_request: Api<NodeMetrics> = Api::all(metrics_client);
+    let lp = ListParams::default();
+    let metrics = m_kube_request.list(&lp).await?;
+    let json = ResourceWithMetricsHolder {
+        resource: serde_json::to_string(&nodes).unwrap(),
+        metrics: serde_json::to_string(&metrics).unwrap(),
+    };
+    let result = serde_json::to_string(&json).unwrap();
+    dispatch_to_frontend(window, cmd, result);
     Ok(())
 }
 

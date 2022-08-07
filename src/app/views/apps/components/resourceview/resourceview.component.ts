@@ -133,6 +133,7 @@ export class ResourceviewComponent implements EventListener {
             console.error("Failed to parse payload");
         }
 
+        console.log(ev.payload);
         if (evname === this.beService.response_channel["app_command_result"]) {
             let cmd = _.get(payload, 'command');
             const mmap = new Map();
@@ -146,10 +147,17 @@ export class ResourceviewComponent implements EventListener {
 
             if (results.items) {
                 results.items.forEach((item: any) => {
-                    if (item.spec.containers && item.spec.containers.length > 0){
+                    if (item.kind === 'Node') {
                         const metric = mmap.get(item.metadata.name);
-                        if (metric && metric.containers && metric.containers.length > 0) {
-                            item.spec.containers[0].resources.usage = metric.containers[0].usage;
+                        if (metric && metric.usage) {
+                            item.status.usage = metric.usage;
+                        }
+                    }else{
+                        if (item.spec.containers && item.spec.containers.length > 0){
+                            const metric = mmap.get(item.metadata.name);
+                            if (metric && metric.containers && metric.containers.length > 0) {
+                                item.spec.containers[0].resources.usage = metric.containers[0].usage;
+                            }
                         }
                     }
                     item.flat = flatten(item);

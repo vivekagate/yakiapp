@@ -271,26 +271,9 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
             let current = get_current_cluster();
             let clusters: Vec<KCluster> = get_clusters(current);
             if clusters.is_empty() {
-                println!("No Clusters found");
-                window
-                    .emit(
-                        "app_events_channel",
-                        EventHolder {
-                            event: "no_cluster_found".parse().unwrap(),
-                            data: "".parse().unwrap(),
-                        },
-                    )
-                    .unwrap();
+                utils::dispatch_event_to_frontend(&window, "no_cluster_found");
             } else {
-                window
-                    .emit(
-                        "app_events_channel",
-                        EventHolder {
-                            event: "cluster_found".parse().unwrap(),
-                            data: "".parse().unwrap(),
-                        },
-                    )
-                    .unwrap();
+                utils::dispatch_event_to_frontend(&window, "cluster_found");
                 debug!("Clusters found");
             }
 

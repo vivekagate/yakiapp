@@ -4,7 +4,7 @@ mod metrics;
 pub(crate) mod models;
 
 use crate::kube::common::{dispatch_to_frontend, init_client};
-use crate::kube::metrics::{get_all_pods, get_pod_metrics, get_pods_with_metrics};
+use crate::kube::metrics::{get_all_pods, get_nodes_with_metrics, get_pod_metrics, get_pods_with_metrics};
 use crate::kube::models::CommandResult;
 use futures::{StreamExt, TryStreamExt};
 use k8s_openapi::api::apps::v1::{DaemonSet, Deployment, ReplicaSet, StatefulSet};
@@ -200,6 +200,8 @@ pub fn get_resource_with_metrics(
     let cluster_copy = cluster.clone();
     if kind == "pod" {
         get_pods_with_metrics(&window_copy1, cluster.as_ref(), &namespace, &cmd);
+    } else if kind == "node" {
+        get_nodes_with_metrics(&window_copy1, cluster.as_ref(), &namespace, &cmd);
     }
     // let _ = get_resource(&window_copy1, cluster.as_ref(), &namespace, &kind, &cmd);
     // let hndl = thread::spawn(move || {
