@@ -139,18 +139,31 @@ export class ResourceviewComponent implements EventListener {
         if (evname === this.beService.response_channel["app_command_result"]) {
             let cmd = _.get(payload, 'command');
             const nameMetricMap = new Map();
-            const labelMetrics = new Map();
+            const specNameMap = new Map();
             if (!results.items && results.resource && results.metrics) {
                 results.items = JSON.parse(results.resource).items;
                 const metrics = JSON.parse(results.metrics);
                 metrics.items.forEach((m: any) => {
                     nameMetricMap.set(m.metadata.name, m);
                 })
-                if (results.metadata) {
-                    const md = JSON.parse(results.metadata);
+                if (results.usage) {
+                    const md = JSON.parse(results.usage);
                     md.items.forEach((pod: any) => {
-                        console.log(JSON.stringify(pod.metadata.labels));
-                        labelMetrics.set(pod.metadata.name, pod);
+                        if (pod.spec.containers) {
+                            const deployname = pod.spec.containers[0].name;
+                            const resourceArray = specNameMap.get(deployname);
+                            if (!resourceArray) {
+                                specNameMap.set(deployname, [{
+                                    name: pod.metadata.name,
+                                    usage: nameMetricMap.get(pod.metadata.name)
+                                }]);
+                            }else{
+                                resourceArray.push({
+                                    name: pod.metadata.name,
+                                    usage: nameMetricMap.get(pod.metadata.name)
+                                });
+                            }
+                        }
                     })
                 }
             }
@@ -171,10 +184,11 @@ export class ResourceviewComponent implements EventListener {
                         }
                     }else if (item.kind === 'Deployment') {
                         console.log(JSON.stringify(item.metadata.labels));
-                        if (item.spec.template.spec.containers && item.spec.template.spec.containers.length > 0){
-                            const metric = nameMetricMap.get(item.metadata.name);
-                            if (metric && metric.containers && metric.containers.length > 0) {
-                                item.spec.containers[0].resources.usage = metric.containers[0].usage;
+                        if (item.spec.template.spec.containers) {
+                            const deployname = item.spec.template.spec.containers[0].name;
+                            const usages = specNameMap.get(deployname);
+                            if (usages && item.spec.template.spec.containers) {
+                                item.spec.template.spec.containers[0].resources.usages = usages;
                             }
                         }
                     }

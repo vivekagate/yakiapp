@@ -20,7 +20,7 @@ impl CommandResult {
 pub struct ResourceWithMetricsHolder {
     pub(crate) resource: String,
     pub(crate) metrics: String,
-    pub(crate) usage: Option<HashMap<String, MetricsUsage>>,
+    pub(crate) usage: Option<String>,
 }
 
 impl ResourceWithMetricsHolder {

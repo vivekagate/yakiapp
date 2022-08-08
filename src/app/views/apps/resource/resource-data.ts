@@ -356,7 +356,6 @@ export class ResourceData {
 
     configMapDef = [
         ['Name', 'metadata.name'],
-        ['Data', ''],
         ['Type', 'kind'],
         ['Age', this.getAge],
     ];
@@ -447,8 +446,99 @@ export class ResourceData {
             eGui.innerHTML = `${value}`
             return eGui;
         }],
-        ['CPU', 'metadata.name'],
-        ['Memory', 'metadata.name'],
+        ['CPU', (params: any) => {
+            const containers = params.data.spec.template.spec.containers;
+            let value = 0;
+            let battery_level = 0;
+            let color = '';
+            if (containers && containers.length > 0) {
+                try{
+                    let limit: number;
+                    let usage = 0;
+                    if (!containers[0].resources.limits) {
+                        limit = 9999999999;
+                    }else{
+                        let mult_factor = 1000000000;
+                        if(containers[0].resources.limits.cpu && containers[0].resources.limits.cpu.endsWith('m')) {
+                            mult_factor = 1000000;
+                        }
+
+                        limit = Number(containers[0].resources.limits.cpu.replace('m','')) * mult_factor;
+                    }
+                    if (containers[0].resources.usages) {
+                        let podcpus = 0;
+                        containers[0].resources.usages.forEach((d: any) => {
+                            podcpus += Number(d.usage.containers[0].usage.cpu.replace('n', ''));
+                        })
+                        usage = podcpus;
+                    }
+                    value = Math.round(usage*100/limit);
+                    battery_level = Math.round(value/20);
+                    if (value > 60 && value < 80) {
+                        color = 'link-warning';
+                    }else if (value > 80) {
+                        color = 'link-danger';
+                    }else {
+                        color = 'link-success';
+                    }
+                }catch(e){
+                    value = 0;
+                }
+            }
+            let eGui = document.createElement('span');
+            if (color) {
+                eGui.classList.add(color);
+            }
+            eGui.innerHTML = `${value}%&nbsp;&nbsp;<i class='fa fa-battery-${battery_level} fa-rotate-270'></i>`
+            return eGui;
+        }],
+        ['Memory', (params:any) => {
+            const containers = params.data.spec.template.spec.containers;
+            let value = 0;
+            let battery_level = 0;
+            let color = '';
+            if (containers && containers.length > 0) {
+                try{
+                    let limit: number;
+                    let usage = 0;
+                    if (!containers[0].resources.limits) {
+                        limit = 9999999999;
+                    }else{
+                        let mult_factor = 1000000;
+                        if(containers[0].resources.limits.memory && containers[0].resources.limits.memory.endsWith('Mi')) {
+                            mult_factor = 1000;
+                        }else if(containers[0].resources.limits.memory && containers[0].resources.limits.memory.endsWith('Ki')) {
+                            mult_factor = 1;
+                        }
+                        limit = Number(containers[0].resources.limits.memory.replace('Ki','').replace('Mi','').replace('Gi','')) * mult_factor;
+                    }
+                    if (containers[0].resources.usages) {
+                        let podmemory = 0;
+                        containers[0].resources.usages.forEach((d: any) => {
+                            podmemory += Number(d.usage.containers[0].usage.memory.replace('Ki', ''));
+                        })
+                        usage = podmemory;
+                    }
+                    value = Math.round(usage*100/limit);
+                    battery_level = Math.round(value/20);
+                    if (value > 60 && value < 80) {
+                        color = 'link-warning';
+                    }else if (value > 80) {
+                        color = 'link-danger';
+                    }else {
+                        color = 'link-success';
+                    }
+                }catch(e){
+                    value = 0;
+                }
+            }
+            let eGui = document.createElement('span');
+            if (color) {
+                eGui.classList.add(color);
+            }
+            eGui.innerHTML = `${value}%&nbsp;&nbsp;<i class='fa fa-battery-${battery_level} fa-rotate-270'></i>`
+            return eGui;
+        }],
     ];
 
     private getColumneDef(name: string, field: string ): AgGridColumn {

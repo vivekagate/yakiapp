@@ -156,7 +156,7 @@ async fn _get_deployments_with_metrics(
     let json = ResourceWithMetricsHolder {
         resource: serde_json::to_string(&deployments).unwrap(),
         metrics: serde_json::to_string(&metrics).unwrap(),
-        usage: None
+        usage: Some(serde_json::to_string(&pods).unwrap())
     };
     dispatch_to_frontend(window, cmd, serde_json::to_string(&json).unwrap());
     Ok(())
