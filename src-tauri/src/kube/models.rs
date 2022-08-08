@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use k8s_openapi::{ClusterResourceScope, NamespaceResourceScope};
 use kube::api::{ListParams, ObjectList, ObjectMeta};
 use k8s_openapi::apimachinery::pkg::api::resource::Quantity;
@@ -19,6 +20,7 @@ impl CommandResult {
 pub struct ResourceWithMetricsHolder {
     pub(crate) resource: String,
     pub(crate) metrics: String,
+    pub(crate) usage: Option<HashMap<String, MetricsUsage>>,
 }
 
 impl ResourceWithMetricsHolder {

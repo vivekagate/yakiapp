@@ -4,7 +4,7 @@ mod metrics;
 pub(crate) mod models;
 
 use crate::kube::common::{dispatch_to_frontend, init_client};
-use crate::kube::metrics::{get_all_pods, get_nodes_with_metrics, get_pod_metrics, get_pods_with_metrics};
+use crate::kube::metrics::{get_all_pods, get_nodes_with_metrics, get_pod_metrics, get_pods_with_metrics, get_deployments_with_metrics};
 use crate::kube::models::CommandResult;
 use futures::{StreamExt, TryStreamExt};
 use k8s_openapi::api::apps::v1::{DaemonSet, Deployment, ReplicaSet, StatefulSet};
@@ -201,7 +201,9 @@ pub fn get_resource_with_metrics(
     if kind == "pod" {
         get_pods_with_metrics(&window_copy1, cluster.as_ref(), &namespace, &cmd);
     } else if kind == "node" {
-        get_nodes_with_metrics(&window_copy1, cluster.as_ref(), &namespace, &cmd);
+        get_nodes_with_metrics(&window_copy1, cluster.as_ref(), &cmd);
+    } else if kind == "deployment" {
+        get_deployments_with_metrics(&window_copy1, cluster.as_ref(), &namespace, &cmd);
     }
     // let _ = get_resource(&window_copy1, cluster.as_ref(), &namespace, &kind, &cmd);
     // let hndl = thread::spawn(move || {
@@ -210,32 +212,6 @@ pub fn get_resource_with_metrics(
     // let _ = get_metrics(&window_copy, &cluster_copy, &ns_copy, &kind_copy, &cmd_copy);
     // let mhndl = thread::spawn(move || {
     // });
-}
-
-pub fn get_metrics(window: &Window, cluster: &str, namespace: &String, kind: &String, cmd: &str) {
-    println!("Get metrics for {:?}", kind);
-    if kind == "deployment" {
-        _get_all_deployments(&window, cmd, cluster, namespace);
-    } else if kind == "namespace" {
-        _get_all_ns(&window, cmd, cluster);
-    } else if kind == "pod" {
-        get_pod_metrics(&window, cmd, cluster, namespace);
-    } else if kind == "node" {
-        _get_all_node_metrics(&window, cmd, cluster);
-    } else if kind == "cronjob" {
-        _get_all_cron_jobs(&window, cmd, cluster, namespace);
-    } else if kind == "configmap" {
-        _get_all_config_maps(&window, cmd, cluster, namespace);
-        _get_all_secrets(&window, cmd, cluster, namespace);
-    } else if kind == "service" {
-        _get_all_services(&window, cmd, cluster, namespace);
-    } else if kind == "daemonset" {
-        _get_all_daemon_sets(&window, cmd, cluster, namespace);
-    } else if kind == "persistentvolume" {
-        _get_all_persistent_volume(&window, cmd, cluster, namespace);
-    } else if kind == "statefulset" {
-        _get_all_stateful_sets(&window, cmd, cluster, namespace);
-    }
 }
 
 pub fn get_resource(window: &Window, cluster: &str, namespace: &String, kind: &String, cmd: &str) {
@@ -264,52 +240,6 @@ pub fn get_resource(window: &Window, cluster: &str, namespace: &String, kind: &S
     } else if kind == "statefulset" {
         _get_all_stateful_sets(&window, cmd, cluster, namespace);
     }
-}
-
-pub fn populate_deployments(window: &Window, namespace: &String, deploys: ObjectList<Deployment>) {
-    _populate_deployments(window, namespace, deploys);
-}
-
-#[tokio::main]
-async fn _populate_deployments(
-    window: &Window,
-    ns: &String,
-    deploys: ObjectList<Deployment>,
-) -> Result<(), Box<dyn std::error::Error>> {
-    // for mut d in deploys {
-    //   if d.available_replicas < d.replicas || d.unavailable_replicas > 0 {
-    //     let pclient = Client::try_default().await?;
-    //     let pod_request: Api<Pod> = Api::namespaced(pclient, ns);
-    //     for (key, value) in &d.match_labels {
-    //       debug!("Label selector:: {:?}", value);
-    //       let label = format!("{}={}", key, value);
-    //       let lp = ListParams::default().labels(label.as_str());
-    //       let pods = pod_request.list(&lp).await?;
-    //       debug!("Total pods found {:?}", pods.items.len());
-    //       for pod in pods {
-    //         if let Some(ref container_statuses) = pod.status.unwrap().container_statuses {
-    //           for status in container_statuses {
-    //             if let Some(ref state) = status.state {
-    //               if let Some(waiting) = &state.waiting {
-    //                 if let Some(reason) = &waiting.reason {
-    //                   debug!("PODS CONTAINER STATUSES::::{:?}", reason);
-    //                   d.reason = reason.to_string();
-    //                   break;
-    //                 }
-    //               }
-    //             }
-    //           }
-    //         }
-    //       }
-    //     }
-    //     let json = serde_json::to_string(&d).unwrap();
-    //     window.emit("app::status_update", CommandResult{
-    //       command: "".to_string(),
-    //       data: json
-    //     }).unwrap();
-    //   }
-    // }
-    Ok(())
 }
 
 #[tokio::main]

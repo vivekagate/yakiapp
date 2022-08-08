@@ -357,7 +357,7 @@ export class ResourceData {
     configMapDef = [
         ['Name', 'metadata.name'],
         ['Data', ''],
-        ['Type', ''],
+        ['Type', 'kind'],
         ['Age', this.getAge],
     ];
 
@@ -573,7 +573,7 @@ export class ResourceData {
             columns: this.getColumnDef(this.deploymentDef),
             command: [
                 {
-                    command: this.beService.commands.get_resource,
+                    command: this.beService.commands.get_resource_with_metrics,
                     arguments: {
                         kind: 'deployment'
                     }

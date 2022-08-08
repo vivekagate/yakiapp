@@ -2,7 +2,7 @@ import {Component, Input, NgZone, ViewChild} from "@angular/core";
 import {EventListener} from "../../../../providers/types";
 import {AgGridAngular, AgGridColumn} from "ag-grid-angular";
 import {ColDef, GridReadyEvent, RowClickedEvent} from "ag-grid-community";
-import {from, Observable, of, Subscription} from "rxjs";
+import {from, Observable, tap, Subscription} from "rxjs";
 import {Resource} from "../../resource/resource-data";
 import * as _ from "lodash";
 import {flatten} from "flat";
@@ -50,7 +50,8 @@ export class ResourceviewComponent implements EventListener {
     };
 
     rowData$: Observable<any> = from([]);
-    rowData = [];
+    rowData: any[] = [];
+    data: any[] = [];
     selectedapp: any;
 
 
@@ -103,6 +104,7 @@ export class ResourceviewComponent implements EventListener {
 
     initialize(): void {
         let delay = 0;
+        this.data = [];
         this.resource.command?.forEach((cmd) => {
             setTimeout(() => {
                 this.beService.executeCommandInCurrentNs(cmd.command, cmd.arguments,true);
@@ -119,7 +121,7 @@ export class ResourceviewComponent implements EventListener {
     }
 
     getName(): string {
-        return "";
+        return "resourceview.component";
     }
 
     handleEvent(ev: any): void {
@@ -136,25 +138,41 @@ export class ResourceviewComponent implements EventListener {
         console.log(ev.payload);
         if (evname === this.beService.response_channel["app_command_result"]) {
             let cmd = _.get(payload, 'command');
-            const mmap = new Map();
+            const nameMetricMap = new Map();
+            const labelMetrics = new Map();
             if (!results.items && results.resource && results.metrics) {
                 results.items = JSON.parse(results.resource).items;
                 const metrics = JSON.parse(results.metrics);
                 metrics.items.forEach((m: any) => {
-                    mmap.set(m.metadata.name, m);
+                    nameMetricMap.set(m.metadata.name, m);
                 })
+                if (results.metadata) {
+                    const md = JSON.parse(results.metadata);
+                    md.items.forEach((pod: any) => {
+                        console.log(JSON.stringify(pod.metadata.labels));
+                        labelMetrics.set(pod.metadata.name, pod);
+                    })
+                }
             }
 
             if (results.items) {
                 results.items.forEach((item: any) => {
                     if (item.kind === 'Node') {
-                        const metric = mmap.get(item.metadata.name);
+                        const metric = nameMetricMap.get(item.metadata.name);
                         if (metric && metric.usage) {
                             item.status.usage = metric.usage;
                         }
-                    }else{
+                    }else if (item.kind === 'Pod') {
                         if (item.spec.containers && item.spec.containers.length > 0){
-                            const metric = mmap.get(item.metadata.name);
+                            const metric = nameMetricMap.get(item.metadata.name);
+                            if (metric && metric.containers && metric.containers.length > 0) {
+                                item.spec.containers[0].resources.usage = metric.containers[0].usage;
+                            }
+                        }
+                    }else if (item.kind === 'Deployment') {
+                        console.log(JSON.stringify(item.metadata.labels));
+                        if (item.spec.template.spec.containers && item.spec.template.spec.containers.length > 0){
+                            const metric = nameMetricMap.get(item.metadata.name);
                             if (metric && metric.containers && metric.containers.length > 0) {
                                 item.spec.containers[0].resources.usage = metric.containers[0].usage;
                             }
@@ -164,28 +182,15 @@ export class ResourceviewComponent implements EventListener {
                 });
 
                 this.ngZone.run(() => {
-                    // @ts-ignore
-                    this.rowData$ = from(results.items);
-                    this.rowData = results.items;
+                    this.data = this.data.concat(results.items);
+                    this.rowData = this.data;
                     this.isLoading = false;
                 });
             }
-
-            // if (cmd === this.beService.commands.get_all_ns) {
-            //     this.ngZone.run(() => {
-            //         this.namespaces = results;
-            //     });
-            // }
         }
     }
 
     onSelect(app: RowClickedEvent<any>) {
-        // this.deployments.forEach((d) => {
-        //     if (d.deployment.metadata.name === app) {
-        //         this.selectedapp = d;
-        //         this.resetMetrics();
-        //     }
-        // });
         this.selectedapp = app.data;
         this.isSideBarHidden = !this.isSideBarHidden;
         if (!this.isSideBarHidden) {

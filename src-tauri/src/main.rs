@@ -55,7 +55,6 @@ struct SingletonHolder(Mutex<AppManager>);
 fn main() {
     init_tauri();
     debug!("Welcome to Yaki");
-    // kube::get_kubectl_raw();
 }
 
 fn init_tauri() {
@@ -180,7 +179,6 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
             let namespace = cmd_hldr.args.get("ns").unwrap();
             let deploys =
                 kube::get_all_deployments(&window, &current_cluster, namespace, GET_DEPLOYMENTS);
-            kube::populate_deployments(&window, namespace, deploys);
         });
     } else if cmd_hldr.command == GET_RESOURCE {
         let _ = thread::spawn(move || {
@@ -286,7 +284,6 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
 }
 
 fn check_license(window: &Window, license: Option<String>) {
-    println!("{:?}", license);
     match license {
         Some(license) => {
             utils::dispatch_event_to_frontend(window, "valid_license_found");
