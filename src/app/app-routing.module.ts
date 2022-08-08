@@ -74,6 +74,11 @@ const routes: Routes = [
             import('./views/apps/resource/resource.module').then((m) => m.ResourceModule)
       },
       {
+        path: 'preferences',
+        loadChildren: () =>
+            import('./views/apps/preferences/preferences.module').then((m) => m.PreferencesModule)
+      },
+      {
         path: 'logs',
         loadChildren: () =>
           import('./views/apps/logs/logs.module').then((m) => m.LogsModule)

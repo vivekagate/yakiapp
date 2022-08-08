@@ -21,13 +21,14 @@ export class DefaultFooterComponent extends FooterComponent implements EventList
   @ViewChild("modal_eula")
   private content: HTMLElement | undefined;
 
+  @ViewChild("modal_license")
+  private licenseModal: HTMLElement | undefined;
+
+  licenseString: any;
+
   constructor(private beService: TauriAdapter, private modalService: NgbModal) {
     super();
     this.beService.registerListener(this.beService.events.app_events_channel, this);
-  }
-
-  onUpgrade() {
-
   }
 
   getName(): string {
@@ -59,4 +60,19 @@ export class DefaultFooterComponent extends FooterComponent implements EventList
       // this.closeResult = `Dismissed ${this.getDismissReason(reason)}`;
     });
   }
+
+  showLicenseAddModal() {
+    this.modalService.open(this.licenseModal, {ariaLabelledBy: 'modal-basic-title'}).result.then((result) => {
+      console.log(this.licenseString);
+      this.beService.executeSyncCommand(this.beService.commands.add_license, {
+        license: this.licenseString
+      }, () => {
+        console.log('License Added');
+
+      });
+    }, (reason) => {
+      // this.closeResult = `Dismissed ${this.getDismissReason(reason)}`;
+    });
+  }
+
 }

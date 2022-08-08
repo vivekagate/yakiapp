@@ -77,6 +77,7 @@ dependencies = [
  "futures",
  "k8s-openapi",
  "kube",
+ "license-key",
  "log",
  "lru",
  "regex",
@@ -1338,6 +1339,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "hex"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
+
+[[package]]
 name = "html5ever"
 version = "0.25.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1814,6 +1821,15 @@ dependencies = [
  "cc",
  "pkg-config",
  "vcpkg",
+]
+
+[[package]]
+name = "license-key"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f0da208aa40218f9813440432af42bd660fa027a2aca29cc1714b7f344894ed7"
+dependencies = [
+ "hex",
 ]
 
 [[package]]

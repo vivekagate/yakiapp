@@ -55,7 +55,6 @@ struct SingletonHolder(Mutex<AppManager>);
 fn main() {
     init_tauri();
     debug!("Welcome to Yaki");
-    // kube::get_kubectl_raw();
 }
 
 fn init_tauri() {
@@ -80,6 +79,7 @@ fn execute_sync_command(
     const GET_CURRENT_CLUSTER_CONTEXT: &str = "get_current_cluster_context";
     const GET_PODS_FOR_DEPLOYMENT: &str = "get_pods_for_deployment";
     const EULA_ACCEPTED: &str = "eula_accepted";
+    const ADD_LICENSE: &str = "add_license";
 
     let current_cluster = appmanager
         .0
@@ -135,6 +135,17 @@ fn execute_sync_command(
             .unwrap()
             .dsmanager
             .upsert(pref);
+    } else if cmd_hldr.command == ADD_LICENSE {
+        let cl = cmd_hldr.args.get("license").unwrap();
+        //TODO Check is license is valid
+        let pref = Preference{key: store::LICENSE_STRING_KEY.to_string(), value: cl.to_string()};
+        appmanager
+            .0
+            .lock()
+            .unwrap()
+            .dsmanager
+            .upsert(pref);
+        check_license(&window, Some(cl.to_string()));
     }
     serde_json::to_string(&res).unwrap()
 }
@@ -180,7 +191,6 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
             let namespace = cmd_hldr.args.get("ns").unwrap();
             let deploys =
                 kube::get_all_deployments(&window, &current_cluster, namespace, GET_DEPLOYMENTS);
-            kube::populate_deployments(&window, namespace, deploys);
         });
     } else if cmd_hldr.command == GET_RESOURCE {
         let _ = thread::spawn(move || {
@@ -189,15 +199,17 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
             let _ = kube::get_resource(&window, &current_cluster, namespace, kind, GET_RESOURCE);
         });
     } else if cmd_hldr.command == GET_RESOURCE_WITH_METRICS {
-        let namespace = cmd_hldr.args.get("ns").unwrap().clone();
-        let kind = cmd_hldr.args.get("kind").unwrap().clone();
-        let _ = kube::get_resource_with_metrics(
-            &window,
-            current_cluster,
-            namespace,
-            kind,
-            GET_RESOURCE_WITH_METRICS.parse().unwrap(),
-        );
+        let _ = thread::spawn(move || {
+            let namespace = cmd_hldr.args.get("ns").unwrap().clone();
+            let kind = cmd_hldr.args.get("kind").unwrap().clone();
+            let _ = kube::get_resource_with_metrics(
+                &window,
+                current_cluster,
+                namespace,
+                kind,
+                GET_RESOURCE_WITH_METRICS.parse().unwrap(),
+            );
+        });
     } else if cmd_hldr.command == GET_PODS_FOR_DEPLOYMENT {
         let _ = thread::spawn(move || {
             let namespace = cmd_hldr.args.get("ns").unwrap();
@@ -271,26 +283,9 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
             let current = get_current_cluster();
             let clusters: Vec<KCluster> = get_clusters(current);
             if clusters.is_empty() {
-                println!("No Clusters found");
-                window
-                    .emit(
-                        "app_events_channel",
-                        EventHolder {
-                            event: "no_cluster_found".parse().unwrap(),
-                            data: "".parse().unwrap(),
-                        },
-                    )
-                    .unwrap();
+                utils::dispatch_event_to_frontend(&window, "no_cluster_found");
             } else {
-                window
-                    .emit(
-                        "app_events_channel",
-                        EventHolder {
-                            event: "cluster_found".parse().unwrap(),
-                            data: "".parse().unwrap(),
-                        },
-                    )
-                    .unwrap();
+                utils::dispatch_event_to_frontend(&window, "cluster_found");
                 debug!("Clusters found");
             }
 
@@ -303,7 +298,6 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
 }
 
 fn check_license(window: &Window, license: Option<String>) {
-    println!("{:?}", license);
     match license {
         Some(license) => {
             utils::dispatch_event_to_frontend(window, "valid_license_found");

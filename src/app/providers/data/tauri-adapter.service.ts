@@ -12,6 +12,7 @@ export class TauriAdapter {
   public commands = {
     execute_sync_command: 'execute_sync_command',
     eula_accepted: 'eula_accepted',
+    add_license: 'add_license',
     get_pods_for_deployment: 'get_pods_for_deployment',
 
 
