@@ -1,15 +1,5 @@
 import {Component, ElementRef, NgZone, ViewChild, ViewChildren} from '@angular/core';
-import * as _ from 'lodash';
-import {invoke} from '@tauri-apps/api/tauri';
-import {appWindow} from "@tauri-apps/api/window";
 import {TauriAdapter} from "../../../providers/data/tauri-adapter.service";
-import {
-  DisplayGrid,
-  GridsterConfig,
-  GridsterItem,
-  GridsterItemComponentInterface,
-  GridType
-} from "angular-gridster2";
 
 @Component({
   selector: 'app-environment',
@@ -18,8 +8,18 @@ import {
 })
 
 export class PreferencesComponent {
-  envvars = [];
-  constructor(private ngZone: NgZone){
+  namespaceString = '';
+  licenseString = '';
+  constructor(private ngZone: NgZone, private beService: TauriAdapter){
 
+  }
+
+  onPreferenceSave() {
+    this.beService.executeSyncCommand(this.beService.commands.save_preference,{
+      key: '',
+      value: ''
+    }, () => {
+
+    })
   }
 }

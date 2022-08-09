@@ -21,6 +21,7 @@ pub struct ResourceWithMetricsHolder {
     pub(crate) resource: String,
     pub(crate) metrics: String,
     pub(crate) usage: Option<String>,
+    pub (crate) metrics2: Option<String>
 }
 
 impl ResourceWithMetricsHolder {

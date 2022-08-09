@@ -38,6 +38,9 @@ export class ResourceviewComponent implements EventListener {
     @ViewChild('aggrid')
     aggrid!: AgGridAngular;
 
+    @ViewChild('resourcedetailtable')
+    resourceDetailsTable!: AgGridAngular;
+
     @Input()
     resource: Resource;
     defaultColDef: ColDef = {
@@ -139,29 +142,46 @@ export class ResourceviewComponent implements EventListener {
         if (evname === this.beService.response_channel["app_command_result"]) {
             let cmd = _.get(payload, 'command');
             const nameMetricMap = new Map();
+            const nameMetric2Map = new Map();
             const specNameMap = new Map();
+            const deployNameToPodsMap = new Map();
             if (!results.items && results.resource && results.metrics) {
                 results.items = JSON.parse(results.resource).items;
                 const metrics = JSON.parse(results.metrics);
                 metrics.items.forEach((m: any) => {
                     nameMetricMap.set(m.metadata.name, m);
                 })
+                if (results.metrics2) {
+                    const metrics2 = JSON.parse(results.metrics2);
+                    metrics2.items.forEach((m: any) => {
+                        nameMetric2Map.set(m.metadata.name, m);
+                    })
+                }
                 if (results.usage) {
                     const md = JSON.parse(results.usage);
                     md.items.forEach((pod: any) => {
                         if (pod.spec.containers) {
                             const deployname = pod.spec.containers[0].name;
-                            const resourceArray = specNameMap.get(deployname);
+                            let resourceArray = specNameMap.get(deployname);
                             if (!resourceArray) {
-                                specNameMap.set(deployname, [{
-                                    name: pod.metadata.name,
-                                    usage: nameMetricMap.get(pod.metadata.name)
-                                }]);
-                            }else{
-                                resourceArray.push({
-                                    name: pod.metadata.name,
-                                    usage: nameMetricMap.get(pod.metadata.name)
-                                });
+                                resourceArray = [];
+                                specNameMap.set(deployname, resourceArray);
+                            }
+                            resourceArray.push({
+                                name: pod.metadata.name,
+                                usage: nameMetricMap.get(pod.metadata.name),
+                                status: pod.status
+                            });
+
+                            let podArray = deployNameToPodsMap.get(deployname);
+                            if (!podArray) {
+                                podArray = [];
+                                deployNameToPodsMap.set(deployname, podArray);
+                            }
+                            podArray.push(pod);
+                            const pmetric = nameMetricMap.get(pod.metadata.name);
+                            if (pmetric && pmetric.containers && pmetric.containers.length > 0) {
+                                pod.spec.containers[0].resources.usage = pmetric.containers[0].usage;
                             }
                         }
                     })
@@ -187,8 +207,10 @@ export class ResourceviewComponent implements EventListener {
                         if (item.spec.template.spec.containers) {
                             const deployname = item.spec.template.spec.containers[0].name;
                             const usages = specNameMap.get(deployname);
+                            const pods = deployNameToPodsMap.get(deployname);
                             if (usages && item.spec.template.spec.containers) {
                                 item.spec.template.spec.containers[0].resources.usages = usages;
+                                item.spec.template.spec.pods = pods;
                             }
                         }
                     }
@@ -231,9 +253,17 @@ export class ResourceviewComponent implements EventListener {
         action?.callback(this.selectedapp);
     }
 
-    getAttrValue(resource_field: string) {
+    getAttrValue(resource_field: any) {
         if (this.selectedapp) {
-            return this.selectedapp?.flat[resource_field];
+            if ((typeof resource_field) === 'function'){
+                return resource_field(this.selectedapp).outerHTML;
+            }
+            const value = this.selectedapp?.flat[resource_field];
+            let eGui = document.createElement('span');
+            if (value) {
+                eGui.innerHTML = `${value}`
+            }
+            return eGui.outerHTML;
         }else{
             return 'N/A';
         }

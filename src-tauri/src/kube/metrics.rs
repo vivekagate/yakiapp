@@ -98,7 +98,8 @@ async fn _get_pods_with_metrics(
     let json = ResourceWithMetricsHolder {
         resource: serde_json::to_string(&pods).unwrap(),
         metrics: serde_json::to_string(&metrics).unwrap(),
-        usage: None
+        usage: None,
+        metrics2: None
     };
     dispatch_to_frontend(window, cmd, serde_json::to_string(&json).unwrap());
     Ok(())
@@ -123,7 +124,8 @@ async fn _get_nodes_with_metrics(
     let json = ResourceWithMetricsHolder {
         resource: serde_json::to_string(&nodes).unwrap(),
         metrics: serde_json::to_string(&metrics).unwrap(),
-        usage: None
+        usage: None,
+        metrics2: None
     };
     let result = serde_json::to_string(&json).unwrap();
     dispatch_to_frontend(window, cmd, result);
@@ -139,6 +141,7 @@ async fn _get_deployments_with_metrics(
 ) -> Result<(), Box<dyn Error>> {
     let client = init_client(cluster).await.unwrap();
     let metrics_client = client.clone();
+    let pod_metrics_client = client.clone();
     let pod_client = client.clone();
     let kube_request: Api<Deployment> = Api::namespaced(client, namespace);
 
@@ -153,10 +156,16 @@ async fn _get_deployments_with_metrics(
     let lp = ListParams::default();
     let pods = p_kube_request.list(&lp).await?;
 
+    let mp_kube_request: Api<PodMetrics> = Api::namespaced(pod_metrics_client, namespace);
+    let lp = ListParams::default();
+    let pod_metrics = mp_kube_request.list(&lp).await?;
+
     let json = ResourceWithMetricsHolder {
         resource: serde_json::to_string(&deployments).unwrap(),
         metrics: serde_json::to_string(&metrics).unwrap(),
-        usage: Some(serde_json::to_string(&pods).unwrap())
+        usage: Some(serde_json::to_string(&pods).unwrap()),
+        metrics2: Some(serde_json::to_string(&pod_metrics).unwrap())
+
     };
     dispatch_to_frontend(window, cmd, serde_json::to_string(&json).unwrap());
     Ok(())
