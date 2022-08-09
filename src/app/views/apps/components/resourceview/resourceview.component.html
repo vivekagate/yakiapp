@@ -70,7 +70,7 @@
         </c-card-header>
                 <c-card-body style="padding: 0">
                     <c-spinner color="secondary" [hidden]="!isLoading" class="center"></c-spinner>
-                    <c-accordion [flush]="true" [alwaysOpen]="true">
+                    <c-accordion [flush]="true" [alwaysOpen]="true" *ngIf="resource && resource.sidebar && resource.sidebar.mode && resource.sidebar.mode !== 'table'">
                         <c-accordion-item *ngFor="let section of resource.sections" [visible]="!section.hidden">
                             <ng-template cTemplateId="accordionHeader">
                                 {{section.name}}
@@ -89,6 +89,19 @@
                             </ng-template>
                         </c-accordion-item>
                     </c-accordion>
+                    <div *ngIf="resource && resource.sidebar && resource.sidebar.mode && resource.sidebar.mode === 'table'">
+                        <ag-grid-angular #resourcedetailtable
+                                style="width: 100%; height: 80vh"
+                                class="ag-theme-alpine-dark"
+                                [suppressCellFocus]="true"
+                                         [columnDefs]="resource.sidebar.data.cols"
+                                         [defaultColDef]="resource.sidebar.data.defcols"
+                                         [rowData]="selectedapp?.spec?.template?.spec?.pods"
+                                [rowSelection]="'single'"
+                                [animateRows]="true"
+                                (gridReady)="onGridReady($event)"
+                        ></ag-grid-angular>
+                    </div>
                 </c-card-body>
     </c-card>
 </c-sidebar>

@@ -3,6 +3,9 @@ import * as _ from "lodash";
 import {TauriAdapter} from "../../../../providers/data/tauri-adapter.service";
 import {ResourceDefinitionCommon} from "./resource-definition-common";
 import {Router} from "@angular/router";
+import {Utilities} from "../utilities";
+import {ColDef} from "ag-grid-community";
+import {Resource} from "../resource-data";
 
 
 @Injectable({
@@ -54,6 +57,30 @@ export class DeploymentDefinition {
         return eGui;
     };
 
+    deploymentLastRestart = (params: any) => {
+        const containers = params.data.spec.template.spec.containers;
+        let value = null;
+        if (containers && containers.length > 0) {
+            try{
+                if (containers[0].resources.usages) {
+                    containers[0].resources.usages.forEach((d: any) => {
+                        if (d.status.containerStatuses[0].state?.running) {
+                            value = new Date(d.status.containerStatuses[0].state?.running?.startedAt);
+                        }
+                    })
+                }
+
+            }catch(e){
+                value = '';
+            }
+        }
+        let eGui = document.createElement('span');
+        if (value) {
+            eGui.innerHTML = `${Utilities.timeAgo(value)}&nbsp;&nbsp;`
+        }
+        return eGui;
+    };
+
     deploymentRestarts = (params: any) => {
         const containers = params.data.spec.template.spec.containers;
         let color = '';
@@ -88,7 +115,7 @@ export class DeploymentDefinition {
     applicationDef = [
         ['Name', 'metadata.name'],
         ['Status', this.deploymentStatus],
-        ['Last Restart', this.common.getAge],
+        ['Last Restart', this.deploymentLastRestart],
         ['Restarts', this.deploymentRestarts],
         ['Instances', this.deploymentInstances],
         ['CPU', (params: any) => {
@@ -186,6 +213,176 @@ export class DeploymentDefinition {
         }],
     ];
 
+    podStatus =  (params: any) => {
+        const cntStatus = params.data.status.containerStatuses;
+        let color = 'link-success';
+        let status = 'Running';
+        let icon = 'fa-check';
+        if (cntStatus && cntStatus.length > 0) {
+            if (cntStatus[0].state?.waiting?.reason) {
+                color = 'link-danger';
+                icon = 'fa-warning';
+                status = cntStatus[0].state?.waiting?.reason;
+            }
+        }
+        let eGui = document.createElement('span');
+        eGui.classList.add(color);
+        eGui.innerHTML = `<i class='fa ${icon}'>&nbsp;&nbsp;${status}</i>`
+        return eGui;
+    };
+
+    podStartTime =  (params: any) => {
+        console.log(params.data);
+        const startTime = params.data.status.startTime;
+        let value = Utilities.timeAgo(new Date(startTime));
+        let eGui = document.createElement('span');
+        eGui.innerHTML = `${value}`
+        return eGui;
+    };
+
+    podCpu = (params: any) => {
+        let value = 0;
+        let battery_level = 0;
+        let color = '';
+        if (params.data.spec && params.data.spec.containers) {
+            const containers = params.data.spec.containers;
+            if (containers && containers.length > 0) {
+                try{
+                    let limit: number;
+                    let usage = 0;
+                    if (!containers[0].resources.limits) {
+                        limit = 9999999999;
+                    }else{
+                        let mult_factor = 1000000000;
+                        if(containers[0].resources.limits.cpu && containers[0].resources.limits.cpu.endsWith('m')) {
+                            mult_factor = 1000000;
+                        }
+
+                        limit = Number(containers[0].resources.limits.cpu.replace('m','')) * mult_factor;
+                    }
+                    if (containers[0].resources.usage) {
+                        usage = Number(containers[0].resources.usage.cpu.replace('n', ''));
+                    }
+                    value = Math.round(usage*100/limit);
+                    battery_level = Math.round(value/20);
+                    if (value > 60 && value < 80) {
+                        color = 'link-warning';
+                    }else if (value > 80) {
+                        color = 'link-danger';
+                    }else {
+                        color = 'link-success';
+                    }
+                }catch(e){
+                    value = 0;
+                }
+            }
+        }
+        let eGui = document.createElement('span');
+        if (color) {
+            eGui.classList.add(color);
+        }
+        eGui.innerHTML = `${value}%&nbsp;&nbsp;<i class='fa fa-battery-${battery_level} fa-rotate-270'></i>`
+        return eGui;
+    };
+
+    podMemory =  (params: any) => {
+        let value = 0;
+        let battery_level = 0;
+        let color = '';
+        if (params.data.spec && params.data.spec.containers){
+            const containers = params.data.spec.containers;
+            if (containers && containers.length > 0) {
+                try{
+                    let limit: number;
+                    let usage = 0;
+                    if (!containers[0].resources.limits) {
+                        limit = 9999999999;
+                    }else{
+                        let mult_factor = 1000000;
+                        if(containers[0].resources.limits.memory && containers[0].resources.limits.memory.endsWith('Mi')) {
+                            mult_factor = 1000;
+                        }else if(containers[0].resources.limits.memory && containers[0].resources.limits.memory.endsWith('Ki')) {
+                            mult_factor = 1;
+                        }
+                        limit = Number(containers[0].resources.limits.memory.replace('Ki','').replace('Mi','').replace('Gi','')) * mult_factor;
+                    }
+                    if (containers[0].resources.usage) {
+                        usage = Number(containers[0].resources.usage.memory.replace('Ki', ''));
+                    }
+                    value = Math.round(usage*100/limit);
+                    battery_level = Math.round(value/20);
+                    if (value > 60 && value < 80) {
+                        color = 'link-warning';
+                    }else if (value > 80) {
+                        color = 'link-danger';
+                    }else {
+                        color = 'link-success';
+                    }
+                }catch(e){
+                    value = 0;
+                }
+            }
+        }
+        let eGui = document.createElement('span');
+        if (color) {
+            eGui.classList.add(color);
+        }
+        eGui.innerHTML = `${value}%&nbsp;&nbsp;<i class='fa fa-battery-${battery_level} fa-rotate-270'></i>`
+        return eGui;
+    };
+
+    podRestarts = (params: any) => {
+        let value = 0;
+        let color = '';
+        if (params.data.status.containerStatuses) {
+            const cntStatus = params.data.status.containerStatuses;
+            if (cntStatus && cntStatus.length > 0) {
+                try{
+                    if (cntStatus[0].restartCount) {
+                        value = Number(cntStatus[0].restartCount);
+                        if (value > 0 && value <= 5) {
+                            color = 'link-warning';
+                        }else if (value > 5) {
+                            color = 'link-danger';
+                        }
+                    }
+                }catch(e){
+                    value = 0;
+                }
+            }
+        }
+        let eGui = document.createElement('span');
+        if (color) {
+            eGui.classList.add(color);
+            eGui.innerHTML = `${value}&nbsp;&nbsp;<i class='fa fa-warning'></i>`
+        }else{
+            eGui.innerHTML = `${value}`
+        }
+        return eGui;
+    }
+
+    podDef = [
+        ['Name', 'metadata.name'],
+        ['Ready', (params: any) => {
+            const cntStatus = params.data.status.containerStatuses;
+            let value = 'N/A';
+            if (cntStatus && cntStatus.length > 0) {
+                if (cntStatus[0].ready) {
+                    value = '1/1'
+                }else{
+                    value = '0/1'
+                }
+            }
+            let eGui = document.createElement('span');
+            eGui.innerHTML = `${value}`
+            return eGui;
+        }],
+        ['Status', this.podStatus],
+        ['Restarts', this.podRestarts],
+        ['Age', this.common.getAge],
+        ['CPU usage (%)', this.podCpu],
+        ['Memory usage (%)', this.podMemory],
+    ];
 
     deploymentDef = [
         ['Name', 'metadata.name'],
@@ -379,6 +576,47 @@ export class DeploymentDefinition {
         }
     }
 
+    getPodResourceDefinition(): Resource {
+        return {
+            columns: this.common.getColumnDef(this.podDef),
+            command: [
+                {
+                    command: this.beService.commands.get_resource_with_metrics,
+                    arguments: {
+                        kind: 'pod'
+                    }
+                },
+            ],
+            name: "Pods",
+            actions: [
+                {
+                    name: 'logs',
+                    displayName: 'Logs',
+                    icon: 'fa-file-code-o',
+                    callback: (resource: any) => {
+                        console.log('Get Logs');
+                    }
+                },
+                {
+                    name: 'restart',
+                    displayName: 'Restart',
+                    icon: 'fa-term',
+                    callback: (resource: any) => {
+                        console.log('Restart');
+                    }
+                },
+                {
+                    name: 'shell',
+                    displayName: 'Shell',
+                    icon: 'fa-term',
+                    callback: (resource: any) => {
+                        console.log('Open Shell');
+                    }
+                },
+            ]
+        }
+    }
+
     getApplicationResourceDefinition() {
         return {
             columns: this.common.getColumnDef(this.applicationDef),
@@ -429,6 +667,15 @@ export class DeploymentDefinition {
                     callback: ()=>{}
                 },
             ],
+            sidebar: {
+                name: 'Instances',
+                mode: 'table',
+                data: {
+                    rows: [],
+                    cols: this.getApplicationColumns(),
+                    defcols: this.getDefaultApplicationColumns()
+                }
+            },
             sections: [
                 {
                     name: 'Overview',
@@ -437,62 +684,39 @@ export class DeploymentDefinition {
                             name: 'Image',
                             resource_field: 'spec.template.spec.containers.0.image'
                         },
-                        {
-                            name: 'Status',
-                            resource_field: (params: any) => this.deploymentStatus({
-                                data: params
-                            })
-                        },
-                        {
-                            name: 'Restarts',
-                            resource_field: (params: any) => this.deploymentRestarts({
-                                data: params
-                            })
-                        },
-                        {
-                            name: 'Last Restart',
-                            resource_field: 'status.nodeInfo.containerRuntimeVersion'
-                        },
-                        {
-                            name: 'Instances (Healthy/Total)',
-                            resource_field: (params: any) => this.deploymentInstances({
-                                data: params
-                            })
-                        },
-                    ]
-                },
-                {
-                    name: 'Resources',
-                    attributes: [
-                        {
-                            name: 'CPU',
-                            resource_field: 'spec.template.spec.containers.0.image'
-                        },
-                        {
-                            name: 'Memory',
-                            resource_field: (params: any) => this.deploymentStatus({
-                                data: params
-                            })
-                        }
-                    ]
-                },
-                {
-                    name: 'Environment Variables',
-                    attributes: [
-                        {
-                            name: 'Image',
-                            resource_field: 'spec.template.spec.containers.0.image'
-                        },
-                        {
-                            name: 'Status',
-                            resource_field: (params: any) => this.deploymentStatus({
-                                data: params
-                            })
-                        }
                     ]
                 },
             ]
         }
     }
 
+    private getDefaultApplicationColumns() {
+        return {
+            editable: false,
+            sortable: true,
+            flex: 1,
+            minWidth: 100,
+            filter: true,
+            resizable: true,
+        };
+
+    }
+
+    applicationDetailsColumnDef = [
+        ['Name', 'metadata.name'],
+        ['Status', this.podStatus],
+        ['Last Restart', this.podStartTime],
+        ['Restarts', this.podRestarts],
+        ['CPU', (params: any) => this.podCpu({
+            data: params
+        })],
+        ['Memory', (params:any) => this.podMemory({
+            data: params
+        })],
+    ];
+
+
+    private getApplicationColumns() {
+        return this.common.getColumnDef(this.applicationDetailsColumnDef);
+    }
 }

@@ -38,6 +38,9 @@ export class ResourceviewComponent implements EventListener {
     @ViewChild('aggrid')
     aggrid!: AgGridAngular;
 
+    @ViewChild('resourcedetailtable')
+    resourceDetailsTable!: AgGridAngular;
+
     @Input()
     resource: Resource;
     defaultColDef: ColDef = {
@@ -140,6 +143,7 @@ export class ResourceviewComponent implements EventListener {
             let cmd = _.get(payload, 'command');
             const nameMetricMap = new Map();
             const specNameMap = new Map();
+            const deployNameToPodsMap = new Map();
             if (!results.items && results.resource && results.metrics) {
                 results.items = JSON.parse(results.resource).items;
                 const metrics = JSON.parse(results.metrics);
@@ -161,6 +165,13 @@ export class ResourceviewComponent implements EventListener {
                                 usage: nameMetricMap.get(pod.metadata.name),
                                 status: pod.status
                             });
+
+                            let podArray = deployNameToPodsMap.get(deployname);
+                            if (!podArray) {
+                                podArray = [];
+                                deployNameToPodsMap.set(deployname, podArray);
+                            }
+                            podArray.push(pod);
                         }
                     })
                 }
@@ -185,8 +196,10 @@ export class ResourceviewComponent implements EventListener {
                         if (item.spec.template.spec.containers) {
                             const deployname = item.spec.template.spec.containers[0].name;
                             const usages = specNameMap.get(deployname);
+                            const pods = deployNameToPodsMap.get(deployname);
                             if (usages && item.spec.template.spec.containers) {
                                 item.spec.template.spec.containers[0].resources.usages = usages;
+                                item.spec.template.spec.pods = pods;
                             }
                         }
                     }
