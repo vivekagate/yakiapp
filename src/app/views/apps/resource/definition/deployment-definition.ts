@@ -85,7 +85,6 @@ export class DeploymentDefinition {
         const containers = params.data.spec.template.spec.containers;
         let color = '';
         let value = 0;
-        console.log('Restart count');
         if (containers && containers.length > 0) {
             try{
                 if (containers[0].resources.usages) {
@@ -93,9 +92,9 @@ export class DeploymentDefinition {
                         value += Number(d.status.containerStatuses[0].restartCount);
                     })
                 }
-                if (value > 60 && value < 80) {
+                if (value > 0 && value <= 5) {
                     color = 'link-warning';
-                }else if (value > 80) {
+                }else if (value > 5) {
                     color = 'link-danger';
                 }else {
                     color = 'link-success';
@@ -142,7 +141,7 @@ export class DeploymentDefinition {
                         containers[0].resources.usages.forEach((d: any) => {
                             podcpus += Number(d.usage.containers[0].usage.cpu.replace('n', ''));
                         })
-                        usage = podcpus;
+                        usage = Math.round(podcpus/containers[0].resources.usages.length);
                     }
                     value = Math.round(usage*100/limit);
                     battery_level = Math.round(value/20);
@@ -189,7 +188,7 @@ export class DeploymentDefinition {
                         containers[0].resources.usages.forEach((d: any) => {
                             podmemory += Number(d.usage.containers[0].usage.memory.replace('Ki', ''));
                         })
-                        usage = podmemory;
+                        usage = Math.round(podmemory/containers[0].resources.usages.length);
                     }
                     value = Math.round(usage*100/limit);
                     battery_level = Math.round(value/20);
@@ -660,12 +659,6 @@ export class DeploymentDefinition {
                     icon: 'fa-term',
                     callback: ()=>{}
                 },
-                {
-                    name: 'edit',
-                    displayName: 'Edit Yaml',
-                    icon: 'fa-file',
-                    callback: ()=>{}
-                },
             ],
             sidebar: {
                 name: 'Instances',
@@ -707,12 +700,8 @@ export class DeploymentDefinition {
         ['Status', this.podStatus],
         ['Last Restart', this.podStartTime],
         ['Restarts', this.podRestarts],
-        ['CPU', (params: any) => this.podCpu({
-            data: params
-        })],
-        ['Memory', (params:any) => this.podMemory({
-            data: params
-        })],
+        ['CPU', this.podCpu],
+        ['Memory', this.podMemory],
     ];
 
 

@@ -142,6 +142,7 @@ export class ResourceviewComponent implements EventListener {
         if (evname === this.beService.response_channel["app_command_result"]) {
             let cmd = _.get(payload, 'command');
             const nameMetricMap = new Map();
+            const nameMetric2Map = new Map();
             const specNameMap = new Map();
             const deployNameToPodsMap = new Map();
             if (!results.items && results.resource && results.metrics) {
@@ -150,6 +151,12 @@ export class ResourceviewComponent implements EventListener {
                 metrics.items.forEach((m: any) => {
                     nameMetricMap.set(m.metadata.name, m);
                 })
+                if (results.metrics2) {
+                    const metrics2 = JSON.parse(results.metrics2);
+                    metrics2.items.forEach((m: any) => {
+                        nameMetric2Map.set(m.metadata.name, m);
+                    })
+                }
                 if (results.usage) {
                     const md = JSON.parse(results.usage);
                     md.items.forEach((pod: any) => {
@@ -172,6 +179,10 @@ export class ResourceviewComponent implements EventListener {
                                 deployNameToPodsMap.set(deployname, podArray);
                             }
                             podArray.push(pod);
+                            const pmetric = nameMetricMap.get(pod.metadata.name);
+                            if (pmetric && pmetric.containers && pmetric.containers.length > 0) {
+                                pod.spec.containers[0].resources.usage = pmetric.containers[0].usage;
+                            }
                         }
                     })
                 }
