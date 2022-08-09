@@ -18,9 +18,16 @@ const routes: Routes = [
     },
     children: [
       {
-        path: 'applications',
+        path: 'oapplications',
         loadChildren: () =>
           import('./views/apps/applications/applications.module').then((m) => m.ApplicationsModule)
+      },
+      {
+        path: 'applications',
+        data: {
+          resource: 'applications'
+        },
+        loadChildren: () => ResourceModule
       },
       {
         path: 'nodes',

@@ -114,6 +114,7 @@ export class DefaultHeaderComponent extends HeaderComponent implements EventList
       cluster: this.selectedCluster.name.trim()
     }, (res) => {
       console.log(res);
+      this.namespaces = [];
       this.getAllNamespaces(true);
     });
   }

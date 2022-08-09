@@ -151,18 +151,16 @@ export class ResourceviewComponent implements EventListener {
                     md.items.forEach((pod: any) => {
                         if (pod.spec.containers) {
                             const deployname = pod.spec.containers[0].name;
-                            const resourceArray = specNameMap.get(deployname);
+                            let resourceArray = specNameMap.get(deployname);
                             if (!resourceArray) {
-                                specNameMap.set(deployname, [{
-                                    name: pod.metadata.name,
-                                    usage: nameMetricMap.get(pod.metadata.name)
-                                }]);
-                            }else{
-                                resourceArray.push({
-                                    name: pod.metadata.name,
-                                    usage: nameMetricMap.get(pod.metadata.name)
-                                });
+                                resourceArray = [];
+                                specNameMap.set(deployname, resourceArray);
                             }
+                            resourceArray.push({
+                                name: pod.metadata.name,
+                                usage: nameMetricMap.get(pod.metadata.name),
+                                status: pod.status
+                            });
                         }
                     })
                 }
@@ -231,9 +229,17 @@ export class ResourceviewComponent implements EventListener {
         action?.callback(this.selectedapp);
     }
 
-    getAttrValue(resource_field: string) {
+    getAttrValue(resource_field: any) {
         if (this.selectedapp) {
-            return this.selectedapp?.flat[resource_field];
+            if ((typeof resource_field) === 'function'){
+                return resource_field(this.selectedapp).outerHTML;
+            }
+            const value = this.selectedapp?.flat[resource_field];
+            let eGui = document.createElement('span');
+            if (value) {
+                eGui.innerHTML = `${value}`
+            }
+            return eGui.outerHTML;
         }else{
             return 'N/A';
         }

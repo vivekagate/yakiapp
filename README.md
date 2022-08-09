@@ -53,6 +53,19 @@ Before you start working on something, it's best to check if there is an existin
 
 **yaki** is following [Semantic Versioning 2.0](https://semver.org/).
 
+## Developer View
+Application 
+----Logs
+-----CPU Metrics
+----- Memory
+---- Environment variables / Configuration
+---- Instances
+---- Access Logs
+----  DB Logs
+---- Network Access - Ports or Domain available ?
+---- Restarts?
+---- Time since last restart?
+
 ## Disable License Check
 
 ## Licenses

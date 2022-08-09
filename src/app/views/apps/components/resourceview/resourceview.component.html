@@ -80,7 +80,9 @@
                                     <tbody>
                                     <tr *ngFor="let attr of section.attributes">
                                         <td>{{attr.name}}</td>
-                                        <td>{{getAttrValue(attr.resource_field)}}</td>
+                                        <td>
+                                            <div [innerHTML]="getAttrValue(attr.resource_field)"></div>
+                                        </td>
                                     </tr>
                                     </tbody>
                                 </table>

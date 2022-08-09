@@ -3,16 +3,17 @@
     <c-card class="mb-4">
       <c-card-header>
         <strong>Settings & Preferences</strong>
+        <button class="button-app btn-sm" (click)="onPreferenceSave()">Save</button>
       </c-card-header>
       <c-card-body style="height: 80vh">
         <table [hover]="true" cTable color="dark">
           <tbody>
           <tr>
             <td>
-              Custom Namespaces
+              Custom Namespaces (One per line)
             </td>
             <td>
-              <textarea style="width: 200px; height: 60px;">
+              <textarea style="width: 200px; height: 60px;" [(ngModel)]="namespaceString">
 
               </textarea>
             </td>
@@ -22,7 +23,7 @@
               License String
             </td>
             <td>
-              <textarea style="width: 200px; height: 60px;">
+              <textarea style="width: 200px; height: 60px;" [(ngModel)]="licenseString">
 
               </textarea>
             </td>
