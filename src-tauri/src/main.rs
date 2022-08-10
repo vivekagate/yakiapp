@@ -6,7 +6,7 @@
 use crate::appmanager::AppManager;
 use crate::cache::CacheManager;
 use crate::kube::models::CommandResult;
-use crate::kube::EventHolder;
+use crate::kube::{EventHolder, KNamespace};
 use crate::store::{DataStoreManager, Preference};
 use crate::task::TaskManager;
 use ::kube::api::Object;
@@ -22,6 +22,7 @@ use std::sync::mpsc::Sender;
 use std::sync::{mpsc, Mutex, MutexGuard};
 use std::{env, io, thread};
 use tauri::{State, Window};
+use tracing_subscriber::registry::Data;
 
 mod appmanager;
 mod cache;
@@ -80,13 +81,15 @@ fn execute_sync_command(
     const GET_PODS_FOR_DEPLOYMENT: &str = "get_pods_for_deployment";
     const EULA_ACCEPTED: &str = "eula_accepted";
     const ADD_LICENSE: &str = "add_license";
+    const SAVE_PREFERENCE: &str = "save_preference";
+    const GET_PREFERENCES: &str = "get_preferences";
 
-    let current_cluster = appmanager
-        .0
-        .lock()
-        .unwrap()
-        .cachemanager
-        .get(cache::KEY_CONTEXT, "");
+    let mut stateHolder = &mut appmanager.0.lock().unwrap();
+
+    // let cachemanager: &CacheManager = &mut singletonHolder.cachemanager;
+    // let mut dsmanager: &DataStoreManager = &singletonHolder.dsmanager;
+
+    let current_cluster = stateHolder.cachemanager.get(cache::KEY_CONTEXT, "");
     debug!("Current cluster: {}", current_cluster);
 
     let cmd_hldr: CommandHolder = serde_json::from_str(commandstr).unwrap();
@@ -118,34 +121,40 @@ fn execute_sync_command(
     } else if cmd_hldr.command == SET_CURRENT_CLUSTER_CONTEXT {
         let cl = cmd_hldr.args.get("cluster").unwrap();
         debug!("New cluster: {}", cl);
-        appmanager
-            .0
-            .lock()
-            .unwrap()
-            .cachemanager
-            .set(cache::KEY_CONTEXT, cl);
+        stateHolder.cachemanager.set(cache::KEY_CONTEXT, cl);
     } else if cmd_hldr.command == GET_CURRENT_CLUSTER_CONTEXT {
         let cluster = get_current_cluster();
         res.data = serde_json::to_string(&cluster).unwrap();
     } else if cmd_hldr.command == EULA_ACCEPTED {
         let pref = Preference{key: store::KEY_EULA_ACCEPT.to_string(), value: "true".to_string()};
-        appmanager
-            .0
-            .lock()
-            .unwrap()
-            .dsmanager
-            .upsert(pref);
+        stateHolder.dsmanager.upsert(pref);
     } else if cmd_hldr.command == ADD_LICENSE {
         let cl = cmd_hldr.args.get("license").unwrap();
         //TODO Check is license is valid
         let pref = Preference{key: store::LICENSE_STRING_KEY.to_string(), value: cl.to_string()};
-        appmanager
-            .0
-            .lock()
-            .unwrap()
-            .dsmanager
-            .upsert(pref);
+        stateHolder.dsmanager.upsert(pref);
         check_license(&window, Some(cl.to_string()));
+    } else if cmd_hldr.command == SAVE_PREFERENCE {
+        let key = cmd_hldr.args.get("key").unwrap();
+        let value = cmd_hldr.args.get("value").unwrap();
+        let pref = Preference{key: key.to_string(), value: value.to_string()};
+        stateHolder.dsmanager.upsert(pref);
+    } else if cmd_hldr.command == GET_PREFERENCES {
+        let keys = cmd_hldr.args.keys();
+        let mut prefs: Vec<Preference> = Vec::new();
+        for key in keys {
+            let result = stateHolder.dsmanager.query(key.to_string(), None);
+            let val = match result {
+                Some(val) => val,
+                None => "".to_string()
+            };
+            prefs.push(Preference{
+                key: key.to_string(),
+                value: val
+            });
+        }
+        res.command = GET_PREFERENCES.parse().unwrap();
+        res.data = serde_json::to_string(&prefs).unwrap()
     }
     serde_json::to_string(&res).unwrap()
 }
@@ -167,24 +176,20 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
     const STOP_ALL_METRICS_STREAMS: &str = "stop_all_metrics_streams";
     const APP_START: &str = "app_start";
 
-    let current_cluster: String = appmanager
-        .0
-        .lock()
-        .unwrap()
+    let mut stateHolder = &mut appmanager.0.lock().unwrap();
+
+    let current_cluster: String = stateHolder
         .cachemanager
         .get(cache::KEY_CONTEXT, "")
         .clone();
 
-    let dsmanager = &appmanager
-        .0
-        .lock()
-        .unwrap()
-        .dsmanager;
     debug!("Current cluster: {}", current_cluster);
     let cmd_hldr: CommandHolder = serde_json::from_str(commandstr).unwrap();
     if cmd_hldr.command == GET_ALL_NS {
+        let pref = stateHolder.dsmanager.query(store::CUSTOM_NS_LIST.to_string(), None);
         let _ = thread::spawn(move || {
-            kube::get_all_ns(&window, &current_cluster, GET_ALL_NS);
+            let custom_ns_list = get_custom_ns_list(pref);
+            kube::get_all_ns(&window, &current_cluster, GET_ALL_NS, custom_ns_list);
         });
     } else if cmd_hldr.command == GET_DEPLOYMENTS {
         let _ = thread::spawn(move || {
@@ -247,7 +252,7 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
             kube::tail_logs_for_pod(window, &current_cluster, &podname, &ns, &rx);
             debug!("Tail of logs initiated");
         });
-        appmanager.0.lock().unwrap().taskmanager.add_logs_stream(tx);
+        stateHolder.taskmanager.add_logs_stream(tx);
     } else if cmd_hldr.command == GET_LOGS_FOR_POD {
         let _ = thread::spawn(move || {
             let ns = cmd_hldr.args.get("ns").unwrap();
@@ -265,20 +270,15 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
             debug!("Stream of metrics initiated");
         });
 
-        appmanager
-            .0
-            .lock()
-            .unwrap()
-            .taskmanager
-            .add_metrics_stream(tx);
+        stateHolder.taskmanager.add_metrics_stream(tx);
     } else if cmd_hldr.command == STOP_ALL_METRICS_STREAMS {
-        appmanager.0.lock().unwrap().taskmanager.stopallmstream();
+        stateHolder.taskmanager.stopallmstream();
     } else if cmd_hldr.command == STOP_LIVE_TAIL {
-        appmanager.0.lock().unwrap().taskmanager.stopalllstream();
+        stateHolder.taskmanager.stopalllstream();
     } else if cmd_hldr.command == APP_START {
         debug!("App started");
-        let license = dsmanager.query(store::LICENSE_STRING_KEY.to_string(), None);
-        let eula = dsmanager.query(store::KEY_EULA_ACCEPT.to_string(), None);
+        let license = stateHolder.dsmanager.query(store::LICENSE_STRING_KEY.to_string(), None);
+        let eula = stateHolder.dsmanager.query(store::KEY_EULA_ACCEPT.to_string(), None);
         let hndl = thread::spawn(move || {
             let current = get_current_cluster();
             let clusters: Vec<KCluster> = get_clusters(current);
@@ -295,6 +295,24 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
     } else {
         error!("Failed to find command");
     }
+}
+
+fn get_custom_ns_list(ns_string: Option<String>) -> Vec<KNamespace>{
+    let mut custom_ns = Vec::new();
+    match ns_string {
+        Some(val) => {
+            for ns in val.split("\n") {
+                if (ns.trim().len() > 0) {
+                    custom_ns.push(KNamespace{
+                        name: ns.to_string(),
+                        creation_ts: None
+                    });
+                }
+            }
+        },
+        _ => {}
+    }
+    custom_ns
 }
 
 fn check_license(window: &Window, license: Option<String>) {

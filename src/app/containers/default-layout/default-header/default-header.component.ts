@@ -77,7 +77,6 @@ export class DefaultHeaderComponent extends HeaderComponent implements EventList
     this.beService.executeSyncCommand(this.beService.commands.get_all_cluster_contexts, {}, (res) => {
       const config = JSON.parse(JSON.parse(res).data);
       this.ngZone.run(() => {
-        console.log(config);
         this.clusters = config.clusters;
         this.clusters.forEach((cl) => {
           if (cl.name === config['current-context']) {
@@ -122,7 +121,6 @@ export class DefaultHeaderComponent extends HeaderComponent implements EventList
 
 
   handleAppStartEvent(event: any, payload: any): void {
-    console.log('Received event: ' + event);
     // @ts-ignore
     if (payload && payload['event'] === this.beService.events.no_cluster_found) {
       this.cluster_found = false;

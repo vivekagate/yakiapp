@@ -15,6 +15,7 @@ export class TauriAdapter {
     add_license: 'add_license',
     get_pods_for_deployment: 'get_pods_for_deployment',
     save_preference: 'save_preference',
+    get_preferences: 'get_preferences',
 
 
     execute_command: 'execute_command',

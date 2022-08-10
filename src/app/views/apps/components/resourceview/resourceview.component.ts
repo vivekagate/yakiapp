@@ -137,8 +137,6 @@ export class ResourceviewComponent implements EventListener {
         } catch (e) {
             console.error("Failed to parse payload");
         }
-
-        console.log(ev.payload);
         if (evname === this.beService.response_channel["app_command_result"]) {
             let cmd = _.get(payload, 'command');
             const nameMetricMap = new Map();
@@ -203,7 +201,6 @@ export class ResourceviewComponent implements EventListener {
                             }
                         }
                     }else if (item.kind === 'Deployment') {
-                        console.log(JSON.stringify(item.metadata.labels));
                         if (item.spec.template.spec.containers) {
                             const deployname = item.spec.template.spec.containers[0].name;
                             const usages = specNameMap.get(deployname);

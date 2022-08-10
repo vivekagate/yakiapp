@@ -7,12 +7,13 @@ use std::{env, fs};
 
 pub const LICENSE_PUBLIC_KEY: &str = "LICENSE_PUBLIC_KEY";
 pub const LICENSE_STRING_KEY: &str = "LICENSE_STRING_KEY";
+pub const CUSTOM_NS_LIST: &str = "CUSTOM_NS_LIST";
 pub const KEY_EULA_ACCEPT: &str = "KEY_EULA_ACCEPT";
 
 pub const LICENSE_PUBLIC_KEY_VALUE: &str = "rsa_string";
 
 
-#[derive(Debug)]
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub struct Preference {
     pub(crate) key: String,
     pub(crate) value: String,
@@ -44,7 +45,23 @@ impl DataStoreManager {
         let key_copy = pref.key.clone();
         let exist = self.query(pref.key, None);
         match exist {
-            Some(val) => Some(true),
+            Some(val) => {
+                let status = self.connection.execute(
+                    "UPDATE preferences set value = ?1 where key = ?2",
+                    (&pref.value, &key_copy),
+                );
+                let result = match status {
+                    Ok(rows) => {
+                        if rows == 0 {
+                            false
+                        } else {
+                            true
+                        }
+                    }
+                    _ => false,
+                };
+                Some(result)
+            },
             None => {
                 let status = self.connection.execute(
                     "INSERT INTO preferences (key, value) VALUES (?1, ?2)",
@@ -63,6 +80,46 @@ impl DataStoreManager {
             }
         }
     }
+
+    // pub(crate) fn queryMany(&self, keys: Vec<String>, default: Vec<String>) -> Option<String> {
+    //     let mut stmt = self
+    //         .connection
+    //         .prepare("SELECT key, value FROM preferences WHERE key = ?")
+    //         .ok()
+    //         .unwrap();
+    //
+    //     let pref_iter = stmt
+    //         .query_map([&key], |row| {
+    //             Ok(Preference {
+    //                 key: row.get(0)?,
+    //                 value: row.get(1)?,
+    //             })
+    //         })
+    //         .ok();
+    //
+    //     match pref_iter {
+    //         Some(mut pref_iter) => {
+    //             let mut result = pref_iter.next();
+    //             let res = match result {
+    //                 Some(val) => {
+    //                     match val {
+    //                         Ok(pref) => {
+    //                             Some(pref.value)
+    //                         },
+    //                         Err(e) => {
+    //                             default
+    //                         }
+    //                     }
+    //                 },
+    //                 _ => {
+    //                     default
+    //                 }
+    //             };
+    //             res
+    //         }
+    //         None => default
+    //     }
+    // }
 
     pub(crate) fn query(&self, key: String, default: Option<String>) -> Option<String> {
         let mut stmt = self
