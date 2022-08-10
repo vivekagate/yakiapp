@@ -130,7 +130,6 @@ export class ResourceviewComponent implements EventListener {
     handleEvent(ev: any): void {
         const evname = ev.name;
         const payload = ev.payload;
-
         let results: any;
         try {
             results = JSON.parse(_.get(payload, 'data'));

@@ -36,6 +36,21 @@ impl KubeClientManager {
         }
     }
 
+    pub fn initialize_from(file: String) -> KubeClientManager {
+        KubeClientManager {
+            cluster: "".to_string(),
+            kubeconfigfile: file
+        }
+    }
+
+    pub fn set_cluster(&mut self, cl: &str) {
+        self.cluster = cl.to_string();
+    }
+
+    pub fn set_kubeconfig_file(&mut self, file: &str) {
+        self.kubeconfigfile = file.to_string();
+    }
+
     async fn init_client(&self) -> Client {
         if self.cluster.len() > 0 {
             let kco = KubeConfigOptions {
@@ -44,6 +59,7 @@ impl KubeClientManager {
                 user: Some(self.cluster.parse().unwrap()),
             };
             let mut kc = Kubeconfig::read().unwrap();
+            println!("Loading custom Kubeconfig: {}", self.kubeconfigfile);
             if self.kubeconfigfile.len() > 0 {
                 //TODO Check if file present
                 kc = Kubeconfig::read_from(Path::new(&self.kubeconfigfile)).unwrap();
@@ -51,6 +67,10 @@ impl KubeClientManager {
             let config = Config::from_custom_kubeconfig(kc, &kco).await;
             Client::try_from(config.unwrap()).unwrap()
         } else {
+            if self.kubeconfigfile.len() > 0 {
+                //TODO Check if file present
+                let kc = Kubeconfig::read_from(Path::new(&self.kubeconfigfile)).unwrap();
+            }
             Client::try_default().await.unwrap()
         }
     }
@@ -106,8 +126,8 @@ impl KubeClientManager {
     async fn _get_pods_with_metrics(
         &self,
         window: &Window,
-        cmd: &str,
         namespace: &String,
+        cmd: &str,
     ) -> Result<(), Box<dyn Error>> {
         let client = self.init_client().await;
         let metrics_client = client.clone();
@@ -161,8 +181,8 @@ impl KubeClientManager {
     async fn _get_deployments_with_metrics(
         &self,
         window: &Window,
-        cmd: &str,
         namespace: &String,
+        cmd: &str,
     ) -> Result<(), Box<dyn Error>> {
         let client = self.init_client().await;
         let metrics_client = client.clone();

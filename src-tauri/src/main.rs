@@ -7,7 +7,7 @@ use crate::appmanager::AppManager;
 use crate::cache::CacheManager;
 use crate::kube::models::CommandResult;
 use crate::kube::{EventHolder, KNamespace, kubeclient};
-use crate::store::{DataStoreManager, Preference};
+use crate::store::{DataStoreManager, PKEY_KUBECONFIG_FILE_LOCATION, Preference};
 use crate::task::TaskManager;
 use ::kube::api::Object;
 use regex::Regex;
@@ -122,6 +122,7 @@ fn execute_sync_command(
         let cl = cmd_hldr.args.get("cluster").unwrap();
         debug!("New cluster: {}", cl);
         stateHolder.cachemanager.set(cache::KEY_CONTEXT, cl);
+        stateHolder.kubemanager.set_cluster(cl);
     } else if cmd_hldr.command == GET_CURRENT_CLUSTER_CONTEXT {
         let cluster = get_current_cluster();
         res.data = serde_json::to_string(&cluster).unwrap();
@@ -139,6 +140,9 @@ fn execute_sync_command(
         let value = cmd_hldr.args.get("value").unwrap();
         let pref = Preference{key: key.to_string(), value: value.to_string()};
         stateHolder.dsmanager.upsert(pref);
+        if key == PKEY_KUBECONFIG_FILE_LOCATION {
+            stateHolder.kubemanager.set_kubeconfig_file(value);
+        }
     } else if cmd_hldr.command == GET_PREFERENCES {
         let keys = cmd_hldr.args.keys();
         let mut prefs: Vec<Preference> = Vec::new();
