@@ -237,6 +237,7 @@ export class ResourceviewComponent implements EventListener {
             //     ns: this.selectedNs.name,
             //     deployment: app
             // }, true);
+        }else{
         }
     }
 

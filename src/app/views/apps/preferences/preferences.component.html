@@ -33,7 +33,15 @@
               Kubeconfig File
             </td>
             <td>
-              <input [(ngModel)]="kubeconfigFile" placeholder="~/.kube/config">
+              <input [(ngModel)]="kubeconfigFile" placeholder="/home/acme/.kube/config">
+            </td>
+          </tr>
+          <tr>
+            <td>
+              Proxy URL
+            </td>
+            <td>
+              <input [(ngModel)]="proxy_url" placeholder="http://bastion:8080">
             </td>
           </tr>
 

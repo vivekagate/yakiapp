@@ -9,6 +9,7 @@ pub const LICENSE_PUBLIC_KEY: &str = "LICENSE_PUBLIC_KEY";
 pub const LICENSE_STRING_KEY: &str = "LICENSE_STRING_KEY";
 pub const CUSTOM_NS_LIST: &str = "CUSTOM_NS_LIST";
 pub const PKEY_KUBECONFIG_FILE_LOCATION: &str = "PKEY_KUBECONFIG_FILE_LOCATION";
+pub const PKEY_PROXY_URL: &str = "PKEY_PROXY_URL";
 pub const KEY_EULA_ACCEPT: &str = "KEY_EULA_ACCEPT";
 
 pub const LICENSE_PUBLIC_KEY_VALUE: &str = "rsa_string";

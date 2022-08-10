@@ -1,3 +1,4 @@
+use std::env;
 use std::path::Path;
 use kube::config::{Kubeconfig, KubeConfigOptions};
 use k8s_openapi::api::core::v1::{
@@ -19,27 +20,31 @@ use crate::kube::models::{NodeMetrics, ResourceWithMetricsHolder};
 pub struct KubeClientManager {
     cluster: String,
     kubeconfigfile: String,
+    proxy_url: Option<String>,
 }
 
 impl KubeClientManager {
     pub fn clone(&self) -> Self {
         KubeClientManager {
             cluster: self.cluster.clone(),
-            kubeconfigfile: self.kubeconfigfile.clone()
+            kubeconfigfile: self.kubeconfigfile.clone(),
+            proxy_url: None
         }
     }
 
     pub fn initialize() -> KubeClientManager {
         KubeClientManager {
             cluster: "".to_string(),
-            kubeconfigfile: "".to_string()
+            kubeconfigfile: "".to_string(),
+            proxy_url: Some("".to_string())
         }
     }
 
-    pub fn initialize_from(file: String) -> KubeClientManager {
+    pub fn initialize_from(file: String, proxy_url: Option<String>) -> KubeClientManager {
         KubeClientManager {
             cluster: "".to_string(),
-            kubeconfigfile: file
+            kubeconfigfile: file,
+            proxy_url
         }
     }
 
@@ -59,11 +64,24 @@ impl KubeClientManager {
                 user: Some(self.cluster.parse().unwrap()),
             };
             let mut kc = Kubeconfig::read().unwrap();
-            println!("Loading custom Kubeconfig: {}", self.kubeconfigfile);
+            debug!("Loading custom Kubeconfig: {}", self.kubeconfigfile);
             if self.kubeconfigfile.len() > 0 {
                 //TODO Check if file present
                 kc = Kubeconfig::read_from(Path::new(&self.kubeconfigfile)).unwrap();
             }
+
+            if let Some(url) = &self.proxy_url {
+                if url.len() > 0 {
+                    if url.starts_with("http:") {
+                        std::env::set_var("HTTP_PROXY", url);
+                    }else if url.starts_with("https:") {
+                        std::env::set_var("HTTPS_PROXY", url);
+                    }else{
+                        std::env::set_var("HTTP_PROXY", url);
+                    }
+                }
+            }
+
             let config = Config::from_custom_kubeconfig(kc, &kco).await;
             Client::try_from(config.unwrap()).unwrap()
         } else {
