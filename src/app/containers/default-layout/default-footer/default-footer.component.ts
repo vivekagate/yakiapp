@@ -40,7 +40,6 @@ export class DefaultFooterComponent extends FooterComponent implements EventList
     const payload = ev.payload;
 
     if (evname === this.beService.events.app_events_channel) {
-      console.log(payload.event);
       if (payload.event === this.beService.events.valid_license_found) {
         this.isValidLicense = true;
       }else if (payload.event === this.beService.events.no_license_found) {
@@ -63,7 +62,6 @@ export class DefaultFooterComponent extends FooterComponent implements EventList
 
   showLicenseAddModal() {
     this.modalService.open(this.licenseModal, {ariaLabelledBy: 'modal-basic-title'}).result.then((result) => {
-      console.log(this.licenseString);
       this.beService.executeSyncCommand(this.beService.commands.add_license, {
         license: this.licenseString
       }, () => {

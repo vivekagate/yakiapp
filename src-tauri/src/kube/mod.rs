@@ -70,7 +70,7 @@ impl EventHolder {
 #[derive(Serialize, Default)]
 pub struct KNamespace {
     pub name: String,
-    pub creation_ts: i64,
+    pub creation_ts: Option<i64>,
 }
 
 impl KNamespace {
@@ -133,8 +133,8 @@ pub fn get_kubectl_raw() {
     kubectl::get_metrics();
 }
 
-pub fn get_all_ns(window: &Window, cluster: &str, cmd: &str) {
-    _get_all_ns(window, cmd, cluster);
+pub fn get_all_ns(window: &Window, cluster: &str, cmd: &str, custom_ns_list: Vec<KNamespace>) {
+    _get_all_ns(window, cmd, cluster, custom_ns_list);
 }
 
 #[tokio::main]
@@ -142,6 +142,7 @@ async fn _get_all_ns(
     window: &Window,
     cmd: &str,
     cluster: &str,
+    custom_ns_list: Vec<KNamespace>
 ) -> Result<Vec<KNamespace>, Box<dyn std::error::Error>> {
     let client = init_client(cluster);
     let mut kns_list: Vec<KNamespace> = Vec::new();
@@ -151,8 +152,11 @@ async fn _get_all_ns(
         debug!("{:?}", ns);
         kns_list.push(KNamespace {
             name: ns.name_any(),
-            creation_ts: 0,
+            creation_ts: None,
         })
+    }
+    for cns in custom_ns_list {
+        kns_list.push(cns);
     }
     let json = serde_json::to_string(&kns_list).unwrap();
     dispatch_to_frontend(window, cmd, json);
@@ -218,7 +222,7 @@ pub fn get_resource(window: &Window, cluster: &str, namespace: &String, kind: &S
     if kind == "deployment" {
         _get_all_deployments(&window, cmd, cluster, namespace);
     } else if kind == "namespace" {
-        _get_all_ns(&window, cmd, cluster);
+        _get_all_ns(&window, cmd, cluster, Vec::new());
     } else if kind == "pod" {
         get_all_pods(&window, cmd, cluster, namespace);
     } else if kind == "podmetrics" {

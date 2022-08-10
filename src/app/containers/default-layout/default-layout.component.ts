@@ -101,8 +101,6 @@ export class DefaultLayoutComponent {
   faPlus = faPlus;
 
   constructor(private eventBus: NgEventBus, private beService: TauriAdapter) {
-    console.log('Menu is this' + this.menu);
-    console.log(this.menu);
   }
 
   onSidebarModeChanged() {
