@@ -10,10 +10,13 @@ import {TauriAdapter} from "../../../providers/data/tauri-adapter.service";
 export class PreferencesComponent {
   be_ns = '';
   be_lic = '';
+  be_kfile = '';
   namespaceString = '';
   licenseString = '';
+  kubeconfigFile = '';
   CUSTOM_NS_LIST = 'CUSTOM_NS_LIST';
   LICENSE_STRING_KEY = 'LICENSE_STRING_KEY';
+  PKEY_KUBECONFIG_FILE_LOCATION = 'PKEY_KUBECONFIG_FILE_LOCATION'
 
   constructor(private ngZone: NgZone, private beService: TauriAdapter){
 
@@ -66,6 +69,10 @@ export class PreferencesComponent {
 
     if (this.be_lic !== this.licenseString) {
       this.savePreference(this.LICENSE_STRING_KEY, this.licenseString);
+    }
+
+    if (this.be_kfile !== this.kubeconfigFile) {
+      this.savePreference(this.PKEY_KUBECONFIG_FILE_LOCATION, this.kubeconfigFile);
     }
 
   }

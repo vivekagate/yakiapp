@@ -6,8 +6,8 @@
 use crate::appmanager::AppManager;
 use crate::cache::CacheManager;
 use crate::kube::models::CommandResult;
-use crate::kube::{EventHolder, KNamespace};
-use crate::store::{DataStoreManager, Preference};
+use crate::kube::{EventHolder, KNamespace, kubeclient};
+use crate::store::{DataStoreManager, PKEY_KUBECONFIG_FILE_LOCATION, Preference};
 use crate::task::TaskManager;
 use ::kube::api::Object;
 use regex::Regex;
@@ -122,6 +122,7 @@ fn execute_sync_command(
         let cl = cmd_hldr.args.get("cluster").unwrap();
         debug!("New cluster: {}", cl);
         stateHolder.cachemanager.set(cache::KEY_CONTEXT, cl);
+        stateHolder.kubemanager.set_cluster(cl);
     } else if cmd_hldr.command == GET_CURRENT_CLUSTER_CONTEXT {
         let cluster = get_current_cluster();
         res.data = serde_json::to_string(&cluster).unwrap();
@@ -139,6 +140,9 @@ fn execute_sync_command(
         let value = cmd_hldr.args.get("value").unwrap();
         let pref = Preference{key: key.to_string(), value: value.to_string()};
         stateHolder.dsmanager.upsert(pref);
+        if key == PKEY_KUBECONFIG_FILE_LOCATION {
+            stateHolder.kubemanager.set_kubeconfig_file(value);
+        }
     } else if cmd_hldr.command == GET_PREFERENCES {
         let keys = cmd_hldr.args.keys();
         let mut prefs: Vec<Preference> = Vec::new();
@@ -176,20 +180,20 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
     const STOP_ALL_METRICS_STREAMS: &str = "stop_all_metrics_streams";
     const APP_START: &str = "app_start";
 
-    let mut stateHolder = &mut appmanager.0.lock().unwrap();
+    let stateHolder = &mut appmanager.0.lock().unwrap();
 
-    let current_cluster: String = stateHolder
-        .cachemanager
-        .get(cache::KEY_CONTEXT, "")
-        .clone();
+
+    let current_cluster: String = stateHolder.cachemanager.get(cache::KEY_CONTEXT, "").clone();
 
     debug!("Current cluster: {}", current_cluster);
     let cmd_hldr: CommandHolder = serde_json::from_str(commandstr).unwrap();
     if cmd_hldr.command == GET_ALL_NS {
         let pref = stateHolder.dsmanager.query(store::CUSTOM_NS_LIST.to_string(), None);
+        let kubemanager = &stateHolder.kubemanager;
+        let km = kubemanager.clone();
         let _ = thread::spawn(move || {
             let custom_ns_list = get_custom_ns_list(pref);
-            kube::get_all_ns(&window, &current_cluster, GET_ALL_NS, custom_ns_list);
+            km.get_all_ns(&window, GET_ALL_NS, custom_ns_list);
         });
     } else if cmd_hldr.command == GET_DEPLOYMENTS {
         let _ = thread::spawn(move || {
@@ -204,12 +208,13 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
             let _ = kube::get_resource(&window, &current_cluster, namespace, kind, GET_RESOURCE);
         });
     } else if cmd_hldr.command == GET_RESOURCE_WITH_METRICS {
+        let kubemanager = &stateHolder.kubemanager;
+        let km = kubemanager.clone();
         let _ = thread::spawn(move || {
             let namespace = cmd_hldr.args.get("ns").unwrap().clone();
             let kind = cmd_hldr.args.get("kind").unwrap().clone();
-            let _ = kube::get_resource_with_metrics(
+            let _ = km.get_resource_with_metrics(
                 &window,
-                current_cluster,
                 namespace,
                 kind,
                 GET_RESOURCE_WITH_METRICS.parse().unwrap(),
@@ -302,7 +307,7 @@ fn get_custom_ns_list(ns_string: Option<String>) -> Vec<KNamespace>{
     match ns_string {
         Some(val) => {
             for ns in val.split("\n") {
-                if (ns.trim().len() > 0) {
+                if ns.trim().len() > 0 {
                     custom_ns.push(KNamespace{
                         name: ns.to_string(),
                         creation_ts: None

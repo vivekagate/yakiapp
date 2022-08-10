@@ -1,10 +1,12 @@
-mod common;
+pub(crate) mod common;
+pub(crate) mod kubeclient;
+
 mod kubectl;
 mod metrics;
 pub(crate) mod models;
 
 use crate::kube::common::{dispatch_to_frontend, init_client};
-use crate::kube::metrics::{get_all_pods, get_nodes_with_metrics, get_pod_metrics, get_pods_with_metrics, get_deployments_with_metrics};
+use crate::kube::metrics::{get_all_pods, get_pod_metrics};
 use crate::kube::models::CommandResult;
 use futures::{StreamExt, TryStreamExt};
 use k8s_openapi::api::apps::v1::{DaemonSet, Deployment, ReplicaSet, StatefulSet};
@@ -129,24 +131,24 @@ async fn _restart_deployment(
     Ok(result)
 }
 
+
 pub fn get_kubectl_raw() {
     kubectl::get_metrics();
 }
 
-pub fn get_all_ns(window: &Window, cluster: &str, cmd: &str, custom_ns_list: Vec<KNamespace>) {
-    _get_all_ns(window, cmd, cluster, custom_ns_list);
+pub fn get_all_ns(window: &Window, client: Client, cmd: &str, custom_ns_list: Vec<KNamespace>) {
+    _get_all_ns(window, cmd, client, custom_ns_list);
 }
 
 #[tokio::main]
 async fn _get_all_ns(
     window: &Window,
     cmd: &str,
-    cluster: &str,
+    client: Client,
     custom_ns_list: Vec<KNamespace>
 ) -> Result<Vec<KNamespace>, Box<dyn std::error::Error>> {
-    let client = init_client(cluster);
     let mut kns_list: Vec<KNamespace> = Vec::new();
-    let ns_request: Api<Namespace> = Api::all(client.await.unwrap());
+    let ns_request: Api<Namespace> = Api::all(client);
     let ns_list = ns_request.list(&ListParams::default()).await?;
     for ns in ns_list {
         debug!("{:?}", ns);
@@ -189,40 +191,11 @@ pub fn get_all_deployments(
     res
 }
 
-pub fn get_resource_with_metrics(
-    window: &Window,
-    cluster: String,
-    namespace: String,
-    kind: String,
-    cmd: String,
-) {
-    let window_copy1 = window.clone();
-    let window_copy = window.clone();
-    let cmd_copy = cmd.clone();
-    let kind_copy = kind.clone();
-    let ns_copy = namespace.clone();
-    let cluster_copy = cluster.clone();
-    if kind == "pod" {
-        get_pods_with_metrics(&window_copy1, cluster.as_ref(), &namespace, &cmd);
-    } else if kind == "node" {
-        get_nodes_with_metrics(&window_copy1, cluster.as_ref(), &cmd);
-    } else if kind == "deployment" {
-        get_deployments_with_metrics(&window_copy1, cluster.as_ref(), &namespace, &cmd);
-    }
-    // let _ = get_resource(&window_copy1, cluster.as_ref(), &namespace, &kind, &cmd);
-    // let hndl = thread::spawn(move || {
-    // });
-    // hndl.join();
-    // let _ = get_metrics(&window_copy, &cluster_copy, &ns_copy, &kind_copy, &cmd_copy);
-    // let mhndl = thread::spawn(move || {
-    // });
-}
-
 pub fn get_resource(window: &Window, cluster: &str, namespace: &String, kind: &String, cmd: &str) {
     if kind == "deployment" {
         _get_all_deployments(&window, cmd, cluster, namespace);
     } else if kind == "namespace" {
-        _get_all_ns(&window, cmd, cluster, Vec::new());
+        // _get_all_ns(&window, cmd, cluster, Vec::new());
     } else if kind == "pod" {
         get_all_pods(&window, cmd, cluster, namespace);
     } else if kind == "podmetrics" {
