@@ -1,28 +1,5 @@
 use std::sync::mpsc::Sender;
 
-// use std::thread;
-// use std::thread::JoinHandle;
-//
-// pub struct Task {
-//   hndl: JoinHandle<fn()>,
-//   status: bool
-// }
-//
-// pub type Work = fn();
-//
-// impl Task {
-//   pub(crate) fn new(work: dyn FnOnce()) -> Task {
-//     let hndl = thread::spawn( move || work);
-//     Task{
-//       hndl,
-//       status: false,
-//     }
-//   }
-//
-//   pub fn complete(&mut self) {
-//     self.status = true;
-//   }
-// }
 pub struct TaskManager {
     m_streamtasklist: Vec<Sender<String>>,
     l_streamtasklist: Vec<Sender<String>>,

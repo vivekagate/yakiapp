@@ -66,26 +66,25 @@ pub fn get_pod_metrics(window: &Window, cmd: &str, cluster: &str, namespace: &St
     _get_metrics(window, cmd, cluster, namespace);
 }
 
-pub fn get_pods_with_metrics(window: &Window, cluster: &str, namespace: &String, cmd: &str) {
-    _get_pods_with_metrics(window, cmd, cluster, namespace);
+pub fn get_pods_with_metrics(window: &Window, client: Client, namespace: &String, cmd: &str) {
+    _get_pods_with_metrics(window, cmd, client, namespace);
 }
 
-pub fn get_nodes_with_metrics(window: &Window, cluster: &str, cmd: &str) {
-    _get_nodes_with_metrics(window, cmd, cluster);
+pub fn get_nodes_with_metrics(window: &Window, client: Client, cmd: &str) {
+    _get_nodes_with_metrics(window, cmd, client);
 }
 
-pub fn get_deployments_with_metrics(window: &Window, cluster: &str, namespace: &String, cmd: &str) {
-    _get_deployments_with_metrics(window, cmd, cluster, namespace);
+pub fn get_deployments_with_metrics(window: &Window, client: Client, namespace: &String, cmd: &str) {
+    _get_deployments_with_metrics(window, cmd, client, namespace);
 }
 
 #[tokio::main]
 async fn _get_pods_with_metrics(
     window: &Window,
     cmd: &str,
-    cluster: &str,
+    client: Client,
     namespace: &String,
 ) -> Result<(), Box<dyn Error>> {
-    let client = init_client(cluster).await.unwrap();
     let metrics_client = client.clone();
     let kube_request: Api<Pod> = Api::namespaced(client, namespace);
 
@@ -109,9 +108,8 @@ async fn _get_pods_with_metrics(
 async fn _get_nodes_with_metrics(
     window: &Window,
     cmd: &str,
-    cluster: &str,
+    client: Client,
 ) -> Result<(), Box<dyn Error>> {
-    let client = init_client(cluster).await.unwrap();
     let metrics_client = client.clone();
     let kube_request: Api<Node> = Api::all(client);
 
@@ -136,10 +134,9 @@ async fn _get_nodes_with_metrics(
 async fn _get_deployments_with_metrics(
     window: &Window,
     cmd: &str,
-    cluster: &str,
+    client: Client,
     namespace: &String,
 ) -> Result<(), Box<dyn Error>> {
-    let client = init_client(cluster).await.unwrap();
     let metrics_client = client.clone();
     let pod_metrics_client = client.clone();
     let pod_client = client.clone();
