@@ -6,6 +6,7 @@
         <button class="button-sm button-app" (click)="clear()">Clear</button>
         <button class="button-sm button-app" (click)="liveTail()">Start Live Tail</button>
         <button class="button-sm button-app" (click)="pause()">Pause</button>
+        <input [(ngModel)]="searchTerm" placeholder="Filter Logs">
       </c-card-header>
       <c-card-body style="height: 80vh">
         <gridster [options]="options" #grid>
