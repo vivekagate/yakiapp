@@ -32,6 +32,7 @@ export class LogsComponent implements EventListener{
   // @ts-ignore
   options: GridsterConfig;
 
+  pods: any[] = [];
   mode = 'single';
   color_pallete: string[] = ['#150050', '#A12568', '#FEC260', '#D8E9A8', '#1597BB'];
 
@@ -69,7 +70,7 @@ export class LogsComponent implements EventListener{
 
   ngOnInit() {
     this.data.registerListener(this.data.response_channel.dashboard_logs, this);
-
+    console.log('Get logs');
     this.options = {
       itemChangeCallback: LogsComponent.itemChange,
       itemResizeCallback: LogsComponent.itemResize,
@@ -104,25 +105,36 @@ export class LogsComponent implements EventListener{
       }, (res) => {
         if (res) {
           try{
-            let pods: any[] = JSON.parse(JSON.parse(res).data)
+            this.pods = JSON.parse(JSON.parse(res).data);
             if (this.mode !== 'single') {
-              pods.forEach((pod) => {
+              this.pods.forEach((pod) => {
                 const podname = _.get(pod, 'metadata.name', 'Pod');
                 this.addTerminal(podname);
-                this.taillogs(podname);
               })
             }else{
               this.addTerminal(this.appname);
-              pods.forEach((pod) => {
-                const podname = _.get(pod, 'metadata.name', 'Pod');
-                this.taillogs(podname);
-              })
             }
+
+            this.streamLogs(false);
           }catch(e){
             console.log('Failed to parse response from backend');
           }
         }
       });
+    }
+  }
+
+  streamLogs(islive: boolean): void {
+    if (this.mode !== 'single') {
+      this.pods.forEach((pod) => {
+        const podname = _.get(pod, 'metadata.name', 'Pod');
+        this.taillogs(podname, islive);
+      })
+    }else{
+      this.pods.forEach((pod) => {
+        const podname = _.get(pod, 'metadata.name', 'Pod');
+        this.taillogs(podname, islive);
+      })
     }
   }
 
@@ -217,5 +229,6 @@ export class LogsComponent implements EventListener{
 
   liveTail() {
     this.clear();
+    this.streamLogs(true);
   }
 }

@@ -231,7 +231,6 @@ export class DeploymentDefinition {
     };
 
     podStartTime =  (params: any) => {
-        console.log(params.data);
         const startTime = params.data.status.startTime;
         let value = Utilities.timeAgo(new Date(startTime));
         let eGui = document.createElement('span');

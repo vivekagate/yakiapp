@@ -1,5 +1,7 @@
 use std::env;
 use std::path::Path;
+use std::sync::mpsc::Receiver;
+use futures::{StreamExt, TryStreamExt};
 use kube::config::{Kubeconfig, KubeConfigOptions};
 use k8s_openapi::api::core::v1::{
     ConfigMap, Namespace, Node, PersistentVolume, Pod, Secret, Service,
@@ -7,15 +9,15 @@ use k8s_openapi::api::core::v1::{
 use k8s_openapi::api::apps::v1::{DaemonSet, Deployment, ReplicaSet, StatefulSet};
 use kube::{
     api::{Api, ListParams, ResourceExt},
-    Client, Config,
+    Client, Config, Error
 };
-use std::error::Error;
-use kube::api::ObjectList;
+use kube::api::{LogParams, ObjectList};
 use tauri::Window;
 use crate::KNamespace;
 use crate::kube::common::dispatch_to_frontend;
 use crate::kube::metrics::{PodMetrics};
 use crate::kube::models::{NodeMetrics, ResourceWithMetricsHolder};
+use crate::kube::Payload;
 
 pub struct KubeClientManager {
     cluster: String,
@@ -146,7 +148,7 @@ impl KubeClientManager {
         window: &Window,
         namespace: &String,
         cmd: &str,
-    ) -> Result<(), Box<dyn Error>> {
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let client = self.init_client().await;
         let metrics_client = client.clone();
         let kube_request: Api<Pod> = Api::namespaced(client, namespace);
@@ -172,7 +174,7 @@ impl KubeClientManager {
         &self,
         window: &Window,
         cmd: &str,
-    ) -> Result<(), Box<dyn Error>> {
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let client = self.init_client().await;
 
         let metrics_client = client.clone();
@@ -201,7 +203,7 @@ impl KubeClientManager {
         window: &Window,
         namespace: &String,
         cmd: &str,
-    ) -> Result<(), Box<dyn Error>> {
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let client = self.init_client().await;
         let metrics_client = client.clone();
         let pod_metrics_client = client.clone();
@@ -233,4 +235,102 @@ impl KubeClientManager {
         dispatch_to_frontend(window, cmd, serde_json::to_string(&json).unwrap());
         Ok(())
     }
+
+    #[tokio::main]
+    pub async fn get_pods_for_deployment(
+        &self,
+        ns: &String,
+        deployment: &str,
+    ) -> Result<Vec<Pod>, Error> {
+        self._get_pods_for_deployment(ns, deployment).await
+    }
+
+    async fn _get_pods_for_deployment(&self,
+        ns: &String,
+        deployment: &str,
+    ) -> Result<Vec<Pod>, Error> {
+        let client = self.init_client().await;
+        let deploy_request: Api<Deployment> = Api::namespaced(client, ns);
+        let d = deploy_request.get(deployment).await?;
+        let mut pods_for_deployments: Vec<Pod> = Vec::new();
+        if let Some(spec) = d.spec {
+            if let Some(match_labels) = spec.selector.match_labels {
+                let pclient = self.init_client().await;
+                let pod_request: Api<Pod> = Api::namespaced(pclient, ns);
+                debug!("Spec:: {:?}", match_labels);
+                for lbl in match_labels {
+                    match lbl {
+                        (key, value) => {
+                            debug!("Label selector:: {:?}", value);
+                            let label = format!("{}={}", key.as_str(), value.as_str());
+                            let lp = ListParams::default().labels(label.as_str());
+                            let pods = pod_request.list(&lp).await?;
+                            debug!("Total pods found {:?}", pods.items.len());
+                            for pod in pods {
+                                pods_for_deployments.push(pod);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return Ok(pods_for_deployments);
+    }
+
+    pub fn tail_logs_for_pod(
+        &self,
+        window: Window,
+        pod: &str,
+        ns: &str,
+        rx: &Receiver<String>,
+    ) {
+        self._tail_logs_for_pod(window,  pod, ns, rx);
+    }
+
+    #[tokio::main]
+    async fn _tail_logs_for_pod(
+        &self,
+        window: Window,
+        pod: &str,
+        ns: &str,
+        rx: &Receiver<String>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        info!("Fetching logs for {:?}", pod);
+        let client = self.init_client().await;
+        let pods: Api<Pod> = Api::namespaced(client, ns);
+        let mut logs = pods
+            .log_stream(
+                &pod,
+                &LogParams {
+                    follow: true,
+                    tail_lines: Some(1),
+                    ..LogParams::default()
+                },
+            )
+            .await?
+            .boxed();
+
+        debug!("Spawning task");
+        while let Some(line) = logs.try_next().await? {
+            let line_str = String::from_utf8_lossy(&line);
+            debug!("{:?}", line_str);
+            let stopword = rx.try_recv().unwrap_or("ERR".to_string());
+            if stopword != "ERR" {
+                debug!("Work is done: {:?}", stopword);
+                break;
+            }
+            window
+                .emit(
+                    "dashboard::logs",
+                    Payload {
+                        message: line_str.to_string(),
+                        metadata: String::from(pod),
+                    },
+                )
+                .unwrap();
+        }
+        debug!("Finished spawned task");
+        Ok(())
+    }
+
 }
