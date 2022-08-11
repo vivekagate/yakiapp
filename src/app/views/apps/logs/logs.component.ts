@@ -34,6 +34,7 @@ export class LogsComponent implements EventListener{
 
   pods: any[] = [];
   mode = 'single';
+  isLogStreamPaused = false;
   color_pallete: string[] = ['#150050', '#A12568', '#FEC260', '#D8E9A8', '#1597BB'];
 
   constructor(private ngZone: NgZone, private data: TauriAdapter) {
@@ -187,6 +188,9 @@ export class LogsComponent implements EventListener{
   }
 
   handleEvent(ev: any): void {
+    if (this.isLogStreamPaused) {
+      return;
+    }
     const event = ev.event;
     const payload = ev.payload;
     if (payload) {
@@ -229,6 +233,11 @@ export class LogsComponent implements EventListener{
 
   liveTail() {
     this.clear();
+    this.isLogStreamPaused = false;
     this.streamLogs(true);
+  }
+
+  pause() {
+    this.isLogStreamPaused = true;
   }
 }

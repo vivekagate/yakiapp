@@ -86,16 +86,12 @@ fn execute_sync_command(
 
     let stateHolder = &mut appmanager.0.lock().unwrap();
 
-    // let cachemanager: &CacheManager = &mut singletonHolder.cachemanager;
-    // let mut dsmanager: &DataStoreManager = &singletonHolder.dsmanager;
-
     let current_cluster = stateHolder.cachemanager.get(cache::KEY_CONTEXT, "");
     debug!("Current cluster: {}", current_cluster);
 
     let cmd_hldr: CommandHolder = serde_json::from_str(commandstr).unwrap();
     let mut res = CommandResult::new();
     if cmd_hldr.command == GET_PODS_FOR_DEPLOYMENT {
-        println!("Get pods for deployment");
         let ns = cmd_hldr.args.get("ns").unwrap();
         let deployment = cmd_hldr.args.get("deployment").unwrap();
         let pods = &stateHolder.kubemanager.get_pods_for_deployment(ns, deployment);
@@ -103,7 +99,6 @@ fn execute_sync_command(
         match pods {
             Ok(data) => {
                 let pods = serde_json::to_string(&data).unwrap();
-                println!("{:?}", pods);
                 res.data = pods;
             }
             Err(err) => {
