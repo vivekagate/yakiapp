@@ -36,6 +36,7 @@ export class LogsComponent implements EventListener{
   mode = 'single';
   isLogStreamPaused = false;
   color_pallete: string[] = ['#150050', '#A12568', '#FEC260', '#D8E9A8', '#1597BB'];
+  searchTerm = '';
 
   constructor(private ngZone: NgZone, private data: TauriAdapter) {
     this.deployments = [];
@@ -214,6 +215,9 @@ export class LogsComponent implements EventListener{
         if (terminal) {
           const lines = log.split('\n');
           lines.forEach((line: string) => {
+            if (this.searchTerm && line.indexOf(this.searchTerm) < 0) {
+              return;
+            }
             terminal.appendContent({
               source: original_pod_name,
               log: line,

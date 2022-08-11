@@ -20,14 +20,14 @@
     <c-header-nav class="d-none d-lg-flex">
       <c-nav-item [hidden]="!cluster_found">
         <a cNavLink>
-          <label class="">Namespace: </label>&nbsp;
-          <select class="form-control-sm form-select-sm" name="namespaces" [(ngModel)]="selectedNs" (ngModelChange)="onNamespaceChanged()">
-            <option *ngFor="let ns of namespaces" [ngValue]="ns">{{ns['name']}}</option>
-          </select>&nbsp;&nbsp;&nbsp;&nbsp;
           <label>Cluster: </label>&nbsp;
           <select class="form-control-sm form-select-sm" name="selectedCluster" [(ngModel)]="selectedCluster" (ngModelChange)="onClusterChanged()">
             <option *ngFor="let cl of clusters" [ngValue]="cl">{{cl.name}}</option>
           </select>
+          <label class="">Namespace: </label>&nbsp;
+          <select class="form-control-sm form-select-sm" name="namespaces" [(ngModel)]="selectedNs" (ngModelChange)="onNamespaceChanged()">
+            <option *ngFor="let ns of namespaces" [ngValue]="ns">{{ns['name']}}</option>
+          </select>&nbsp;&nbsp;&nbsp;&nbsp;
         </a>
       </c-nav-item>
       <c-nav-item [hidden]="cluster_found">
