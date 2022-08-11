@@ -226,17 +226,7 @@ export class ResourceviewComponent implements EventListener {
         this.selectedapp = app.data;
         this.isSideBarHidden = !this.isSideBarHidden;
         if (!this.isSideBarHidden) {
-            // this.isEnvsLoading = true;
-            // this.beService.executeCommand(this.beService.commands.get_pods_for_deployment_async, {
-            //     ns: this.selectedNs.name,
-            //     deployment: app
-            // }, true);
-            //
-            // this.isMetricsLoading = true;
-            // this.beService.executeCommand(this.beService.commands.get_metrics_for_deployment, {
-            //     ns: this.selectedNs.name,
-            //     deployment: app
-            // }, true);
+        }else{
         }
     }
 

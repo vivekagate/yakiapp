@@ -84,10 +84,7 @@ fn execute_sync_command(
     const SAVE_PREFERENCE: &str = "save_preference";
     const GET_PREFERENCES: &str = "get_preferences";
 
-    let mut stateHolder = &mut appmanager.0.lock().unwrap();
-
-    // let cachemanager: &CacheManager = &mut singletonHolder.cachemanager;
-    // let mut dsmanager: &DataStoreManager = &singletonHolder.dsmanager;
+    let stateHolder = &mut appmanager.0.lock().unwrap();
 
     let current_cluster = stateHolder.cachemanager.get(cache::KEY_CONTEXT, "");
     debug!("Current cluster: {}", current_cluster);
@@ -97,11 +94,12 @@ fn execute_sync_command(
     if cmd_hldr.command == GET_PODS_FOR_DEPLOYMENT {
         let ns = cmd_hldr.args.get("ns").unwrap();
         let deployment = cmd_hldr.args.get("deployment").unwrap();
-        let pods = kube::get_pods_for_deployment(ns, &current_cluster, deployment);
+        let pods = &stateHolder.kubemanager.get_pods_for_deployment(ns, deployment);
         res.command = GET_PODS_FOR_DEPLOYMENT.parse().unwrap();
         match pods {
             Ok(data) => {
-                res.data = serde_json::to_string(&data).unwrap();
+                let pods = serde_json::to_string(&data).unwrap();
+                res.data = pods;
             }
             Err(err) => {
                 println!("{}", err.to_string());
@@ -182,7 +180,6 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
 
     let stateHolder = &mut appmanager.0.lock().unwrap();
 
-
     let current_cluster: String = stateHolder.cachemanager.get(cache::KEY_CONTEXT, "").clone();
 
     debug!("Current cluster: {}", current_cluster);
@@ -224,25 +221,25 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
         let _ = thread::spawn(move || {
             let namespace = cmd_hldr.args.get("ns").unwrap();
             let deployment = cmd_hldr.args.get("deployment").unwrap();
-            let deploys = kube::get_pods_for_deployment_async(
-                &window,
-                &current_cluster,
-                namespace,
-                deployment,
-                GET_PODS_FOR_DEPLOYMENT,
-            );
+            // let deploys = kube::get_pods_for_deployment_async(
+            //     &window,
+            //     &current_cluster,
+            //     namespace,
+            //     deployment,
+            //     GET_PODS_FOR_DEPLOYMENT,
+            // );
         });
     } else if cmd_hldr.command == GET_METRICS_FOR_DEPLOYMENT {
         let _ = thread::spawn(move || {
             let namespace = cmd_hldr.args.get("ns").unwrap();
             let deployment = cmd_hldr.args.get("deployment").unwrap();
-            kube::get_metrics_for_deployment(
-                &window,
-                &current_cluster,
-                namespace,
-                deployment,
-                GET_METRICS_FOR_DEPLOYMENT,
-            );
+            // kube::get_metrics_for_deployment(
+            //     &window,
+            //     &current_cluster,
+            //     namespace,
+            //     deployment,
+            //     GET_METRICS_FOR_DEPLOYMENT,
+            // );
         });
     } else if cmd_hldr.command == RESTART_DEPLOYMENTS {
         let _ = thread::spawn(move || {
@@ -250,11 +247,12 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
         });
     } else if cmd_hldr.command == TAIL_LOGS_FOR_POD {
         let (tx, rx): (Sender<String>, mpsc::Receiver<String>) = mpsc::channel();
-
+        let kubemanager = &stateHolder.kubemanager;
+        let km = kubemanager.clone();
         let _ = thread::spawn(move || {
             let ns = cmd_hldr.args.get("ns").unwrap();
             let podname = cmd_hldr.args.get("pod").unwrap();
-            kube::tail_logs_for_pod(window, &current_cluster, &podname, &ns, &rx);
+            km.tail_logs_for_pod(window, &podname, &ns, &rx);
             debug!("Tail of logs initiated");
         });
         stateHolder.taskmanager.add_logs_stream(tx);

@@ -11,12 +11,17 @@ export class PreferencesComponent {
   be_ns = '';
   be_lic = '';
   be_kfile = '';
+  be_proxy = '';
+
   namespaceString = '';
   licenseString = '';
   kubeconfigFile = '';
+  proxy_url = '';
+
   CUSTOM_NS_LIST = 'CUSTOM_NS_LIST';
   LICENSE_STRING_KEY = 'LICENSE_STRING_KEY';
   PKEY_KUBECONFIG_FILE_LOCATION = 'PKEY_KUBECONFIG_FILE_LOCATION'
+  PKEY_PROXY_URL = 'PKEY_PROXY_URL';
 
   constructor(private ngZone: NgZone, private beService: TauriAdapter){
 
@@ -26,6 +31,8 @@ export class PreferencesComponent {
     const args: any = {};
     args[this.LICENSE_STRING_KEY] = '';
     args[this.CUSTOM_NS_LIST] = '';
+    args[this.PKEY_KUBECONFIG_FILE_LOCATION] = '';
+    args[this.PKEY_PROXY_URL] = '';
 
     this.beService.executeSyncCommand(this.beService.commands.get_preferences, args, (res) => {
       if (res) {
@@ -33,13 +40,16 @@ export class PreferencesComponent {
           const result = JSON.parse(res);
           if (result.data) {
             const data = JSON.parse(result.data);
-            console.log(data);
             this.ngZone.run(() => {
               data.forEach((pref: any) => {
                 if (pref.key === this.CUSTOM_NS_LIST) {
                   this.be_ns = this.namespaceString = pref.value;
                 }else if (pref.key === this.LICENSE_STRING_KEY) {
                   this.be_lic = this.licenseString = pref.value;
+                }else if (pref.key === this.PKEY_KUBECONFIG_FILE_LOCATION) {
+                  this.be_kfile = this.kubeconfigFile = pref.value;
+                }else if (pref.key === this.PKEY_PROXY_URL) {
+                  this.be_proxy = this.proxy_url = pref.value;
                 }
               });
 
