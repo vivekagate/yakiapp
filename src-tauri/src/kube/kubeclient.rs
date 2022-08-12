@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::env;
 use std::path::Path;
 use std::sync::mpsc::Receiver;
@@ -10,6 +11,11 @@ use k8s_openapi::api::apps::v1::{DaemonSet, Deployment, ReplicaSet, StatefulSet}
 use kube::{
     api::{Api, ListParams, ResourceExt},
     Client, Config, Error
+};
+use kube::{
+    api::{
+        DeleteParams, PostParams, WatchEvent, AttachParams, AttachedProcess
+    },
 };
 use kube::api::{LogParams, ObjectList};
 use tauri::Window;
@@ -330,6 +336,42 @@ impl KubeClientManager {
                 .unwrap();
         }
         debug!("Finished spawned task");
+        Ok(())
+    }
+
+    pub fn get_environment_variables(&self, window: &Window, podname: &str, ns: &str, cmd: &str) {
+        self._get_environment_variables(window, podname, ns, cmd);
+    }
+
+    #[tokio::main]
+    async fn _get_environment_variables(
+        &self,
+        window: &Window,
+        podname: &str,
+        ns: &str,
+        cmd: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let client = self.init_client().await;
+        let pods: Api<Pod> = Api::namespaced(client, ns);
+        let mut attached = pods
+            .exec(podname, vec!["env"], &AttachParams::default().stderr(false))
+            .await?;
+        let stdout = tokio_util::io::ReaderStream::new(attached.stdout().unwrap());
+        let output = stdout
+            .filter_map(|r| async { r.ok().and_then(|v| String::from_utf8(v.to_vec()).ok()) })
+            .collect::<Vec<_>>()
+            .await
+            .join("");
+        attached.join().await.unwrap();
+        let mut map: HashMap<&str, &str> = HashMap::new();
+        for kvp in output.split("\n") {
+            if !kvp.trim().is_empty() {
+                let mut kv = kvp.split("=");
+                map.insert(kv.next().unwrap(), kv.next().unwrap());
+            }
+        }
+        let result = serde_json::to_string(&map).unwrap();
+        dispatch_to_frontend(window, cmd, result);
         Ok(())
     }
 
