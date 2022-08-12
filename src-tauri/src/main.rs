@@ -173,7 +173,9 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
     const RESTART_DEPLOYMENTS: &str = "restart_deployments";
     const TAIL_LOGS_FOR_POD: &str = "tail_logs_for_pod";
     const GET_LOGS_FOR_POD: &str = "get_logs_for_pod";
+    const GET_ENVIRONMENT_VARIABLES_FOR_POD: &str = "get_environment_variables_for_pod";
     const STREAM_METRICS_FOR_POD: &str = "stream_metrics_for_pod";
+    const STREAM_METRICS_FOR_DEPLOYMENT: &str = "stream_metrics_for_deployment";
     const STOP_LIVE_TAIL: &str = "stop_live_tail";
     const STOP_ALL_METRICS_STREAMS: &str = "stop_all_metrics_streams";
     const APP_START: &str = "app_start";
@@ -262,7 +264,27 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
             let podname = cmd_hldr.args.get("pod").unwrap();
             kube::get_logs_for_pod(window, &current_cluster, &podname, &ns);
         });
+    } else if cmd_hldr.command == GET_ENVIRONMENT_VARIABLES_FOR_POD {
+        let kubemanager = &stateHolder.kubemanager;
+        let km = kubemanager.clone();
+        let _ = thread::spawn(move || {
+            let ns = cmd_hldr.args.get("ns").unwrap();
+            let podname = cmd_hldr.args.get("pod").unwrap();
+            km.get_environment_variables(&window, &podname, &ns, GET_ENVIRONMENT_VARIABLES_FOR_POD);
+        });
     } else if cmd_hldr.command == STREAM_METRICS_FOR_POD {
+        let (tx, rx): (Sender<String>, mpsc::Receiver<String>) = mpsc::channel();
+        let args = &cmd_hldr.args;
+        let ns = args.get("ns").unwrap().clone();
+        let podname = args.get("pod").unwrap().clone();
+
+        let _ = thread::spawn(move || {
+            kube::stream_cpu_memory_for_pod(window, &current_cluster, &podname, &ns, &rx);
+            debug!("Stream of metrics initiated");
+        });
+
+        stateHolder.taskmanager.add_metrics_stream(tx);
+    } else if cmd_hldr.command == STREAM_METRICS_FOR_DEPLOYMENT {
         let (tx, rx): (Sender<String>, mpsc::Receiver<String>) = mpsc::channel();
         let args = &cmd_hldr.args;
         let ns = args.get("ns").unwrap().clone();
