@@ -34,6 +34,7 @@ use std::thread;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::Window;
 use tokio::time::{sleep, Duration};
+use tracing_subscriber::fmt::format;
 
 use crate::utils;
 
@@ -172,9 +173,19 @@ async fn _get_all_ns(
 }
 
 
-pub fn get_clusters() -> Result<Kubeconfig, Error> {
-    let kc = Kubeconfig::read().unwrap();
-    Ok(kc)
+pub fn get_clusters(window: &Window) -> Kubeconfig {
+    let kc = Kubeconfig::read();
+    match kc {
+        Ok(kc) => {
+            kc
+        },
+            Err(e) => {
+            println!("{}", e);
+                let json = format!("Encountered error: {}. Check Kubeconfig file is available.", e);
+                utils::send_error(&window, json);
+                Kubeconfig::default()
+        }
+    }
 }
 
 pub fn get_all_deployments(

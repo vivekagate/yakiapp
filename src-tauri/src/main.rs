@@ -107,15 +107,8 @@ fn execute_sync_command(
             }
         }
     } else if cmd_hldr.command == GET_ALL_CLUSTER_CONTEXTS {
-        let clusters = kube::get_clusters();
-        match clusters {
-            Ok(clusters) => {
-                res.data = serde_json::to_string(&clusters).unwrap();
-            }
-            Err(err) => {
-                res.data = "".parse().unwrap();
-            }
-        }
+        let clusters = kube::get_clusters(&window);
+        res.data = serde_json::to_string(&clusters).unwrap();
     } else if cmd_hldr.command == SET_CURRENT_CLUSTER_CONTEXT {
         let cl = cmd_hldr.args.get("cluster").unwrap();
         debug!("New cluster: {}", cl);
