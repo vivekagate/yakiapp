@@ -52,7 +52,6 @@ export class ResourceviewComponent implements EventListener {
         resizable: true,
     };
 
-    rowData$: Observable<any> = from([]);
     rowData: any[] = [];
     data: any[] = [];
     selectedapp: any;
@@ -73,7 +72,6 @@ export class ResourceviewComponent implements EventListener {
 
     constructor(private beService: TauriAdapter, private ngZone: NgZone, private eventBus: NgEventBus) {
         this.columnDefs = [];
-        this.rowData$ = new Observable<any[]>;
         this.resource = {columns: [], command: [], name: ""};
         this.beService.registerListener(this.beService.response_channel.app_command_result, this);
     }
@@ -118,7 +116,6 @@ export class ResourceviewComponent implements EventListener {
 
     clearTable(): void {
         this.ngZone.run(() => {
-            this.rowData$ = from([]);
             this.aggrid.api.setRowData([]);
         })
     }

@@ -1,46 +1,46 @@
 <c-row ngPreserveWhitespaces>
   <c-col xs="12">
     <c-card class="mb-4">
-      <c-card-header>
-        <strong>Debug View</strong>
-        <label class="">Application: </label>
-        <select  class="form-control-sm form-select-sm" name="deployments" [(ngModel)]="selectedDeployment" (ngModelChange)="onDeploymentChanged()">
-          <option *ngFor="let deploy of deployments" [ngValue]="deploy">{{deploy['name']}}</option>
-        </select>
-
-        <c-dropdown style="display: inline;">
-          <button cButton cDropdownToggle color="primary">
-            Actions
-          </button>
-          <ul cDropdownMenu>
-            <li><a routerLink="./" cDropdownItem>Restart</a></li>
-            <li><a routerLink="./" cDropdownItem>Open Shell</a></li>
-            <li><a routerLink="./" cDropdownItem>Memory Dump</a></li>
-            <li>
-              <hr cDropdownDivider>
-            </li>
-            <li>
-              <button [routerLink]="'/buttons'" cDropdownItem>Separated link</button>
-            </li>
-          </ul>
-        </c-dropdown>
-      </c-card-header>
       <c-card-body style="height: 80vh">
         <c-row>
           <c-col md="8">
+            <div class="mb-0">
+              <b>Logs</b>
+            </div>
             <app-logs></app-logs>
           </c-col>
           <c-col>
-            <div class="mb-0">
-              <b>CPU & Memory</b>
-            </div>
-            <c-chart #metricsgraph [data]="mainChart.data"
-                     [height]="300"
-                     [ngStyle]="{'marginTop.px': 40}"
-                     [options]="mainChart.options"
-                     [type]="mainChart.type">
-              Main chart
-            </c-chart>
+            <c-row>
+              <c-col md="10">
+                <div class="mb-0">
+                  <b>CPU & Memory</b>
+                </div>
+                <c-chart #metricsgraph [data]="mainChart.data"
+                         [height]="300"
+                         [ngStyle]="{'marginTop.px': 40}"
+                         [options]="mainChart.options"
+                         [type]="mainChart.type">
+                  Main chart
+                </c-chart>
+              </c-col>
+            </c-row>
+            <c-row>
+              <c-col md="10">
+                <div class="mb-0">
+                  <b>Environment Variables</b>
+                </div>
+                <ag-grid-angular #aggrid
+                                 style="width: 100%; height: 40vh"
+                                 class="ag-theme-alpine-dark"
+                                 [suppressCellFocus]="true"
+                                 [columnDefs]="columnDefs"
+                                 [defaultColDef]="defaultColDef"
+                                 [rowData]="rowData"
+                                 [rowSelection]="'single'"
+                                 [animateRows]="true"
+                ></ag-grid-angular>
+              </c-col>
+            </c-row>
           </c-col>
         </c-row>
       </c-card-body>
