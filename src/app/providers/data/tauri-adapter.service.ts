@@ -31,7 +31,9 @@ export class TauriAdapter {
     restart_deployments: 'restart_deployments',
     tail_logs_for_pod: 'tail_logs_for_pod',
     get_logs_for_pod: 'get_logs_for_pod',
+    get_environment_variables_for_pod: 'get_environment_variables_for_pod',
     stream_metrics_for_pod: 'stream_metrics_for_pod',
+    stream_metrics_for_deployment: 'stream_metrics_for_deployment',
     stop_live_tail: 'stop_live_tail',
     app_start: 'app_start',
     stop_all_metrics_streams: 'stop_all_metrics_streams'
@@ -136,11 +138,6 @@ export class TauriAdapter {
 
   executeCommand(cmd: string, args: object, force_refresh = false){
     const result = this.cache.get(`app_${cmd}_result`);
-    // @ts-ignore
-    // if (args && !args['ns']) {
-    //   // @ts-ignore
-    //   args['ns'] = this.storage.ns;
-    // }
     if (result && !force_refresh) {
       const elMap = this.eventListeners.get(this.response_channel["app_command_result"]);
       if (elMap) {

@@ -658,6 +658,20 @@ export class DeploymentDefinition {
                     icon: 'fa-term',
                     callback: ()=>{}
                 },
+                {
+                    name: 'appconsole',
+                    displayName: 'AppConsole',
+                    icon: 'fa-term',
+                    callback: (resource: any)=>{
+                        const appname = _.get(resource, 'metadata.name');
+                        console.log('Requesting logs for: ' + appname);
+                        this.beService.storage = Object.assign(this.beService.storage, {
+                            appname: appname,
+                            metadata: resource
+                        })
+                        this.router.navigateByUrl('/debug');
+                    }
+                },
             ],
             sidebar: {
                 name: 'Instances',

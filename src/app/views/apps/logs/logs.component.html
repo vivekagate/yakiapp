@@ -1,22 +1,33 @@
 <c-row ngPreserveWhitespaces>
   <c-col xs="12">
+    <app-terminal [hidden]="logs_viewport.length === 0" [name]="appname" #logterminal [mode]="mode"></app-terminal>
     <c-card class="mb-4">
+<!--      <c-card-body style="height: 80vh">-->
+<!--        <gridster [options]="options" #grid>-->
+<!--          <gridster-item [item]=item *ngFor="let item of logs_viewport">-->
+<!--            <div class="gridster-item-content">-->
+<!--              <app-terminal [name]="item['name']" id="{{item['name']}}" #logterminal [mode]="mode"></app-terminal>-->
+<!--            </div>-->
+<!--          </gridster-item>-->
+<!--        </gridster>-->
+<!--      </c-card-body>-->
       <c-card-header>
-        <strong>Logs for Application: {{appname}}</strong>
-        <button class="button-sm button-app" (click)="clear()">Clear</button>
-        <button class="button-sm button-app" (click)="liveTail()">Start Live Tail</button>
-        <button class="button-sm button-app" (click)="pause()">Pause</button>
-        <input [(ngModel)]="searchTerm" placeholder="Filter Logs">
+        <c-dropdown style="display: inline;">
+          <button cButton cDropdownToggle color="primary">
+            All Instances
+          </button>
+          <ul cDropdownMenu>
+            <li *ngFor="let pod of logs_viewport"><a routerLink="./" cDropdownItem>{{pod['name']}}</a></li>
+          </ul>
+        </c-dropdown>
+
+        <input [(ngModel)]="searchTerm" class='form-control-sm' style="width: 60%" placeholder="Example: 'Error: Exception'">
+        <span class="fa-pull-right">
+          <button class="button-sm button-app" (click)="clear()">Clear</button>
+          <button class="button-sm button-app" (click)="liveTail()">Start Live Tail</button>
+          <button class="button-sm button-app" (click)="pause()">Pause</button>
+        </span>
       </c-card-header>
-      <c-card-body style="height: 80vh">
-        <gridster [options]="options" #grid>
-          <gridster-item [item]=item *ngFor="let item of logs_viewport">
-            <div class="gridster-item-content">
-              <app-terminal [name]="item['name']" id="{{item['name']}}" #logterminal [mode]="mode"></app-terminal>
-            </div>
-          </gridster-item>
-        </gridster>
-      </c-card-body>
     </c-card>
   </c-col>
 </c-row>
