@@ -559,12 +559,6 @@ export class DeploymentDefinition {
                     }
                 },
                 {
-                    name: 'shell',
-                    displayName: 'Shell',
-                    icon: 'fa-term',
-                    callback: ()=>{}
-                },
-                {
                     name: 'edit',
                     displayName: 'Edit Yaml',
                     icon: 'fa-file',
@@ -601,14 +595,6 @@ export class DeploymentDefinition {
                     icon: 'fa-term',
                     callback: (resource: any) => {
                         console.log('Restart');
-                    }
-                },
-                {
-                    name: 'shell',
-                    displayName: 'Shell',
-                    icon: 'fa-term',
-                    callback: (resource: any) => {
-                        console.log('Open Shell');
                     }
                 },
             ]
@@ -651,12 +637,6 @@ export class DeploymentDefinition {
                             deployment: appname,
                         });
                     }
-                },
-                {
-                    name: 'shell',
-                    displayName: 'Shell',
-                    icon: 'fa-term',
-                    callback: ()=>{}
                 },
                 {
                     name: 'appconsole',

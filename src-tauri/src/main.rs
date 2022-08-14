@@ -281,10 +281,11 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
         let (tx, rx): (Sender<String>, mpsc::Receiver<String>) = mpsc::channel();
         let args = &cmd_hldr.args;
         let ns = args.get("ns").unwrap().clone();
-        let podname = args.get("pod").unwrap().clone();
-
+        let deployment = args.get("deployment").unwrap().clone();
+        let kubemanager = &stateHolder.kubemanager;
+        let km = kubemanager.clone();
         let _ = thread::spawn(move || {
-            kube::stream_cpu_memory_for_pod(window, &current_cluster, &podname, &ns, &rx);
+            km.stream_cpu_memory_for_deployment(&window, ns, deployment, &rx);
             debug!("Stream of metrics initiated");
         });
 

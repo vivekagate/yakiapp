@@ -21,7 +21,8 @@ pub struct ResourceWithMetricsHolder {
     pub(crate) resource: String,
     pub(crate) metrics: String,
     pub(crate) usage: Option<String>,
-    pub (crate) metrics2: Option<String>
+    pub (crate) metrics2: Option<String>,
+    pub(crate) ts: u128
 }
 
 impl ResourceWithMetricsHolder {
@@ -62,5 +63,20 @@ impl k8s_openapi::Metadata for NodeMetrics {
 
     fn metadata_mut(&mut self) -> &mut Self::Ty {
         &mut self.metadata
+    }
+}
+
+#[derive(Clone, serde::Serialize, Default)]
+pub struct Metric {
+    pub(crate) cpu: Option<String>,
+    pub(crate) memory: Option<String>,
+    pub(crate) ts: u128,
+    pub(crate) pod: Option<String>,
+    pub(crate) metrics: Option<String>,
+}
+
+impl Metric {
+    pub(crate) fn new() -> Self {
+        Default::default()
     }
 }

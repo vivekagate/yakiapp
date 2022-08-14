@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::env;
 use std::path::Path;
 use std::sync::mpsc::Receiver;
+use std::time::{SystemTime, UNIX_EPOCH};
 use futures::{StreamExt, TryStreamExt};
 use kube::config::{Kubeconfig, KubeConfigOptions};
 use k8s_openapi::api::core::v1::{
@@ -25,8 +26,10 @@ use tauri::Window;
 use crate::KNamespace;
 use crate::kube::common::dispatch_to_frontend;
 use crate::kube::metrics::{PodMetrics};
-use crate::kube::models::{NodeMetrics, ResourceWithMetricsHolder};
-use crate::kube::Payload;
+use crate::kube::models::{Metric, NodeMetrics, ResourceWithMetricsHolder};
+use crate::kube::{Payload};
+use tokio::time::{sleep, Duration};
+
 
 pub struct KubeClientManager {
     cluster: String,
@@ -177,6 +180,71 @@ impl KubeClientManager {
         }
     }
 
+    pub fn stream_cpu_memory_for_deployment(
+        &self,
+        window: &Window,
+        ns: String,
+        deployment: String,
+        rx: &Receiver<String>,
+    ) {
+        self._stream_cpu_memory_for_deployment(window, &ns, &deployment,rx);
+    }
+
+    #[tokio::main]
+    async fn _stream_cpu_memory_for_deployment(
+        &self,
+        window: &Window,
+        ns: &String,
+        deployment: &String,
+        rx: &Receiver<String>,
+    ) -> Result<(), Box<dyn std::error::Error>>{
+        info!("Fetching metrics for {:?}", deployment);
+        let client = self.init_client().await;
+        match client {
+            Some(client) => {
+                let pod_client = client.clone();
+                let mp_kube_request: Api<PodMetrics> = Api::namespaced(client, ns);
+                let lp = ListParams::default();
+                let p_kube_request: Api<Pod> = Api::namespaced(pod_client, ns);
+
+                loop {
+                    let metrics = mp_kube_request.list(&lp).await?;
+                    let lp = ListParams::default();
+                    let pods = p_kube_request.list(&lp).await?;
+
+                    let metrics = ResourceWithMetricsHolder {
+                        resource: String::from(deployment),
+                        metrics: serde_json::to_string(&metrics).unwrap(),
+                        usage: Some(serde_json::to_string(&pods).unwrap()),
+                        metrics2: None,
+                        ts: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis()
+                    };
+                    let json = serde_json::to_string(&metrics).unwrap();
+                    window
+                        .emit(
+                            "app::metrics",
+                            Payload {
+                                message: json,
+                                metadata: String::from(deployment),
+                            },
+                        )
+                        .unwrap();
+
+                    let stopword = rx.try_recv().unwrap_or("ERR".to_string());
+                    if stopword != "ERR" {
+                        debug!("Work is done: {:?}", stopword);
+                        break;
+                    }
+                    sleep(Duration::from_millis(5000)).await;
+                }
+
+            },
+            None => {()}
+        }
+        debug!("Completed task for streamin metrics");
+        Ok(())
+    }
+
     #[tokio::main]
     async fn _get_pods_with_metrics(
         &self,
@@ -200,7 +268,8 @@ impl KubeClientManager {
                     resource: serde_json::to_string(&pods).unwrap(),
                     metrics: serde_json::to_string(&metrics).unwrap(),
                     usage: None,
-                    metrics2: None
+                    metrics2: None,
+                    ts: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis()
                 };
                 dispatch_to_frontend(window, cmd, serde_json::to_string(&json).unwrap());
                 Ok(())
@@ -234,7 +303,8 @@ impl KubeClientManager {
                     resource: serde_json::to_string(&nodes).unwrap(),
                     metrics: serde_json::to_string(&metrics).unwrap(),
                     usage: None,
-                    metrics2: None
+                    metrics2: None,
+                    ts: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis()
                 };
                 let result = serde_json::to_string(&json).unwrap();
                 dispatch_to_frontend(window, cmd, result);
@@ -280,8 +350,8 @@ impl KubeClientManager {
                     resource: serde_json::to_string(&deployments).unwrap(),
                     metrics: serde_json::to_string(&metrics).unwrap(),
                     usage: Some(serde_json::to_string(&pods).unwrap()),
-                    metrics2: Some(serde_json::to_string(&pod_metrics).unwrap())
-
+                    metrics2: Some(serde_json::to_string(&pod_metrics).unwrap()),
+                    ts: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis()
                 };
                 dispatch_to_frontend(window, cmd, serde_json::to_string(&json).unwrap());
                 Ok(())

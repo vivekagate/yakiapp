@@ -211,7 +211,6 @@ export class LogsComponent implements EventListener{
         }
         const terminal = this.logterminalMap.get(podname);
         const color = this.getColor(original_pod_name);
-        console.debug('Color found: ' + color);
         if (terminal) {
           const lines = log.split('\n');
           lines.forEach((line: string) => {

@@ -7,7 +7,7 @@ pub(crate) mod models;
 
 use crate::kube::common::{dispatch_to_frontend, init_client};
 use crate::kube::metrics::{get_all_pods, get_pod_metrics};
-use crate::kube::models::CommandResult;
+use crate::kube::models::{CommandResult, Metric};
 use futures::{StreamExt, TryStreamExt};
 use k8s_openapi::api::apps::v1::{DaemonSet, Deployment, ReplicaSet, StatefulSet};
 use k8s_openapi::api::batch::v1::CronJob;
@@ -46,20 +46,6 @@ struct Payload {
 
 impl Payload {
     fn new() -> Self {
-        Default::default()
-    }
-}
-
-#[derive(Clone, serde::Serialize, Default)]
-pub struct Metric {
-    pub(crate) cpu: String,
-    pub(crate) memory: String,
-    pub(crate) ts: u128,
-    pod: String,
-}
-
-impl Metric {
-    pub(crate) fn new() -> Self {
         Default::default()
     }
 }
@@ -473,10 +459,11 @@ async fn _stream_cpu_memory_for_pod(
         debug!("Memory: {}, CPU: {}", memory_string, cpu_string);
         let since_the_epoch = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
         let metric = Metric {
-            cpu: cpu_string,
-            memory: memory_string,
+            cpu: Some(cpu_string),
+            memory: Some(memory_string),
             ts: since_the_epoch.as_millis(),
-            pod: pod.to_string(),
+            pod: Some(pod.to_string()),
+            metrics: None,
         };
         let json = serde_json::to_string(&metric).unwrap();
         window

@@ -23,7 +23,7 @@
           <label>Cluster: </label>&nbsp;
           <select class="form-control-sm form-select-sm" name="selectedCluster" [(ngModel)]="selectedCluster" (ngModelChange)="onClusterChanged()">
             <option *ngFor="let cl of clusters" [ngValue]="cl">{{cl.name}}</option>
-          </select>
+          </select>&nbsp;&nbsp;&nbsp;
           <label class="">Namespace: </label>&nbsp;
           <select class="form-control-sm form-select-sm" name="namespaces" [(ngModel)]="selectedNs" (ngModelChange)="onNamespaceChanged()">
             <option *ngFor="let ns of namespaces" [ngValue]="ns">{{ns['name']}}</option>
