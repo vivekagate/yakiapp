@@ -90,6 +90,9 @@ export class DebugComponent implements EventListener{
 
   initCharts(max_cpu: Number, maxmem: Number): void {
     this.mainChart = this.chartsData.getChart(max_cpu, maxmem);
+    this.mainChart.data.datasets[0].data = [];
+    this.mainChart.data.datasets[1].data = [];
+    this.mainChart.data.labels = [];
   }
 
   getName(): string {
@@ -165,6 +168,7 @@ export class DebugComponent implements EventListener{
     });
 
     this.ngZone.run(() => {
+      this.rowData = [];
       this.rowData = data;
     });
   }

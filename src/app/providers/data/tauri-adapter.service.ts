@@ -17,7 +17,6 @@ export class TauriAdapter {
     save_preference: 'save_preference',
     get_preferences: 'get_preferences',
 
-
     execute_command: 'execute_command',
     get_deployments: 'get_deployments',
     get_resource: 'get_resource',
@@ -90,7 +89,6 @@ export class TauriAdapter {
 
     event_list.forEach(eventname => {
       appWindow.listen(eventname, ({event, payload}) => {
-        console.debug('Received event: ' + event);
         const nevent = {
           name: eventname,
           payload
@@ -147,7 +145,6 @@ export class TauriAdapter {
         }
       }
     }else{
-      console.debug('Sending command: ' + cmd);
       setTimeout(() => {
         invoke(this.commands.execute_command, {
           commandstr: JSON.stringify({

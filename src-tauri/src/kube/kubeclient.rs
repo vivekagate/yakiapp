@@ -23,12 +23,13 @@ use kube::client::ConfigExt;
 use kube::client::middleware::BaseUriLayer;
 use tauri::http::Uri;
 use tauri::Window;
-use crate::KNamespace;
+use crate::{CommandResult, KNamespace};
 use crate::kube::common::dispatch_to_frontend;
 use crate::kube::metrics::{PodMetrics};
 use crate::kube::models::{Metric, NodeMetrics, ResourceWithMetricsHolder};
 use crate::kube::{Payload};
 use tokio::time::{sleep, Duration};
+use crate::utils::send_error;
 
 
 pub struct KubeClientManager {
@@ -505,6 +506,58 @@ impl KubeClientManager {
                 Ok(())
             },
                 None => Ok(())
+        }
+    }
+
+
+    pub fn restart_deployment(
+        &self,
+        window: &Window,
+        ns: &String,
+        deployment: &String,
+        cmd: &str,
+    ) {
+        let result = self._restart_deployment(window, ns, deployment, cmd);
+        match result {
+            Ok(res) => {
+
+            }
+            Err(err) => {
+                error!("Failed to restart: {}", deployment);
+                send_error(window, "Failed to restart. Reason: ".to_string());
+            }
+        }
+    }
+
+    #[tokio::main]
+    async fn _restart_deployment(
+        &self,
+        window: &Window,
+        namespace: &str,
+        deployment: &str,
+        cmd: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let client = self.init_client().await;
+        match client {
+            Some(client) => {
+                let deploy_request: Api<Deployment> = Api::namespaced(client, namespace);
+                let result = deploy_request.restart(deployment).await?;
+                let json = "success";
+                window
+                    .emit(
+                        "app::command_result",
+                        CommandResult {
+                            command: String::from(cmd),
+                            data: String::from(json),
+                        },
+                    )
+                    .unwrap();
+                Ok(())
+            },
+            None => {
+                send_error(window, "Failed to restart. Reason Kubeclient failed.".to_string());
+                Ok(())
+            }
         }
     }
 

@@ -3,7 +3,10 @@
     <c-card class="mb-4">
       <c-card-header>
         <strong>Settings & Preferences</strong>
-        <button class="button-app btn-sm" (click)="onPreferenceSave()">Save</button>
+        <button class="button-app btn-sm" (click)="onPreferenceSave()">
+          <i class="fa fa-save"></i>&nbsp;
+          Save
+        </button>
       </c-card-header>
       <c-card-body style="height: 80vh">
         <table [hover]="true" cTable color="dark">

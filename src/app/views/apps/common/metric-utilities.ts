@@ -53,9 +53,6 @@ export class MetricUtilities {
                 }
             });
 
-            totalCpuUsage = totalCpuUsage / pods.items.length;
-            totalMemoryUsage = totalMemoryUsage / pods.items.length;
-
             let maxCpuLimit: number;
             if (!pods.items[0].spec.containers[0].resources.limits) {
                 maxCpuLimit = 9999999999;
@@ -82,8 +79,9 @@ export class MetricUtilities {
 
             cpupcg = Math.round(totalCpuUsage * 100/maxCpuLimit);
             mempcg = Math.round(totalMemoryUsage * 100/maxMemoryLimit);
-        }
 
+            console.log(`CPU: ${totalCpuUsage}, Memory: ${totalMemoryUsage}, CPU %: ${cpupcg}, Memory %: ${mempcg}, Max CPU: ${maxCpuLimit}, Max Memory: ${maxMemoryLimit}`);
+        }
 
 
         return {

@@ -622,9 +622,10 @@ export class DeploymentDefinition {
                         const appname = _.get(resource, 'metadata.name');
                         console.log('Requesting logs for: ' + appname);
                         this.beService.storage = Object.assign(this.beService.storage, {
-                            appname: appname
+                            appname: appname,
+                            metadata: resource
                         })
-                        this.router.navigateByUrl('/logs');
+                        this.router.navigateByUrl('/debug');
                     }
                 },
                 {
@@ -639,8 +640,8 @@ export class DeploymentDefinition {
                     }
                 },
                 {
-                    name: 'appconsole',
-                    displayName: 'AppConsole',
+                    name: 'metrics',
+                    displayName: 'CPU/Memory',
                     icon: 'fa-term',
                     callback: (resource: any)=>{
                         const appname = _.get(resource, 'metadata.name');

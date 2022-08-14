@@ -74,57 +74,6 @@ impl KNamespace {
     }
 }
 
-pub fn restart_deployment(
-    window: Window,
-    cluster: &str,
-    arg_map: HashMap<String, String>,
-    cmd: &str,
-) {
-    let namespace = arg_map.get("ns").unwrap();
-    let deployment = arg_map.get("deployment").unwrap();
-
-    let result = _restart_deployment(cluster, namespace, deployment);
-    match result {
-        Ok(res) => {
-            let json = "success";
-            window
-                .emit(
-                    "app::command_result",
-                    CommandResult {
-                        command: String::from(cmd),
-                        data: String::from(json),
-                    },
-                )
-                .unwrap();
-        }
-        Err(err) => {
-            error!("Failed to restart: {}", deployment);
-            window
-                .emit(
-                    "app::error",
-                    CommandResult {
-                        command: String::from(cmd),
-                        data: err.to_string(),
-                    },
-                )
-                .unwrap();
-        }
-    }
-}
-
-#[tokio::main]
-async fn _restart_deployment(
-    cluster: &str,
-    namespace: &str,
-    deployment: &str,
-) -> Result<Deployment, Box<dyn std::error::Error>> {
-    let client = init_client(cluster);
-    let deploy_request: Api<Deployment> = Api::namespaced(client.await.unwrap(), namespace);
-    let result = deploy_request.restart(deployment).await?;
-    Ok(result)
-}
-
-
 pub fn get_kubectl_raw() {
     kubectl::get_metrics();
 }

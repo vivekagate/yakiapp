@@ -237,8 +237,12 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
             // );
         });
     } else if cmd_hldr.command == RESTART_DEPLOYMENTS {
+        let kubemanager = &stateHolder.kubemanager;
+        let km = kubemanager.clone();
         let _ = thread::spawn(move || {
-            kube::restart_deployment(window, &current_cluster, cmd_hldr.args, RESTART_DEPLOYMENTS);
+            let namespace =  cmd_hldr.args.get("ns").unwrap();
+            let deployment =  cmd_hldr.args.get("deployment").unwrap();
+            km.restart_deployment(&window, namespace, deployment, RESTART_DEPLOYMENTS);
         });
     } else if cmd_hldr.command == TAIL_LOGS_FOR_POD {
         let (tx, rx): (Sender<String>, mpsc::Receiver<String>) = mpsc::channel();
