@@ -107,15 +107,8 @@ fn execute_sync_command(
             }
         }
     } else if cmd_hldr.command == GET_ALL_CLUSTER_CONTEXTS {
-        let clusters = kube::get_clusters();
-        match clusters {
-            Ok(clusters) => {
-                res.data = serde_json::to_string(&clusters).unwrap();
-            }
-            Err(err) => {
-                res.data = "".parse().unwrap();
-            }
-        }
+        let clusters = kube::get_clusters(&window);
+        res.data = serde_json::to_string(&clusters).unwrap();
     } else if cmd_hldr.command == SET_CURRENT_CLUSTER_CONTEXT {
         let cl = cmd_hldr.args.get("cluster").unwrap();
         debug!("New cluster: {}", cl);
@@ -244,8 +237,12 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
             // );
         });
     } else if cmd_hldr.command == RESTART_DEPLOYMENTS {
+        let kubemanager = &stateHolder.kubemanager;
+        let km = kubemanager.clone();
         let _ = thread::spawn(move || {
-            kube::restart_deployment(window, &current_cluster, cmd_hldr.args, RESTART_DEPLOYMENTS);
+            let namespace =  cmd_hldr.args.get("ns").unwrap();
+            let deployment =  cmd_hldr.args.get("deployment").unwrap();
+            km.restart_deployment(&window, namespace, deployment, RESTART_DEPLOYMENTS);
         });
     } else if cmd_hldr.command == TAIL_LOGS_FOR_POD {
         let (tx, rx): (Sender<String>, mpsc::Receiver<String>) = mpsc::channel();
@@ -288,10 +285,11 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
         let (tx, rx): (Sender<String>, mpsc::Receiver<String>) = mpsc::channel();
         let args = &cmd_hldr.args;
         let ns = args.get("ns").unwrap().clone();
-        let podname = args.get("pod").unwrap().clone();
-
+        let deployment = args.get("deployment").unwrap().clone();
+        let kubemanager = &stateHolder.kubemanager;
+        let km = kubemanager.clone();
         let _ = thread::spawn(move || {
-            kube::stream_cpu_memory_for_pod(window, &current_cluster, &podname, &ns, &rx);
+            km.stream_cpu_memory_for_deployment(&window, ns, deployment, &rx);
             debug!("Stream of metrics initiated");
         });
 

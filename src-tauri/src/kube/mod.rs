@@ -7,7 +7,7 @@ pub(crate) mod models;
 
 use crate::kube::common::{dispatch_to_frontend, init_client};
 use crate::kube::metrics::{get_all_pods, get_pod_metrics};
-use crate::kube::models::CommandResult;
+use crate::kube::models::{CommandResult, Metric};
 use futures::{StreamExt, TryStreamExt};
 use k8s_openapi::api::apps::v1::{DaemonSet, Deployment, ReplicaSet, StatefulSet};
 use k8s_openapi::api::batch::v1::CronJob;
@@ -34,6 +34,7 @@ use std::thread;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::Window;
 use tokio::time::{sleep, Duration};
+use tracing_subscriber::fmt::format;
 
 use crate::utils;
 
@@ -45,20 +46,6 @@ struct Payload {
 
 impl Payload {
     fn new() -> Self {
-        Default::default()
-    }
-}
-
-#[derive(Clone, serde::Serialize, Default)]
-pub struct Metric {
-    pub(crate) cpu: String,
-    pub(crate) memory: String,
-    pub(crate) ts: u128,
-    pod: String,
-}
-
-impl Metric {
-    pub(crate) fn new() -> Self {
         Default::default()
     }
 }
@@ -86,57 +73,6 @@ impl KNamespace {
         Default::default()
     }
 }
-
-pub fn restart_deployment(
-    window: Window,
-    cluster: &str,
-    arg_map: HashMap<String, String>,
-    cmd: &str,
-) {
-    let namespace = arg_map.get("ns").unwrap();
-    let deployment = arg_map.get("deployment").unwrap();
-
-    let result = _restart_deployment(cluster, namespace, deployment);
-    match result {
-        Ok(res) => {
-            let json = "success";
-            window
-                .emit(
-                    "app::command_result",
-                    CommandResult {
-                        command: String::from(cmd),
-                        data: String::from(json),
-                    },
-                )
-                .unwrap();
-        }
-        Err(err) => {
-            error!("Failed to restart: {}", deployment);
-            window
-                .emit(
-                    "app::error",
-                    CommandResult {
-                        command: String::from(cmd),
-                        data: err.to_string(),
-                    },
-                )
-                .unwrap();
-        }
-    }
-}
-
-#[tokio::main]
-async fn _restart_deployment(
-    cluster: &str,
-    namespace: &str,
-    deployment: &str,
-) -> Result<Deployment, Box<dyn std::error::Error>> {
-    let client = init_client(cluster);
-    let deploy_request: Api<Deployment> = Api::namespaced(client.await.unwrap(), namespace);
-    let result = deploy_request.restart(deployment).await?;
-    Ok(result)
-}
-
 
 pub fn get_kubectl_raw() {
     kubectl::get_metrics();
@@ -172,9 +108,19 @@ async fn _get_all_ns(
 }
 
 
-pub fn get_clusters() -> Result<Kubeconfig, Error> {
-    let kc = Kubeconfig::read().unwrap();
-    Ok(kc)
+pub fn get_clusters(window: &Window) -> Kubeconfig {
+    let kc = Kubeconfig::read();
+    match kc {
+        Ok(kc) => {
+            kc
+        },
+            Err(e) => {
+            println!("{}", e);
+                let json = format!("Encountered error: {}. Check Kubeconfig file is available.", e);
+                utils::send_error(&window, json);
+                Kubeconfig::default()
+        }
+    }
 }
 
 pub fn get_all_deployments(
@@ -462,10 +408,11 @@ async fn _stream_cpu_memory_for_pod(
         debug!("Memory: {}, CPU: {}", memory_string, cpu_string);
         let since_the_epoch = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
         let metric = Metric {
-            cpu: cpu_string,
-            memory: memory_string,
+            cpu: Some(cpu_string),
+            memory: Some(memory_string),
             ts: since_the_epoch.as_millis(),
-            pod: pod.to_string(),
+            pod: Some(pod.to_string()),
+            metrics: None,
         };
         let json = serde_json::to_string(&metric).unwrap();
         window

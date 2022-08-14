@@ -7,7 +7,7 @@ import {ResourceModule} from "./views/apps/resource/resource.module";
 const routes: Routes = [
   {
     path: '',
-    redirectTo: 'pods',
+    redirectTo: 'applications',
     pathMatch: 'full'
   },
   {

@@ -15,6 +15,7 @@ import {EventListener} from "../../../providers/types";
 import {QuantityUtils} from "./quantity-utils";
 import {ColDef} from "ag-grid-community";
 import {TerminalComponent} from "../logs/terminal/terminal.component";
+import {MetricUtilities} from "../common/metric-utilities";
 
 @Component({
   selector: 'app-debug',
@@ -68,38 +69,37 @@ export class DebugComponent implements EventListener{
         if (spec.resources.limits) {
           const cpu_max_chart = QuantityUtils.normalizeCpu(spec.resources.limits.cpu);
           const memory_max_chart = QuantityUtils.normalizeMemory(spec.resources.limits.memory);
-          if ((this.mainChart.options.scales.y.max < cpu_max_chart) || (this.mainChart.options.scales.y1.max < memory_max_chart)){
-            this.ngZone.run(() => {
-              this.mainChart.options.scales.y.max = cpu_max_chart;
-              this.mainChart.options.scales.y1.max = memory_max_chart;
-              this.metricsgraph.chart.update();
-            });
-          }
+          // if ((this.mainChart.options.scales.y.max < cpu_max_chart) || (this.mainChart.options.scales.y1.max < memory_max_chart)){
+          //   this.ngZone.run(() => {
+          //     this.mainChart.options.scales.y.max = 100;
+          //     this.mainChart.options.scales.y1.max = 100;
+          //     this.metricsgraph.chart.update();
+          //   });
+          // }
         }
       }
 
 
-      // this.beService.executeCommandInCurrentNs(this.beService.commands.stream_metrics_for_deployment, {
-      //   deployment: this.beService.storage.appname,
-      // });
+      this.beService.executeCommandInCurrentNs(this.beService.commands.stream_metrics_for_deployment, {
+        deployment: this.beService.storage.appname,
+      });
     }
 
-    this.initCharts(1000, 1000);
+    this.initCharts(100, 100);
   }
 
   initCharts(max_cpu: Number, maxmem: Number): void {
     this.mainChart = this.chartsData.getChart(max_cpu, maxmem);
+    this.mainChart.data.datasets[0].data = [];
+    this.mainChart.data.datasets[1].data = [];
+    this.mainChart.data.labels = [];
   }
 
   getName(): string {
     return 'debug.component.ts';
   }
 
-  onDeploymentChanged() {}
-
-  handleEvent(ev: any): void {
-    const event = ev.name;
-    const payload = ev.payload;
+  handleCommand(payload: any) {
     if (payload) {
       try {
         let command = _.get(payload, 'command');
@@ -117,36 +117,47 @@ export class DebugComponent implements EventListener{
     }
   }
 
-  // handleEvent(ev: any): void {
-  //   console.log('Received new metrics');
-  //   const payload = ev.payload;
-  //   const podname = ev.metadata;
-  //   const metric = JSON.parse(payload.message);
-  //   const epoch_ts = metric.ts;
-  //   const cpu = QuantityUtils.normalizeCpu(metric.cpu);
-  //   const memory = QuantityUtils.normalizeMemory(metric.memory);
-  //   console.log(`Adding CPU: ${cpu} and Memory: ${memory}`);
-  //   const label = new Date(JSON.parse(epoch_ts)).toLocaleTimeString();
-  //   // @ts-ignore
-  //   this.metricsgraph.chart.data.labels.push(label);
-  //   // @ts-ignore
-  //   this.metricsgraph.chart.data.datasets[0].data.push(cpu);
-  //   // @ts-ignore
-  //   this.metricsgraph.chart.data.datasets[1].data.push(memory);
-  //   // @ts-ignore
-  //   if (this.metricsgraph.chart.data.labels.length > 20) {
-  //     // @ts-ignore
-  //     this.metricsgraph.chart.data.labels.shift();
-  //     // @ts-ignore
-  //     this.metricsgraph.chart.data.datasets[0].data.shift();
-  //     // @ts-ignore
-  //     this.metricsgraph.chart.data.datasets[1].data.shift();
-  //   }
-  //
-  //   this.ngZone.run(() => {
-  //     this.metricsgraph.chart.update();
-  //   });
-  // }
+  handleMetricsEvent(payload: any) {
+    if (payload) {
+      let metrics = JSON.parse(_.get(payload, 'message'));
+      const epoch_ts = metrics.ts;
+      const pods = JSON.parse(metrics.usage);
+      const deployment = metrics.resource;
+      const {cpu, cpupcg, memory, mempcg} = MetricUtilities.parseDeploymentMetrics(deployment, pods, JSON.parse(metrics.metrics));
+      console.log(`CPU: ${cpu}, Memory: ${memory}, CPU %: ${cpupcg}`);
+        const label = new Date(epoch_ts).toLocaleTimeString();
+        // @ts-ignore
+        this.metricsgraph.chart.data.labels.push(label);
+        // @ts-ignore
+        this.metricsgraph.chart.data.datasets[0].data.push(cpupcg);
+        // @ts-ignore
+        this.metricsgraph.chart.data.datasets[1].data.push(mempcg);
+        // @ts-ignore
+        if (this.metricsgraph.chart.data.labels.length > 20) {
+          // @ts-ignore
+          this.metricsgraph.chart.data.labels.shift();
+          // @ts-ignore
+          this.metricsgraph.chart.data.datasets[0].data.shift();
+          // @ts-ignore
+          this.metricsgraph.chart.data.datasets[1].data.shift();
+        }
+
+      this.ngZone.run(() => {
+            this.metricsgraph.chart.update();
+      });
+    }
+  }
+
+  handleEvent(ev: any): void {
+    const event = ev.name;
+    const payload = ev.payload;
+    if (event === this.beService.response_channel.app_command_result) {
+      this.handleCommand(payload);
+    }else if (event === this.beService.response_channel.app_metrics) {
+      this.handleMetricsEvent(payload);
+    }
+  }
+
   private handleEnvironmentVariables(environmentVariables: any) {
     const data: any[] = [];
     Object.keys(environmentVariables).forEach((key) =>{
@@ -157,6 +168,7 @@ export class DebugComponent implements EventListener{
     });
 
     this.ngZone.run(() => {
+      this.rowData = [];
       this.rowData = data;
     });
   }

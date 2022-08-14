@@ -559,12 +559,6 @@ export class DeploymentDefinition {
                     }
                 },
                 {
-                    name: 'shell',
-                    displayName: 'Shell',
-                    icon: 'fa-term',
-                    callback: ()=>{}
-                },
-                {
                     name: 'edit',
                     displayName: 'Edit Yaml',
                     icon: 'fa-file',
@@ -603,14 +597,6 @@ export class DeploymentDefinition {
                         console.log('Restart');
                     }
                 },
-                {
-                    name: 'shell',
-                    displayName: 'Shell',
-                    icon: 'fa-term',
-                    callback: (resource: any) => {
-                        console.log('Open Shell');
-                    }
-                },
             ]
         }
     }
@@ -636,9 +622,10 @@ export class DeploymentDefinition {
                         const appname = _.get(resource, 'metadata.name');
                         console.log('Requesting logs for: ' + appname);
                         this.beService.storage = Object.assign(this.beService.storage, {
-                            appname: appname
+                            appname: appname,
+                            metadata: resource
                         })
-                        this.router.navigateByUrl('/logs');
+                        this.router.navigateByUrl('/debug');
                     }
                 },
                 {
@@ -653,14 +640,8 @@ export class DeploymentDefinition {
                     }
                 },
                 {
-                    name: 'shell',
-                    displayName: 'Shell',
-                    icon: 'fa-term',
-                    callback: ()=>{}
-                },
-                {
-                    name: 'appconsole',
-                    displayName: 'AppConsole',
+                    name: 'metrics',
+                    displayName: 'CPU/Memory',
                     icon: 'fa-term',
                     callback: (resource: any)=>{
                         const appname = _.get(resource, 'metadata.name');
