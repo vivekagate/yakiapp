@@ -117,7 +117,7 @@ pub fn get_clusters(window: &Window) -> Kubeconfig {
             Err(e) => {
             println!("{}", e);
                 let json = format!("Encountered error: {}. Check Kubeconfig file is available.", e);
-                utils::send_error(&window, json);
+                utils::send_error(&window, &json);
                 Kubeconfig::default()
         }
     }

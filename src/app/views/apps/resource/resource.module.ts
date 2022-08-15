@@ -22,6 +22,8 @@ import { ChartjsModule } from '@coreui/angular-chartjs';
 import {ResourceComponent} from "./resource.component";
 import {ResourceRoutingModule} from "./resource-routing.module";
 import {ResourceViewModule} from "../components/resourceview/resourceview.module";
+import {ResourceEditComponent} from "./definition/resource-edit.component";
+import {LogsModule} from "../logs/logs.module";
 
 @NgModule({
     imports: [
@@ -34,8 +36,10 @@ import {ResourceViewModule} from "../components/resourceview/resourceview.module
         GridModule,
         SharedModule,
         ResourceViewModule,
+        LogsModule,
+        FormsModule,
     ],
-  declarations: [ResourceComponent]
+  declarations: [ResourceComponent, ResourceEditComponent]
 })
 export class ResourceModule {
 }

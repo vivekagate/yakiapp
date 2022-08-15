@@ -16,6 +16,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import {MetaData} from "ng-event-bus/lib/meta-data";
 import {NgEventBus} from "ng-event-bus";
+import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 
 export enum COL_TYPE {
     number,
@@ -70,7 +71,7 @@ export class ResourceviewComponent implements EventListener {
     faStopped = faStop;
     subscription: Subscription | undefined;
 
-    constructor(private beService: TauriAdapter, private ngZone: NgZone, private eventBus: NgEventBus) {
+    constructor(private beService: TauriAdapter, private ngZone: NgZone, private eventBus: NgEventBus, private modalService: NgbModal) {
         this.columnDefs = [];
         this.resource = {columns: [], command: [], name: ""};
         this.beService.registerListener(this.beService.response_channel.app_command_result, this);
@@ -233,7 +234,17 @@ export class ResourceviewComponent implements EventListener {
 
     onAction(name: string) {
         const action = this.resource.actions?.filter(ac => ac.name === name)[0];
-        action?.callback(this.selectedapp);
+        const ui = action?.callback(this.selectedapp);
+        console.log("Actioning");
+        if (ui) {
+            this.modalService.open(ui, {ariaLabelledBy: 'modal-basic-title', size: 'lg'}).result.then((result) => {
+                // this.beService.executeSyncCommand(this.beService.commands.eula_accepted, {}, () => {
+                //     console.log('EULA Accepted');
+                // });
+            }, (reason) => {
+                // this.closeResult = `Dismissed ${this.getDismissReason(reason)}`;
+            });
+        }
     }
 
     getAttrValue(resource_field: any) {
