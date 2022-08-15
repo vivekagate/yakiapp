@@ -83,6 +83,8 @@ fn execute_sync_command(
     const ADD_LICENSE: &str = "add_license";
     const SAVE_PREFERENCE: &str = "save_preference";
     const GET_PREFERENCES: &str = "get_preferences";
+    const GET_DEPLOYMENT: &str = "get_deployment";
+    const EDIT_RESOURCE: &str = "edit_resource";
 
     let stateHolder = &mut appmanager.0.lock().unwrap();
 
@@ -98,13 +100,37 @@ fn execute_sync_command(
         res.command = GET_PODS_FOR_DEPLOYMENT.parse().unwrap();
         match pods {
             Ok(data) => {
-                let pods = serde_json::to_string(&data).unwrap();
-                res.data = pods;
+                res.data = serde_json::to_string(&data).unwrap();
             }
             Err(err) => {
                 println!("{}", err.to_string());
-                utils::send_error(&window, err.to_string());
+                utils::send_error(&window, &err.to_string());
             }
+        }
+    }else if cmd_hldr.command == GET_DEPLOYMENT {
+        let ns = cmd_hldr.args.get("ns").unwrap();
+        let deployment = cmd_hldr.args.get("deployment").unwrap();
+        res.command = GET_DEPLOYMENT.parse().unwrap();
+        let d = &stateHolder.kubemanager.get_deployment(ns, deployment);
+        match d {
+            Some(data) => {
+                res.data = serde_json::to_string(&data).unwrap();
+            }
+            None => {
+                utils::send_error(&window, "Deployment not found");
+            }
+        }
+    }else if cmd_hldr.command == EDIT_RESOURCE {
+        let ns = cmd_hldr.args.get("ns").unwrap();
+        let kind = cmd_hldr.args.get("kind").unwrap();
+        let name = cmd_hldr.args.get("name").unwrap();
+        let resource_str = cmd_hldr.args.get("resource").unwrap();
+        res.command = EDIT_RESOURCE.parse().unwrap();
+        let d = &stateHolder.kubemanager.edit_resource(ns, resource_str, name, kind);
+        if *d {
+            res.data = "Success".to_string();
+        }else{
+            utils::send_error(&window, "Failed to edit resource");
         }
     } else if cmd_hldr.command == GET_ALL_CLUSTER_CONTEXTS {
         let clusters = kube::get_clusters(&window);

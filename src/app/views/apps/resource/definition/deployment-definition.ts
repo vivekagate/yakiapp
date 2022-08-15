@@ -6,6 +6,7 @@ import {Router} from "@angular/router";
 import {Utilities} from "../utilities";
 import {ColDef} from "ag-grid-community";
 import {Resource} from "../resource-data";
+import {ResourceEditComponent} from "./resource-edit.component";
 
 
 @Injectable({
@@ -560,9 +561,12 @@ export class DeploymentDefinition {
                 },
                 {
                     name: 'edit',
-                    displayName: 'Edit Yaml',
+                    displayName: 'Edit',
                     icon: 'fa-file',
-                    callback: ()=>{}
+                    callback: (res: any)=>{
+                        this.beService.storage.metadata = res;
+                        return ResourceEditComponent;
+                    }
                 },
             ]
         }

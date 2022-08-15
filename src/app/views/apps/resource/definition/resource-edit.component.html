@@ -1,0 +1,16 @@
+<div #modal_eula>
+    <div class="modal-header">
+        <h4 class="modal-title" id="modal-basic-title">Edit</h4>
+        <button type="button" class="close" aria-label="Close" (click)="onDismiss()">
+            <span aria-hidden="true">×</span>
+        </button>
+    </div>
+    <div class="modal-body">
+        <div class="bg-general" style="width: 100%;height: 75vh;" disabled="false">
+            <textarea [(ngModel)]="resourcedescription" class="resource-descriptor bg-general"></textarea>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-outline-dark" (click)="onApply()">Apply</button>
+    </div>
+</div>

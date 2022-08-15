@@ -214,9 +214,9 @@ fn _intialize() -> Result<DataStoreManager, Box<dyn Error>> {
     let sm = DataStoreManager {
         connection: Connection::open(Path::new(&filename)).unwrap(),
     };
-    const sql_init_statements: &str = "\
+    const SQL_INIT_STATEMENTS: &str = "\
     CREATE TABLE IF NOT EXISTS preferences (key TEXT, value TEXT);";
-    sm.connection.execute(sql_init_statements, ()).unwrap();
+    sm.connection.execute(SQL_INIT_STATEMENTS, ()).unwrap();
     sm.upsert(Preference {
         key: LICENSE_PUBLIC_KEY.parse().unwrap(),
         value: LICENSE_PUBLIC_KEY_VALUE.parse().unwrap(),

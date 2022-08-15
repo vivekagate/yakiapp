@@ -12,8 +12,8 @@ impl AppError {
     }
 }
 
-pub fn send_error(window: &Window, err: String) {
-    window.emit("app::error", AppError { reason: err }).unwrap();
+pub fn send_error(window: &Window, err: &str) {
+    window.emit("app::error", AppError { reason: err.to_string() }).unwrap();
 }
 
 pub fn dispatch_event_to_frontend(window: &Window, event: &str) {

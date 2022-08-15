@@ -1,13 +1,14 @@
 {
   "name": "yaki",
-  "version": "0.0.1",
+  "version": "1.1.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "tauriwin": "tauri build -c ./src-tauri/tauri.win.conf.json"
   },
   "private": true,
   "dependencies": {

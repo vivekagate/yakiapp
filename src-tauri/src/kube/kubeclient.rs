@@ -9,16 +9,14 @@ use k8s_openapi::api::core::v1::{
     ConfigMap, Namespace, Node, PersistentVolume, Pod, Secret, Service,
 };
 use k8s_openapi::api::apps::v1::{DaemonSet, Deployment, ReplicaSet, StatefulSet};
-use kube::{
-    api::{Api, ListParams, ResourceExt},
-    Client, Config, Error
-};
+use k8s_openapi::Resource;
+use kube::{api::{Api, ListParams, ResourceExt, DynamicObject}, Client, Config, Discovery, Error};
 use kube::{
     api::{
         DeleteParams, PostParams, WatchEvent, AttachParams, AttachedProcess
     },
 };
-use kube::api::{LogParams, ObjectList};
+use kube::api::{LogParams, ObjectList, Patch, PatchParams};
 use kube::client::ConfigExt;
 use kube::client::middleware::BaseUriLayer;
 use tauri::http::Uri;
@@ -407,6 +405,64 @@ impl KubeClientManager {
         }
     }
 
+    #[tokio::main]
+    pub async fn edit_resource(
+        &self,
+        ns: &str,
+        resource_str: &str,
+        name: &str,
+        kind: &str
+    ) -> bool  {
+        let client = self.init_client().await;
+
+        match client {
+            Some(cl) => {
+                let deploy: Api<Deployment> = Api::namespaced(cl, ns);
+
+                let params = PatchParams::apply("yaki").force();
+                let patch: Deployment = serde_json::from_str(resource_str).unwrap();
+                let patch = Patch::Apply(&patch);
+                let o_patched = deploy.patch(name, &params, &patch).await;
+                match o_patched {
+                    Ok(res) => {
+                        println!("{:?}", res);
+                        true
+                    },
+                    Err(e) => {
+                        println!("{}", e);
+                        false
+                    }
+                }
+            },
+            None => false
+        }
+    }
+
+    #[tokio::main]
+    pub async fn get_deployment(
+        &self,
+        ns: &String,
+        deployment: &str,
+    ) -> Option<Deployment> {
+        let client = self.init_client().await;
+        match client {
+            Some(client) => {
+                let deploy_request: Api<Deployment> = Api::namespaced(client, ns);
+                let d = deploy_request.get(deployment).await;
+                match d {
+                    Ok(mut d) => {
+                        d.managed_fields_mut().clear();
+                        Some(d)
+                    },
+                    _ => {
+                        None
+                    }
+                }
+            },
+            None => {None}
+        }
+    }
+
     pub fn tail_logs_for_pod(
         &self,
         window: Window,
@@ -524,7 +580,7 @@ impl KubeClientManager {
             }
             Err(err) => {
                 error!("Failed to restart: {}", deployment);
-                send_error(window, "Failed to restart. Reason: ".to_string());
+                send_error(window, "Failed to restart. Reason: ");
             }
         }
     }
@@ -555,7 +611,7 @@ impl KubeClientManager {
                 Ok(())
             },
             None => {
-                send_error(window, "Failed to restart. Reason Kubeclient failed.".to_string());
+                send_error(window, "Failed to restart. Reason Kubeclient failed.");
                 Ok(())
             }
         }
