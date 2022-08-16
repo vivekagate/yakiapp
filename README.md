@@ -13,13 +13,11 @@ There are already a number of different IDEs. Yaki offers an alternative to the 
 - No Telemetry (Except for checking for updates)
 - No Sign up or Email address needed.
 
-## Free vs Paid
+## Free vs Paid (WIP)
 
-The source code for Yaki is Open source and is available for anyone to build. If you build it, you can use it for free. Out of the box, the IDE runs for 30 minutes and then shuts down. The instructions for disabling this check are given [here](https://github.com/nirops/yakiapp#disable-license-check)
+The source code for Yaki is Open source and is available for anyone to build. If you build it, you can use it for free.
 
-In case you wish to go directly to the binaries, they can be downloaded [here](https://yaki.nirops.com/#downloads) These binaries run for 30 minutes and then shut down. By paying a nominal fee, you will be provided a key that allows you to keep using the software for perpetuity.
-There is no subscription or any hidden cost beyond that. 
-
+In case you wish to go directly to the binaries, they can be downloaded [here](https://yaki.nirops.com/#downloads).
 
 ### Platforms
 
