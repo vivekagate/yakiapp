@@ -66,6 +66,11 @@ Application
 
 ## Disable License Check
 
+## Contact
+[Discord](https://discord.gg/KDNpzFgV4h)
+[Website](https://yaki.nirops.com)
+[Email](nirops.contact@gmail.com)
+
 ## Licenses
 
 MIT or MIT/Apache 2.0 where applicable.
