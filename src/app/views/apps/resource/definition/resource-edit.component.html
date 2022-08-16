@@ -6,11 +6,12 @@
         </button>
     </div>
     <div class="modal-body">
+        <button class="button-app btn-sm" (click)="onApply()">
+            <i class="fa fa-save"></i>&nbsp;
+            Save
+        </button>
         <div class="bg-general" style="width: 100%;height: 75vh;" disabled="false">
             <textarea [(ngModel)]="resourcedescription" class="resource-descriptor bg-general"></textarea>
         </div>
-    </div>
-    <div class="modal-footer">
-        <button type="button" class="btn btn-outline-dark" (click)="onApply()">Apply</button>
     </div>
 </div>

@@ -1,0 +1,26 @@
+<div #modal_eula>
+    <div class="modal-header">
+        <h4 class="modal-title" id="modal-basic-title">Change Instance Setting</h4>
+        <button type="button" class="close" aria-label="Close" (click)="onDismiss()">
+            <span aria-hidden="true">×</span>
+        </button>
+    </div>
+    <div class="modal-body">
+        <div class="bg-general" style="width: 100%;height: 75vh;">
+            <button class="button-app btn-sm" (click)="onSave()">
+                <i class="fa fa-save"></i>&nbsp;
+                Save
+            </button>
+            <ag-grid-angular #aggrid
+                             style="width: 100%; height: 40vh"
+                             class="ag-theme-alpine-dark"
+                             [suppressCellFocus]="true"
+                             [columnDefs]="columnDefs"
+                             [defaultColDef]="defaultColDef"
+                             [rowData]="rowData"
+                             [rowSelection]="'single'"
+                             [animateRows]="true"
+            ></ag-grid-angular>
+        </div>
+    </div>
+</div>

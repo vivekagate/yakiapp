@@ -7,6 +7,7 @@ import {Utilities} from "../utilities";
 import {ColDef} from "ag-grid-community";
 import {Resource} from "../resource-data";
 import {ResourceEditComponent} from "./resource-edit.component";
+import {InstanceDialogComponent} from "./instancedialog/instance-dialog.component";
 
 
 @Injectable({
@@ -619,17 +620,12 @@ export class DeploymentDefinition {
             name: "Applications",
             actions: [
                 {
-                    name: 'logs',
-                    displayName: 'Logs',
+                    name: 'instance',
+                    displayName: 'Change instance',
                     icon: 'fa-file-code-o',
-                    callback: (resource: any)=>{
-                        const appname = _.get(resource, 'metadata.name');
-                        console.log('Requesting logs for: ' + appname);
-                        this.beService.storage = Object.assign(this.beService.storage, {
-                            appname: appname,
-                            metadata: resource
-                        })
-                        this.router.navigateByUrl('/debug');
+                    callback: (res: any)=>{
+                        this.beService.storage.metadata = res;
+                        return InstanceDialogComponent;
                     }
                 },
                 {
@@ -645,8 +641,8 @@ export class DeploymentDefinition {
                 },
                 {
                     name: 'metrics',
-                    displayName: 'CPU/Memory',
-                    icon: 'fa-term',
+                    displayName: 'Logs + Metrics',
+                    icon: 'fa-file-code-o',
                     callback: (resource: any)=>{
                         const appname = _.get(resource, 'metadata.name');
                         console.log('Requesting logs for: ' + appname);

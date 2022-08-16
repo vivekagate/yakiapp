@@ -16,6 +16,7 @@ import {QuantityUtils} from "./quantity-utils";
 import {ColDef} from "ag-grid-community";
 import {TerminalComponent} from "../logs/terminal/terminal.component";
 import {MetricUtilities} from "../common/metric-utilities";
+import {AgGridAngular} from "ag-grid-angular";
 
 @Component({
   selector: 'app-debug',
@@ -29,6 +30,7 @@ export class DebugComponent implements EventListener{
   deployments: any;
   // @ts-ignore
   @ViewChild("metricsgraph") metricsgraph: ChartjsComponent;
+  @ViewChild("aggrid") aggrid!: AgGridAngular;
   defaultColDef: ColDef = {
     editable: false,
     sortable: true,
@@ -52,6 +54,8 @@ export class DebugComponent implements EventListener{
     this.beService.executeCommand(this.beService.commands.stop_live_tail, {});
   }
   ngOnInit(): void {
+    this.aggrid.api.setRowData([]);
+
     this.beService.registerListener(this.beService.response_channel.app_metrics, this);
     this.beService.registerListener(this.beService.response_channel.app_command_result, this);
 
