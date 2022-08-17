@@ -8,6 +8,7 @@ import {ColDef} from "ag-grid-community";
 import {Resource} from "../resource-data";
 import {ResourceEditComponent} from "./resource-edit.component";
 import {InstanceDialogComponent} from "./instancedialog/instance-dialog.component";
+import {ConfirmDialogComponent} from "./confirmdialog/confirm-dialog.component";
 
 
 @Injectable({
@@ -625,18 +626,22 @@ export class DeploymentDefinition {
                     icon: 'fa-file-code-o',
                     callback: (res: any)=>{
                         this.beService.storage.metadata = res;
-                        return InstanceDialogComponent;
+                        return {
+                            ui: InstanceDialogComponent,
+                            size: 'lg'
+                        };
                     }
                 },
                 {
                     name: 'restart',
                     displayName: 'Restart',
                     icon: 'fa-term',
-                    callback: (resource: any)=>{
-                        const appname = _.get(resource, 'metadata.name');
-                        this.beService.executeCommandInCurrentNs(this.beService.commands.restart_deployments, {
-                            deployment: appname,
-                        });
+                    callback: (res: any)=>{
+                        this.beService.storage.metadata = res;
+                        return {
+                            ui: ConfirmDialogComponent,
+                            size: 'sm'
+                        };
                     }
                 },
                 {

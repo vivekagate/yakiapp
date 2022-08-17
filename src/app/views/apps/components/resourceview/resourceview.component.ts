@@ -237,10 +237,9 @@ export class ResourceviewComponent implements EventListener {
 
     onAction(name: string) {
         const action = this.resource.actions?.filter(ac => ac.name === name)[0];
-        const ui = action?.callback(this.selectedapp);
-        console.log("Actioning");
+        const {ui, size} = action?.callback(this.selectedapp);
         if (ui) {
-            this.modalService.open(ui, {ariaLabelledBy: 'modal-basic-title', size: 'lg'}).result.then((result) => {
+            this.modalService.open(ui, {ariaLabelledBy: 'modal-basic-title', size: size || 'lg'}).result.then((result) => {
                 // this.beService.executeSyncCommand(this.beService.commands.eula_accepted, {}, () => {
                 //     console.log('EULA Accepted');
                 // });
