@@ -70,7 +70,7 @@
         </c-card-header>
                 <c-card-body style="padding: 0">
                     <c-spinner color="secondary" [hidden]="!isLoading" class="center"></c-spinner>
-                    <c-accordion [flush]="true" [alwaysOpen]="true" *ngIf="resource && resource.sidebar && resource.sidebar.mode && resource.sidebar.mode !== 'table'">
+                    <c-accordion [flush]="true" [alwaysOpen]="true" *ngIf="resource && resource.sections && resource.sections.length >0 ">
                         <c-accordion-item *ngFor="let section of resource.sections" [visible]="!section.hidden">
                             <ng-template cTemplateId="accordionHeader">
                                 {{section.name}}

@@ -100,6 +100,9 @@ export class ResourceviewComponent implements EventListener {
                 if ( ! this.isSideBarHidden) {
                     this.isSideBarHidden = true;
                 }
+            }else if (meta.data === this.beService.ngevent.refresh_clicked) {
+                this.isLoading = true;
+                this.initialize();
             }
         });
     }
@@ -129,6 +132,7 @@ export class ResourceviewComponent implements EventListener {
         const evname = ev.name;
         const payload = ev.payload;
         let results: any;
+        console.log(evname);
         try {
             results = JSON.parse(_.get(payload, 'data'));
         } catch (e) {
@@ -140,8 +144,39 @@ export class ResourceviewComponent implements EventListener {
             const nameMetric2Map = new Map();
             const specNameMap = new Map();
             const deployNameToPodsMap = new Map();
-            if (!results.items && results.resource && results.metrics) {
+            if (!results.items && results.resource) {
                 results.items = JSON.parse(results.resource).items;
+            }
+            if (results.usage) {
+                const md = JSON.parse(results.usage);
+                md.items.forEach((pod: any) => {
+                    if (pod.spec.containers) {
+                        const deployname = pod.spec.containers[0].name;
+                        let resourceArray = specNameMap.get(deployname);
+                        if (!resourceArray) {
+                            resourceArray = [];
+                            specNameMap.set(deployname, resourceArray);
+                        }
+                        resourceArray.push({
+                            name: pod.metadata.name,
+                            usage: nameMetricMap.get(pod.metadata.name),
+                            status: pod.status
+                        });
+
+                        let podArray = deployNameToPodsMap.get(deployname);
+                        if (!podArray) {
+                            podArray = [];
+                            deployNameToPodsMap.set(deployname, podArray);
+                        }
+                        podArray.push(pod);
+                        const pmetric = nameMetricMap.get(pod.metadata.name);
+                        if (pmetric && pmetric.containers && pmetric.containers.length > 0) {
+                            pod.spec.containers[0].resources.usage = pmetric.containers[0].usage;
+                        }
+                    }
+                })
+            }
+            if (results.resource && results.metrics) {
                 const metrics = JSON.parse(results.metrics);
                 metrics.items.forEach((m: any) => {
                     nameMetricMap.set(m.metadata.name, m);
@@ -150,35 +185,6 @@ export class ResourceviewComponent implements EventListener {
                     const metrics2 = JSON.parse(results.metrics2);
                     metrics2.items.forEach((m: any) => {
                         nameMetric2Map.set(m.metadata.name, m);
-                    })
-                }
-                if (results.usage) {
-                    const md = JSON.parse(results.usage);
-                    md.items.forEach((pod: any) => {
-                        if (pod.spec.containers) {
-                            const deployname = pod.spec.containers[0].name;
-                            let resourceArray = specNameMap.get(deployname);
-                            if (!resourceArray) {
-                                resourceArray = [];
-                                specNameMap.set(deployname, resourceArray);
-                            }
-                            resourceArray.push({
-                                name: pod.metadata.name,
-                                usage: nameMetricMap.get(pod.metadata.name),
-                                status: pod.status
-                            });
-
-                            let podArray = deployNameToPodsMap.get(deployname);
-                            if (!podArray) {
-                                podArray = [];
-                                deployNameToPodsMap.set(deployname, podArray);
-                            }
-                            podArray.push(pod);
-                            const pmetric = nameMetricMap.get(pod.metadata.name);
-                            if (pmetric && pmetric.containers && pmetric.containers.length > 0) {
-                                pod.spec.containers[0].resources.usage = pmetric.containers[0].usage;
-                            }
-                        }
                     })
                 }
             }
@@ -222,6 +228,7 @@ export class ResourceviewComponent implements EventListener {
 
     onSelect(app: RowClickedEvent<any>) {
         this.selectedapp = app.data;
+        console.log(this.selectedapp);
         this.isSideBarHidden = !this.isSideBarHidden;
         if (!this.isSideBarHidden) {
         }else{
@@ -234,10 +241,9 @@ export class ResourceviewComponent implements EventListener {
 
     onAction(name: string) {
         const action = this.resource.actions?.filter(ac => ac.name === name)[0];
-        const ui = action?.callback(this.selectedapp);
-        console.log("Actioning");
+        const {ui, size} = action?.callback(this.selectedapp);
         if (ui) {
-            this.modalService.open(ui, {ariaLabelledBy: 'modal-basic-title', size: 'lg'}).result.then((result) => {
+            this.modalService.open(ui, {ariaLabelledBy: 'modal-basic-title', size: size || 'lg'}).result.then((result) => {
                 // this.beService.executeSyncCommand(this.beService.commands.eula_accepted, {}, () => {
                 //     console.log('EULA Accepted');
                 // });

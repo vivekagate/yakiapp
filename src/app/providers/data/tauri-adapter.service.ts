@@ -58,7 +58,8 @@ export class TauriAdapter {
   public ngevent = {
     ns_changed: 'ns_changed',
     cluster_changed: 'cluster_changed',
-    escape_hit: 'escape_hit'
+    escape_hit: 'escape_hit',
+    refresh_clicked: 'refresh_clicked'
   }
 
   public response_channel = {

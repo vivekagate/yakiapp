@@ -167,4 +167,7 @@ export class DefaultHeaderComponent extends HeaderComponent implements EventList
     }
   }
 
+    onRefresh() {
+      this.eventBus.cast(this.beService.ngeventbus.app_events, this.beService.ngevent.refresh_clicked);
+    }
 }

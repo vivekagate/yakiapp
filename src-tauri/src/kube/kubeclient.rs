@@ -260,12 +260,16 @@ impl KubeClientManager {
                 let lp = ListParams::default();
                 let pods: ObjectList<Pod> = kube_request.list(&lp).await?;
 
-                let m_kube_request: Api<PodMetrics> = Api::namespaced(metrics_client, namespace);
-                let lp = ListParams::default();
-                let metrics = m_kube_request.list(&lp).await?;
+                let mut metrics_val = "".to_string();
+                if self.is_metrics_available() {
+                    let m_kube_request: Api<PodMetrics> = Api::namespaced(metrics_client, namespace);
+                    let lp = ListParams::default();
+                    let metrics = m_kube_request.list(&lp).await?;
+                    metrics_val = serde_json::to_string(&metrics).unwrap();
+                }
                 let json = ResourceWithMetricsHolder {
                     resource: serde_json::to_string(&pods).unwrap(),
-                    metrics: serde_json::to_string(&metrics).unwrap(),
+                    metrics: metrics_val,
                     usage: None,
                     metrics2: None,
                     ts: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis()
@@ -295,12 +299,16 @@ impl KubeClientManager {
                 let lp = ListParams::default();
                 let nodes: ObjectList<Node> = kube_request.list(&lp).await?;
 
-                let m_kube_request: Api<NodeMetrics> = Api::all(metrics_client);
-                let lp = ListParams::default();
-                let metrics = m_kube_request.list(&lp).await?;
+                let mut metrics_val = "".to_string();
+                if self.is_metrics_available() {
+                    let m_kube_request: Api<NodeMetrics> = Api::all(metrics_client);
+                    let lp = ListParams::default();
+                    let metrics = m_kube_request.list(&lp).await?;
+                    metrics_val = serde_json::to_string(&metrics).unwrap();
+                }
                 let json = ResourceWithMetricsHolder {
                     resource: serde_json::to_string(&nodes).unwrap(),
-                    metrics: serde_json::to_string(&metrics).unwrap(),
+                    metrics: metrics_val,
                     usage: None,
                     metrics2: None,
                     ts: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis()
@@ -313,6 +321,10 @@ impl KubeClientManager {
                 Ok(())
             }
         }
+    }
+
+    fn is_metrics_available(&self) -> bool {
+        return false;
     }
 
     #[tokio::main]
@@ -333,24 +345,30 @@ impl KubeClientManager {
                 let lp = ListParams::default();
                 let deployments: ObjectList<Deployment> = kube_request.list(&lp).await?;
 
-                let m_kube_request: Api<PodMetrics> = Api::namespaced(metrics_client, namespace);
-                let lp = ListParams::default();
-                let metrics = m_kube_request.list(&lp).await?;
-
                 let p_kube_request: Api<Pod> = Api::namespaced(pod_client, namespace);
                 let lp = ListParams::default();
                 let pods = p_kube_request.list(&lp).await?;
 
-                let mp_kube_request: Api<PodMetrics> = Api::namespaced(pod_metrics_client, namespace);
-                let lp = ListParams::default();
-                let pod_metrics = mp_kube_request.list(&lp).await?;
+                let mut metrics_val = "".to_string();
+                let mut metrics2 = None;
+                if self.is_metrics_available() {
+                    let m_kube_request: Api<PodMetrics> = Api::namespaced(metrics_client, namespace);
+                    let lp = ListParams::default();
+                    let metrics = m_kube_request.list(&lp).await?;
 
+                    let mp_kube_request: Api<PodMetrics> = Api::namespaced(pod_metrics_client, namespace);
+                    let lp = ListParams::default();
+                    let pod_metrics = mp_kube_request.list(&lp).await?;
+
+                    metrics_val = serde_json::to_string(&metrics).unwrap();
+                    metrics2 = Some(serde_json::to_string(&pod_metrics).unwrap());
+                }
                 let json = ResourceWithMetricsHolder {
                     resource: serde_json::to_string(&deployments).unwrap(),
-                    metrics: serde_json::to_string(&metrics).unwrap(),
                     usage: Some(serde_json::to_string(&pods).unwrap()),
-                    metrics2: Some(serde_json::to_string(&pod_metrics).unwrap()),
-                    ts: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis()
+                    ts: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis(),
+                    metrics: metrics_val,
+                    metrics2,
                 };
                 dispatch_to_frontend(window, cmd, serde_json::to_string(&json).unwrap());
                 Ok(())
@@ -425,7 +443,6 @@ impl KubeClientManager {
                 let o_patched = deploy.patch(name, &params, &patch).await;
                 match o_patched {
                     Ok(res) => {
-                        println!("{:?}", res);
                         true
                     },
                     Err(e) => {

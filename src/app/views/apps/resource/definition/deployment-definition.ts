@@ -7,6 +7,8 @@ import {Utilities} from "../utilities";
 import {ColDef} from "ag-grid-community";
 import {Resource} from "../resource-data";
 import {ResourceEditComponent} from "./resource-edit.component";
+import {InstanceDialogComponent} from "./instancedialog/instance-dialog.component";
+import {ConfirmDialogComponent} from "./confirmdialog/confirm-dialog.component";
 
 
 @Injectable({
@@ -565,8 +567,30 @@ export class DeploymentDefinition {
                     icon: 'fa-file',
                     callback: (res: any)=>{
                         this.beService.storage.metadata = res;
-                        return ResourceEditComponent;
+                        return {
+                            ui: ResourceEditComponent,
+                            size: 'lg'
+                        };
                     }
+                },
+            ],
+            sections: [
+                {
+                    name: 'Overview',
+                    attributes: [
+                        {
+                            name: 'Image',
+                            resource_field: 'spec.template.spec.containers.0.image'
+                        },
+                        {
+                            name: 'CPU Max',
+                            resource_field: 'spec.template.spec.containers.0.resources.limits.cpu'
+                        },
+                        {
+                            name: 'Memory Max',
+                            resource_field: 'spec.template.spec.containers.0.resources.limits.memory'
+                        },
+                    ]
                 },
             ]
         }
@@ -601,6 +625,17 @@ export class DeploymentDefinition {
                         console.log('Restart');
                     }
                 },
+            ],
+            sections: [
+                {
+                    name: 'Overview',
+                    attributes: [
+                        {
+                            name: 'Image',
+                            resource_field: 'spec.template.spec.containers.0.image'
+                        },
+                    ]
+                },
             ]
         }
     }
@@ -619,34 +654,33 @@ export class DeploymentDefinition {
             name: "Applications",
             actions: [
                 {
-                    name: 'logs',
-                    displayName: 'Logs',
+                    name: 'instance',
+                    displayName: 'Change instance',
                     icon: 'fa-file-code-o',
-                    callback: (resource: any)=>{
-                        const appname = _.get(resource, 'metadata.name');
-                        console.log('Requesting logs for: ' + appname);
-                        this.beService.storage = Object.assign(this.beService.storage, {
-                            appname: appname,
-                            metadata: resource
-                        })
-                        this.router.navigateByUrl('/debug');
+                    callback: (res: any)=>{
+                        this.beService.storage.metadata = res;
+                        return {
+                            ui: InstanceDialogComponent,
+                            size: 'lg'
+                        };
                     }
                 },
                 {
                     name: 'restart',
                     displayName: 'Restart',
                     icon: 'fa-term',
-                    callback: (resource: any)=>{
-                        const appname = _.get(resource, 'metadata.name');
-                        this.beService.executeCommandInCurrentNs(this.beService.commands.restart_deployments, {
-                            deployment: appname,
-                        });
+                    callback: (res: any)=>{
+                        this.beService.storage.metadata = res;
+                        return {
+                            ui: ConfirmDialogComponent,
+                            size: 'sm'
+                        };
                     }
                 },
                 {
                     name: 'metrics',
-                    displayName: 'CPU/Memory',
-                    icon: 'fa-term',
+                    displayName: 'Logs + Metrics',
+                    icon: 'fa-file-code-o',
                     callback: (resource: any)=>{
                         const appname = _.get(resource, 'metadata.name');
                         console.log('Requesting logs for: ' + appname);

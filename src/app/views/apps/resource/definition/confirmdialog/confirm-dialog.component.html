@@ -1,0 +1,22 @@
+<div #modal_eula>
+    <div class="modal-body">
+        <div class="card">
+            <div class="card-header">
+                Confirmation
+            </div>
+            <div class="card-body">
+                Are you sure you want to continue?
+            </div>
+            <div class="card-footer">
+                <button class="button-app btn-sm" (click)="onDismiss()">
+                    <i class="fa fa-crosshairs"></i>&nbsp;
+                    Cancel
+                </button>
+                <button class="button-app btn-sm fa-pull-right" (click)="onConfirm()">
+                    <i class="fa fa-save"></i>&nbsp;
+                    Ok
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
