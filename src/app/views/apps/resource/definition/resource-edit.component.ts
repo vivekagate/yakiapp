@@ -16,14 +16,16 @@ export class ResourceEditComponent {
 
     ngOnInit(): void {
         const deployment = this.beService.storage.metadata.metadata.name;
-        this.beService.executeSyncCommandInCurrentNs(this.beService.commands.get_deployment, {
-            deployment
-        }, (res) => {
-            const val = JSON.parse(JSON.parse(res).data);
-            delete val.metadata.managedFields;
-            const op = JSON.stringify(val, null, 4);
-            // const op = JSON.parse(res).data;
-            this.resourcedescription = `${op}`;
+        setTimeout(() => {
+            this.beService.executeSyncCommandInCurrentNs(this.beService.commands.get_deployment, {
+                deployment
+            }, (res) => {
+                const val = JSON.parse(JSON.parse(res).data);
+                delete val.metadata.managedFields;
+                const op = JSON.stringify(val, null, 4);
+                // const op = JSON.parse(res).data;
+                this.resourcedescription = `${op}`;
+            });
         });
     }
 

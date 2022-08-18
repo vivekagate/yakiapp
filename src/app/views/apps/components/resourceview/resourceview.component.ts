@@ -228,6 +228,7 @@ export class ResourceviewComponent implements EventListener {
 
     onSelect(app: RowClickedEvent<any>) {
         this.selectedapp = app.data;
+        console.log(this.selectedapp);
         this.isSideBarHidden = !this.isSideBarHidden;
         if (!this.isSideBarHidden) {
         }else{

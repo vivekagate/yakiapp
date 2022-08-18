@@ -567,8 +567,35 @@ export class DeploymentDefinition {
                     icon: 'fa-file',
                     callback: (res: any)=>{
                         this.beService.storage.metadata = res;
-                        return ResourceEditComponent;
+                        return {
+                            ui: ResourceEditComponent,
+                            size: 'lg'
+                        };
                     }
+                },
+            ],
+            sidebar: {
+                name: 'Deployment Detail',
+                mode: 'accordion',
+                data: []
+            },
+            sections: [
+                {
+                    name: 'Overview',
+                    attributes: [
+                        {
+                            name: 'Image',
+                            resource_field: 'spec.template.spec.containers.0.image'
+                        },
+                        {
+                            name: 'CPU Max',
+                            resource_field: 'spec.template.spec.containers.0.resources.limits.cpu'
+                        },
+                        {
+                            name: 'Memory Max',
+                            resource_field: 'spec.template.spec.containers.0.resources.limits.memory'
+                        },
+                    ]
                 },
             ]
         }
@@ -602,6 +629,22 @@ export class DeploymentDefinition {
                     callback: (resource: any) => {
                         console.log('Restart');
                     }
+                },
+            ],
+            sidebar: {
+                name: 'Pod Detail',
+                mode: 'accordion',
+                data: []
+            },
+            sections: [
+                {
+                    name: 'Overview',
+                    attributes: [
+                        {
+                            name: 'Image',
+                            resource_field: 'spec.template.spec.containers.0.image'
+                        },
+                    ]
                 },
             ]
         }
