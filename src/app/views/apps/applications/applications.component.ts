@@ -79,6 +79,9 @@ export class ApplicationsComponent implements EventListener{
         if ( ! this.isSideBarHidden) {
           this.isSideBarHidden = true;
         }
+      }else if (meta.data === this.beService.ngevent.refresh_clicked) {
+        this.isLoading = true;
+        this.onNamespaceChanged();
       }
     });
   }
