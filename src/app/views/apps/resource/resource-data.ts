@@ -267,11 +267,6 @@ export class ResourceData {
                 }
             ],
             name: "Nodes",
-            sidebar: {
-                name: 'Node Detail',
-                mode: 'accordion',
-                data: []
-            },
             sections: [
                 {
                     name: 'Overview',

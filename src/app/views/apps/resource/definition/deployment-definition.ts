@@ -574,11 +574,6 @@ export class DeploymentDefinition {
                     }
                 },
             ],
-            sidebar: {
-                name: 'Deployment Detail',
-                mode: 'accordion',
-                data: []
-            },
             sections: [
                 {
                     name: 'Overview',
@@ -631,11 +626,6 @@ export class DeploymentDefinition {
                     }
                 },
             ],
-            sidebar: {
-                name: 'Pod Detail',
-                mode: 'accordion',
-                data: []
-            },
             sections: [
                 {
                     name: 'Overview',
