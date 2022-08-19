@@ -9,11 +9,12 @@ use k8s_openapi::api::core::v1::{
     ConfigMap, Namespace, Node, PersistentVolume, Pod, Secret, Service,
 };
 use k8s_openapi::api::apps::v1::{DaemonSet, Deployment, ReplicaSet, StatefulSet};
-use k8s_openapi::Resource;
+use k8s_openapi::{NamespaceResourceScope, Resource};
+use k8s_openapi::api::batch::v1::CronJob;
 use kube::{api::{Api, ListParams, ResourceExt, DynamicObject}, Client, Config, Discovery, Error};
 use kube::{
     api::{
-        DeleteParams, PostParams, WatchEvent, AttachParams, AttachedProcess
+        DeleteParams, PostParams, WatchEvent, AttachParams, AttachedProcess, ObjectMeta
     },
 };
 use kube::api::{LogParams, ObjectList, Patch, PatchParams};
@@ -67,6 +68,13 @@ impl KubeClientManager {
 
     pub fn set_kubeconfig_file(&mut self, file: &str) {
         self.kubeconfigfile = file.to_string();
+    }
+
+    fn get_api<T>(&self, client: Client, ns: &str) -> Api<T> where T: Resource + k8s_openapi::Metadata<Ty = ObjectMeta>{
+        if ns == "*All*" {
+            return Api::all(client);
+        }
+        Api::namespaced(client, ns)
     }
 
     async fn init_client(&self) -> Option<Client> {
@@ -137,6 +145,10 @@ impl KubeClientManager {
         custom_ns_list: Vec<KNamespace>
     ) -> Result<Vec<KNamespace>, Box<dyn std::error::Error>> {
         let mut kns_list: Vec<KNamespace> = Vec::new();
+        kns_list.push(KNamespace {
+            name: "*All*".to_string(),
+            creation_ts: None
+        });
         let client = self.init_client().await;
         match client {
             Some(client) => {
@@ -202,9 +214,9 @@ impl KubeClientManager {
         match client {
             Some(client) => {
                 let pod_client = client.clone();
-                let mp_kube_request: Api<PodMetrics> = Api::namespaced(client, ns);
+                let mp_kube_request: Api<PodMetrics> = self.get_api(client, ns);
                 let lp = ListParams::default();
-                let p_kube_request: Api<Pod> = Api::namespaced(pod_client, ns);
+                let p_kube_request: Api<Pod> = self.get_api(pod_client, ns);
 
                 loop {
                     let metrics = mp_kube_request.list(&lp).await?;
@@ -255,14 +267,14 @@ impl KubeClientManager {
         match client {
             Some(client) => {
                 let metrics_client = client.clone();
-                let kube_request: Api<Pod> = Api::namespaced(client, namespace);
+                let kube_request: Api<Pod> = self.get_api(client, namespace);
 
                 let lp = ListParams::default();
                 let pods: ObjectList<Pod> = kube_request.list(&lp).await?;
 
                 let mut metrics_val = "".to_string();
                 if self.is_metrics_available() {
-                    let m_kube_request: Api<PodMetrics> = Api::namespaced(metrics_client, namespace);
+                    let m_kube_request: Api<PodMetrics> = self.get_api(metrics_client, namespace);
                     let lp = ListParams::default();
                     let metrics = m_kube_request.list(&lp).await?;
                     metrics_val = serde_json::to_string(&metrics).unwrap();
@@ -340,23 +352,23 @@ impl KubeClientManager {
                 let metrics_client = client.clone();
                 let pod_metrics_client = client.clone();
                 let pod_client = client.clone();
-                let kube_request: Api<Deployment> = Api::namespaced(client, namespace);
+                let kube_request: Api<Deployment> = self.get_api(client, namespace);
 
                 let lp = ListParams::default();
                 let deployments: ObjectList<Deployment> = kube_request.list(&lp).await?;
 
-                let p_kube_request: Api<Pod> = Api::namespaced(pod_client, namespace);
+                let p_kube_request: Api<Pod> = self.get_api(pod_client, namespace);
                 let lp = ListParams::default();
                 let pods = p_kube_request.list(&lp).await?;
 
                 let mut metrics_val = "".to_string();
                 let mut metrics2 = None;
                 if self.is_metrics_available() {
-                    let m_kube_request: Api<PodMetrics> = Api::namespaced(metrics_client, namespace);
+                    let m_kube_request: Api<PodMetrics> = self.get_api(metrics_client, namespace);
                     let lp = ListParams::default();
                     let metrics = m_kube_request.list(&lp).await?;
 
-                    let mp_kube_request: Api<PodMetrics> = Api::namespaced(pod_metrics_client, namespace);
+                    let mp_kube_request: Api<PodMetrics> = self.get_api(pod_metrics_client, namespace);
                     let lp = ListParams::default();
                     let pod_metrics = mp_kube_request.list(&lp).await?;
 
@@ -394,12 +406,12 @@ impl KubeClientManager {
         match client {
             Some(client) => {
                 let pclient = client.clone();
-                let deploy_request: Api<Deployment> = Api::namespaced(client, ns);
+                let deploy_request: Api<Deployment> = self.get_api(client, ns);
                 let d = deploy_request.get(deployment).await?;
                 let mut pods_for_deployments: Vec<Pod> = Vec::new();
                 if let Some(spec) = d.spec {
                     if let Some(match_labels) = spec.selector.match_labels {
-                        let pod_request: Api<Pod> = Api::namespaced(pclient, ns);
+                        let pod_request: Api<Pod> = self.get_api(pclient, ns);
                         debug!("Spec:: {:?}", match_labels);
                         for lbl in match_labels {
                             match lbl {
@@ -435,7 +447,7 @@ impl KubeClientManager {
 
         match client {
             Some(cl) => {
-                let deploy: Api<Deployment> = Api::namespaced(cl, ns);
+                let deploy: Api<Deployment> = self.get_api(cl, ns);
 
                 let params = PatchParams::apply("yaki").force();
                 let patch: Deployment = serde_json::from_str(resource_str).unwrap();
@@ -464,7 +476,7 @@ impl KubeClientManager {
         let client = self.init_client().await;
         match client {
             Some(client) => {
-                let deploy_request: Api<Deployment> = Api::namespaced(client, ns);
+                let deploy_request: Api<Deployment> = self.get_api(client, ns);
                 let d = deploy_request.get(deployment).await;
                 match d {
                     Ok(mut d) => {
@@ -502,7 +514,7 @@ impl KubeClientManager {
         let client = self.init_client().await;
         match client {
             Some(client) => {
-                let pods: Api<Pod> = Api::namespaced(client, ns);
+                let pods: Api<Pod> = self.get_api(client, ns);
                 let mut logs = pods
                     .log_stream(
                         &pod,
@@ -556,7 +568,7 @@ impl KubeClientManager {
         let client = self.init_client().await;
         match client {
             Some(client) => {
-                let pods: Api<Pod> = Api::namespaced(client, ns);
+                let pods: Api<Pod> = self.get_api(client, ns);
                 let mut attached = pods
                     .exec(podname, vec!["env"], &AttachParams::default().stderr(false))
                     .await?;
@@ -613,7 +625,7 @@ impl KubeClientManager {
         let client = self.init_client().await;
         match client {
             Some(client) => {
-                let deploy_request: Api<Deployment> = Api::namespaced(client, namespace);
+                let deploy_request: Api<Deployment> = self.get_api(client, namespace);
                 let result = deploy_request.restart(deployment).await?;
                 let json = "success";
                 window
@@ -634,4 +646,208 @@ impl KubeClientManager {
         }
     }
 
+    pub fn get_resource(&self, window: &Window, namespace: &String, kind: &String, cmd: &str) {
+        if kind == "deployment" {
+            self._get_deployments_with_metrics(&window, namespace, cmd);
+        } else if kind == "namespace" {
+            // _get_all_ns(&window, cmd, cluster, Vec::new());
+        } else if kind == "pod" {
+            self._get_pods_with_metrics(&window, namespace, cmd);
+        } else if kind == "podmetrics" {
+            self._get_pods_with_metrics(&window, namespace, cmd);
+        } else if kind == "node" {
+            self._get_nodes_with_metrics(&window, cmd);
+        } else if kind == "cronjob" {
+            self._get_all_cron_jobs(&window, cmd, namespace);
+        } else if kind == "configmap" {
+            self._get_all_config_maps(&window, cmd, namespace);
+            self._get_all_secrets(&window, cmd, namespace);
+        } else if kind == "service" {
+            self._get_all_services(&window, cmd, namespace);
+        } else if kind == "daemonset" {
+            self._get_all_daemon_sets(&window, cmd, namespace);
+        } else if kind == "persistentvolume" {
+            self._get_all_persistent_volume(&window, cmd, namespace);
+        } else if kind == "statefulset" {
+            self._get_all_stateful_sets(&window, cmd, namespace);
+        }
+    }
+
+    #[tokio::main]
+    async fn _get_all_services(
+        &self,
+        window: &Window,
+        cmd: &str,
+        namespace: &String,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let client = self.init_client().await;
+        match client {
+            Some(client) => {
+                let kube_request: Api<Service> = Api::namespaced(client, namespace);
+
+                let lp = ListParams::default();
+                let services: ObjectList<Service> = kube_request.list(&lp).await?;
+                let json = serde_json::to_string(&services).unwrap();
+                dispatch_to_frontend(window, cmd, json);
+                Ok(())
+            },
+            None => Ok(())
+        }
+    }
+
+    #[tokio::main]
+    async fn _get_all_config_maps(
+        &self,
+        window: &Window,
+        cmd: &str,
+        namespace: &String,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let client = self.init_client().await;
+        match client {
+            Some(client) => {
+                let kube_request: Api<ConfigMap> = self.get_api(client, namespace);
+
+                let lp = ListParams::default();
+                let config_maps: ObjectList<ConfigMap> = kube_request.list(&lp).await?;
+                let json = serde_json::to_string(&config_maps).unwrap();
+                dispatch_to_frontend(window, cmd, json);
+                Ok(())
+            },
+                None => Ok(())
+        }
+    }
+
+    #[tokio::main]
+    async fn _get_all_cron_jobs(
+        &self,
+        window: &Window,
+        cmd: &str,
+        namespace: &String,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let client = self.init_client().await;
+        match client {
+            Some(client) =>{
+                let kube_request: Api<CronJob> = self.get_api(client, namespace);
+
+                let lp = ListParams::default();
+                let cron_jobs: ObjectList<CronJob> = kube_request.list(&lp).await?;
+                let json = serde_json::to_string(&cron_jobs).unwrap();
+                dispatch_to_frontend(window, cmd, json);
+                Ok(())
+            },
+                None => Ok(())
+        }
+    }
+
+    #[tokio::main]
+    async fn _get_all_secrets(
+        &self,
+        window: &Window,
+        cmd: &str,
+        namespace: &String,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let client = self.init_client().await;
+        match client {
+            Some(client) => {
+                let kube_request: Api<Secret> = self.get_api(client, namespace);
+
+                let lp = ListParams::default();
+                let secrets: ObjectList<Secret> = kube_request.list(&lp).await?;
+                let json = serde_json::to_string(&secrets).unwrap();
+                dispatch_to_frontend(window, cmd, json);
+                Ok(())
+            },
+                None => Ok(())
+        }
+    }
+
+
+    #[tokio::main]
+    async fn _get_all_persistent_volume(
+        &self,
+        window: &Window,
+        cmd: &str,
+        namespace: &String,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let client = self.init_client().await;
+        match client {
+            Some(client) => {
+                let kube_request: Api<PersistentVolume> = self.get_api(client, namespace);
+
+                let lp = ListParams::default();
+                let persistent_volumes: ObjectList<PersistentVolume> = kube_request.list(&lp).await?;
+                let json = serde_json::to_string(&persistent_volumes).unwrap();
+                dispatch_to_frontend(window, cmd, json);
+                Ok(())
+            },
+                None => Ok(())
+        }
+    }
+
+
+    #[tokio::main]
+    async fn _get_all_daemon_sets(
+        &self,
+        window: &Window,
+        cmd: &str,
+        namespace: &String,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let client = self.init_client().await;
+        match client {
+            Some(client) => {
+                let kube_request: Api<DaemonSet> = self.get_api(client, namespace);
+
+                let lp = ListParams::default();
+                let daemon_sets: ObjectList<DaemonSet> = kube_request.list(&lp).await?;
+                let json = serde_json::to_string(&daemon_sets).unwrap();
+                dispatch_to_frontend(window, cmd, json);
+                Ok(())
+            },
+                None => Ok(())
+        }
+    }
+
+    #[tokio::main]
+    async fn _get_all_replica_sets(
+        &self,
+        window: &Window,
+        cmd: &str,
+        namespace: &String,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let client = self.init_client().await;
+        match client {
+            Some(client) => {
+                let kube_request: Api<ReplicaSet> = self.get_api(client, namespace);
+
+                let lp = ListParams::default();
+                let replica_sets: ObjectList<ReplicaSet> = kube_request.list(&lp).await?;
+                let json = serde_json::to_string(&replica_sets).unwrap();
+                dispatch_to_frontend(window, cmd, json);
+                Ok(())
+            },
+            None => Ok(())
+        }
+    }
+
+    #[tokio::main]
+    async fn _get_all_stateful_sets(
+        &self,
+        window: &Window,
+        cmd: &str,
+        namespace: &String,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let client = self.init_client().await;
+        match client {
+            Some(client) => {
+                let kube_request: Api<StatefulSet> = self.get_api(client, namespace);
+
+                let lp = ListParams::default();
+                let stateful_sets: ObjectList<StatefulSet> = kube_request.list(&lp).await?;
+                let json = serde_json::to_string(&stateful_sets).unwrap();
+                dispatch_to_frontend(window, cmd, json);
+                Ok(())
+            },
+                None => Ok(())
+        }
+    }
 }

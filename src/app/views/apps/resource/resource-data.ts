@@ -208,12 +208,14 @@ export class ResourceData {
 
     configMapDef = [
         ['Name', 'metadata.name'],
+        ['Namespace', 'metadata.namespace'],
         ['Type', 'kind'],
         ['Age', this.common.getAge],
     ];
 
     cronJobDef = [
         ['Name', 'metadata.name'],
+        ['Namespace', 'metadata.namespace'],
         ['Status', (params: any) => {
             let eGui = document.createElement('span');
             eGui.innerHTML = `${params.data.status}`
@@ -228,6 +230,7 @@ export class ResourceData {
 
     serviceDef = [
         ['Name', 'metadata.name'],
+        ['Namespace', 'metadata.namespace'],
         ['Age', (params: any) => {
             let eGui = document.createElement('span');
             eGui.innerHTML = `${params.data.metadata.creationTimestamp}`
@@ -243,6 +246,7 @@ export class ResourceData {
 
     daemonSetDef = [
         ['Name', 'metadata.name'],
+        ['Namespace', 'metadata.namespace'],
         ['Status', (params: any) => {
             let eGui = document.createElement('span');
             eGui.innerHTML = `${params.data.status}`
