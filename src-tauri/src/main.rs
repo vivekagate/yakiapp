@@ -214,16 +214,20 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
             km.get_all_ns(&window, GET_ALL_NS, custom_ns_list);
         });
     } else if cmd_hldr.command == GET_DEPLOYMENTS {
+        let kubemanager = &stateHolder.kubemanager;
+        let km = kubemanager.clone();
         let _ = thread::spawn(move || {
             let namespace = cmd_hldr.args.get("ns").unwrap();
             let deploys =
-                kube::get_all_deployments(&window, &current_cluster, namespace, GET_DEPLOYMENTS);
+                km.get_resource(&window, namespace, &"deployment".to_string(), GET_DEPLOYMENTS);
         });
     } else if cmd_hldr.command == GET_RESOURCE {
+        let kubemanager = &stateHolder.kubemanager;
+        let km = kubemanager.clone();
         let _ = thread::spawn(move || {
             let namespace = cmd_hldr.args.get("ns").unwrap();
             let kind = cmd_hldr.args.get("kind").unwrap();
-            let _ = kube::get_resource(&window, &current_cluster, namespace, kind, GET_RESOURCE);
+            let _ = km.get_resource(&window, namespace, kind, GET_RESOURCE);
         });
     } else if cmd_hldr.command == GET_RESOURCE_WITH_METRICS {
         let kubemanager = &stateHolder.kubemanager;
