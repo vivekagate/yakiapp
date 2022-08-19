@@ -353,9 +353,9 @@ fn get_custom_ns_list(ns_string: Option<String>) -> Vec<KNamespace>{
             for ns in val.split("\n") {
                 if ns.trim().len() > 0 {
                     custom_ns.push(KNamespace{
-                        name: ns.to_string(),
-                        creation_ts: None
-                    });
+                    name: ns.to_string(),
+                    creation_ts: None
+                });
                 }
             }
         },

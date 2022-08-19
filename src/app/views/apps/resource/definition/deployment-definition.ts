@@ -116,6 +116,7 @@ export class DeploymentDefinition {
 
     applicationDef = [
         ['Name', 'metadata.name'],
+        ['Namespace', 'metadata.namespace'],
         ['Status', this.deploymentStatus],
         ['Last Restart', this.deploymentLastRestart],
         ['Restarts', this.deploymentRestarts],
@@ -364,6 +365,7 @@ export class DeploymentDefinition {
 
     podDef = [
         ['Name', 'metadata.name'],
+        ['Namespace', 'metadata.namespace'],
         ['Ready', (params: any) => {
             const cntStatus = params.data.status.containerStatuses;
             let value = 'N/A';
@@ -387,6 +389,7 @@ export class DeploymentDefinition {
 
     deploymentDef = [
         ['Name', 'metadata.name'],
+        ['Namespace', 'metadata.namespace'],
         ['Status', (params: any) => {
             const replicas = params.data.status.replicas;
             const unavailable = params.data.status.unavailableReplicas;
