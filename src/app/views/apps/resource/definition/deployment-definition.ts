@@ -650,7 +650,11 @@ export class DeploymentDefinition {
                     displayName: 'Delete',
                     icon: 'fa-term',
                     callback: (resource: any) => {
-                        console.log('Delete');
+                        console.log('Deleting resource');
+                        this.beService.executeCommand(this.beService.commands.delete_resource, {
+                            name: resource.metadata.name,
+                            kind: resource.kind,
+                        }, true);
                     }
                 },
             ],

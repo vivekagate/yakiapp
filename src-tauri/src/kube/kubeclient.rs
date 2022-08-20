@@ -546,18 +546,18 @@ impl KubeClientManager {
         }
     }
 
-    pub fn apply_resource(
+    pub fn create_resource(
         &self,
         window: &Window,
         resource_str: &str,
         kind: &str,
         cmd: &str
     ) {
-        self._apply_resource(window, resource_str, kind, cmd);
+        self._create_resource(window, resource_str, kind, cmd);
     }
 
     #[tokio::main]
-    pub async fn _apply_resource(
+    pub async fn _create_resource(
         &self,
         window: &Window,
         resource_str: &str,
@@ -575,6 +575,47 @@ impl KubeClientManager {
                 let patch = serde_yaml::from_str(resource_str).unwrap();
                 let o_patched = createRequest.create(&params, &patch).await;
                 match o_patched {
+                    Ok(res) => {
+                        true
+                    },
+                    Err(e) => {
+                        println!("{:?}", e);
+                        false
+                    }
+                }
+            },
+            None => false
+        }
+    }
+
+    pub fn delete_resource(
+        &self,
+        window: &Window,
+        resource_name: &str,
+        kind: &str,
+        cmd: &str
+    ) {
+        self._delete_resource(window, resource_name, kind, cmd);
+    }
+
+    #[tokio::main]
+    pub async fn _delete_resource(
+        &self,
+        window: &Window,
+        resource_name: &str,
+        kind: &str,
+        cmd: &str
+    ) -> bool  {
+        let client = self.init_client().await;
+
+        match client {
+            Some(cl) => {
+                let ar = ApiResource::from_gvk(&GroupVersionKind::gvk("", "v1", kind));
+                let deleteapi: Api<DynamicObject> = Api::all_with(cl, &ar);
+
+                let params = DeleteParams::default();
+                let res = deleteapi.delete(resource_name, &params).await;
+                match res {
                     Ok(res) => {
                         true
                     },

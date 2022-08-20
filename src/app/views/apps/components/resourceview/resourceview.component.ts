@@ -253,6 +253,10 @@ export class ResourceviewComponent implements EventListener {
             }, (reason) => {
                 // this.closeResult = `Dismissed ${this.getDismissReason(reason)}`;
             });
+        }else{
+            this.ngZone.run(() => {
+                this.isSideBarHidden = true;
+            });
         }
     }
 

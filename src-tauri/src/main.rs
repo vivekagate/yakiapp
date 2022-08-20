@@ -205,7 +205,8 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
     const STOP_LIVE_TAIL: &str = "stop_live_tail";
     const STOP_ALL_METRICS_STREAMS: &str = "stop_all_metrics_streams";
     const APP_START: &str = "app_start";
-    const APPLY_RESOURCE: &str = "apply_resource";
+    const CREATE_RESOURCE: &str = "apply_resource";
+    const DELETE_RESOURCE: &str = "delete_resource";
 
     let stateHolder = &mut appmanager.0.lock().unwrap();
 
@@ -237,13 +238,22 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
             let kind = cmd_hldr.args.get("kind").unwrap();
             let _ = km.get_resource(&window, namespace, kind, GET_RESOURCE);
         });
-    } else if cmd_hldr.command == APPLY_RESOURCE {
+    } else if cmd_hldr.command == CREATE_RESOURCE {
         let kubemanager = &stateHolder.kubemanager;
         let km = kubemanager.clone();
         let _ = thread::spawn(move || {
             let resource_str = cmd_hldr.args.get("resource").unwrap();
             let kind = cmd_hldr.args.get("kind").unwrap();
-            let _ = km.apply_resource(&window, resource_str, kind, APPLY_RESOURCE);
+            let _ = km.create_resource(&window, resource_str, kind, CREATE_RESOURCE);
+        });
+
+    } else if cmd_hldr.command == DELETE_RESOURCE {
+        let kubemanager = &stateHolder.kubemanager;
+        let km = kubemanager.clone();
+        let _ = thread::spawn(move || {
+            let name = cmd_hldr.args.get("name").unwrap();
+            let kind = cmd_hldr.args.get("kind").unwrap();
+            let _ = km.delete_resource(&window, name, kind, DELETE_RESOURCE);
         });
 
     } else if cmd_hldr.command == GET_RESOURCE_WITH_METRICS {
