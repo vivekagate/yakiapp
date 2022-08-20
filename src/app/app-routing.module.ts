@@ -30,6 +30,13 @@ const routes: Routes = [
         loadChildren: () => ResourceModule
       },
       {
+        path: 'namespaces',
+        data: {
+          resource: 'namespaces'
+        },
+        loadChildren: () => ResourceModule
+      },
+      {
         path: 'nodes',
         data: {
           resource: 'nodes'

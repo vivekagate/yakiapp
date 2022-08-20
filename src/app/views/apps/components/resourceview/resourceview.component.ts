@@ -83,11 +83,7 @@ export class ResourceviewComponent implements EventListener {
     }
 
     ngOnInit(): void {
-        this.ngZone.run(() => {
-            this.columnDefs = this.resource.columns;
-        });
         this.initialize();
-
         this.subscription = this.eventBus.on(this.beService.ngeventbus.app_events).subscribe((meta: MetaData) => {
             if (meta.data === this.beService.ngevent.cluster_changed) {
                 this.isLoading = true;
@@ -110,6 +106,13 @@ export class ResourceviewComponent implements EventListener {
     initialize(): void {
         let delay = 0;
         this.data = [];
+        this.ngZone.run(() => {
+            if (this.beService.isNamespaceAll()) {
+                this.columnDefs = this.resource.columns;
+            }else{
+                this.columnDefs = this.resource.columns.filter((col) => col.headerName !== 'Namespace');
+            }
+        });
         this.resource.command?.forEach((cmd) => {
             setTimeout(() => {
                 this.beService.executeCommandInCurrentNs(cmd.command, cmd.arguments,true);
@@ -241,6 +244,20 @@ export class ResourceviewComponent implements EventListener {
 
     onAction(name: string) {
         const action = this.resource.actions?.filter(ac => ac.name === name)[0];
+        const {ui, size} = action?.callback(this.selectedapp);
+        if (ui) {
+            this.modalService.open(ui, {ariaLabelledBy: 'modal-basic-title', size: size || 'lg'}).result.then((result) => {
+                // this.beService.executeSyncCommand(this.beService.commands.eula_accepted, {}, () => {
+                //     console.log('EULA Accepted');
+                // });
+            }, (reason) => {
+                // this.closeResult = `Dismissed ${this.getDismissReason(reason)}`;
+            });
+        }
+    }
+
+    onResourceListAction(name: string) {
+        const action = this.resource.resourceListActions?.filter(ac => ac.name === name)[0];
         const {ui, size} = action?.callback(this.selectedapp);
         if (ui) {
             this.modalService.open(ui, {ariaLabelledBy: 'modal-basic-title', size: size || 'lg'}).result.then((result) => {

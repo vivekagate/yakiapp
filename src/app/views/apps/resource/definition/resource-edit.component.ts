@@ -30,7 +30,6 @@ export class ResourceEditComponent {
     }
 
     onApply() {
-        console.log(this.resourcedescription);
         this.beService.executeSyncCommandInCurrentNs(this.beService.commands.edit_resource, {
             name: this.beService.storage.metadata.metadata.name,
             kind: this.beService.storage.metadata.kind,

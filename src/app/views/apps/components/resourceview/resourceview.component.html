@@ -3,6 +3,12 @@
         <c-card class="mb-4">
             <c-card-header>
                 <strong>{{resource.name}}</strong>
+                <button class="btn-sm button-app" (click)="onResourceListAction(action.name)" *ngFor="let action of resource.resourceListActions">
+                    <div>
+                        <i class="fa {{action.icon}}" ></i>&nbsp;
+                        {{action.displayName}}
+                    </div>
+                </button>&nbsp;&nbsp;&nbsp;
                 <c-spinner color="secondary" [hidden]="!isLoading"></c-spinner>
             </c-card-header>
             <c-card-body style="padding: 0">

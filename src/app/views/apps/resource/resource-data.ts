@@ -39,6 +39,7 @@ export interface Resource {
     columns: AgGridColumn[];
     command?: Command[];
     actions?: Action[];
+    resourceListActions?: Action[];
     sections?: Section[];
     sidebar?: SideBar;
 }
@@ -71,6 +72,7 @@ export class ResourceData {
     constructor(private beService: TauriAdapter, private common: ResourceDefinitionCommon,  private deployDefinition: DeploymentDefinition) {
         this.resourceMap = new Map();
         this.resourceMap.set('pods', deployDefinition.getPodResourceDefinition());
+        this.resourceMap.set('namespaces', deployDefinition.getNamespacesResourceDefinition());
         this.resourceMap.set('deployments', deployDefinition.getDeploymentResourceDefinition());
         this.resourceMap.set('configmaps', this.getConfigMapsResourceDefinition());
         this.resourceMap.set('cronjobs', this.getCronJobsResourceDefinition());

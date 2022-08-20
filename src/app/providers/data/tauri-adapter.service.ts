@@ -16,8 +16,10 @@ export class TauriAdapter {
     get_pods_for_deployment: 'get_pods_for_deployment',
     get_deployment: 'get_deployment',
     edit_resource: 'edit_resource',
+    apply_resource: 'apply_resource',
     save_preference: 'save_preference',
     get_preferences: 'get_preferences',
+    get_resource_template: 'get_resource_template',
 
     execute_command: 'execute_command',
     get_deployments: 'get_deployments',
@@ -68,6 +70,10 @@ export class TauriAdapter {
     dashboard_logs: 'dashboard::logs',
     app_status_update: 'app::status_update',
     app_metrics: 'app::metrics'
+  }
+
+  public app_constants = {
+    all_namespaces: '*All*'
   }
 
   private eventListeners: Map<any,Map<string, EventListener>>;
@@ -135,6 +141,10 @@ export class TauriAdapter {
       ns: this.storage.ns
     });
     this.executeCommand(cmd, nargs, force_refresh);
+  }
+
+  isNamespaceAll() {
+    return this.storage.ns && this.storage.ns === this.app_constants.all_namespaces;
   }
 
   executeCommand(cmd: string, args: object, force_refresh = false){

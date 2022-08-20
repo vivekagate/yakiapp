@@ -9,6 +9,7 @@ import {Resource} from "../resource-data";
 import {ResourceEditComponent} from "./resource-edit.component";
 import {InstanceDialogComponent} from "./instancedialog/instance-dialog.component";
 import {ConfirmDialogComponent} from "./confirmdialog/confirm-dialog.component";
+import {NewResourceDialogComponent} from "./newresource-dialog/new-resource-dialog.component";
 
 
 @Injectable({
@@ -363,6 +364,12 @@ export class DeploymentDefinition {
         return eGui;
     }
 
+    nsDef = [
+        ['Name', 'metadata.name'],
+        ['Status', 'status.phase'],
+        ['Age', this.common.getAge],
+    ];
+
     podDef = [
         ['Name', 'metadata.name'],
         ['Namespace', 'metadata.namespace'],
@@ -598,6 +605,69 @@ export class DeploymentDefinition {
             ]
         }
     }
+
+    getNamespacesResourceDefinition(): Resource {
+        return {
+            columns: this.common.getColumnDef(this.nsDef),
+            command: [
+                {
+                    command: this.beService.commands.get_resource_with_metrics,
+                    arguments: {
+                        kind: 'namespace'
+                    }
+                },
+            ],
+            name: "Namespaces",
+            resourceListActions: [
+                {
+                    name: 'addNs',
+                    displayName: 'Create New',
+                    icon: 'fa-plus',
+                    callback: (resource: any) => {
+                        this.beService.storage = Object.assign(this.beService.storage, {
+                            metadata: {
+                                kind: 'Namespace'
+                            }
+                        });
+                        return {
+                            ui: NewResourceDialogComponent,
+                            size: 'lg'
+                        }
+                    }
+                },
+            ],
+            actions: [
+                {
+                    name: 'edit',
+                    displayName: 'Edit',
+                    icon: 'fa-term',
+                    callback: (resource: any) => {
+                        console.log('Delete');
+                    }
+                },
+                {
+                    name: 'delete',
+                    displayName: 'Delete',
+                    icon: 'fa-term',
+                    callback: (resource: any) => {
+                        console.log('Delete');
+                    }
+                },
+            ],
+            sections: [
+                {
+                    name: 'Overview',
+                    attributes: [
+                        {
+                            name: 'Name',
+                            resource_field: 'metadata.name'
+                        },
+                    ]
+                },
+            ]
+        }
+    }
+
 
     getPodResourceDefinition(): Resource {
         return {
