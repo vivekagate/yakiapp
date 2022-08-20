@@ -20,6 +20,8 @@ use kube::{
 use kube::api::{LogParams, ObjectList, Patch, PatchParams};
 use kube::client::ConfigExt;
 use kube::client::middleware::BaseUriLayer;
+use kube::core::GroupVersionKind;
+use kube::discovery::ApiResource;
 use tauri::http::Uri;
 use tauri::Window;
 use crate::{CommandResult, KNamespace};
@@ -541,6 +543,48 @@ impl KubeClientManager {
                 }
             },
             None => {None}
+        }
+    }
+
+    pub fn apply_resource(
+        &self,
+        window: &Window,
+        resource_str: &str,
+        kind: &str,
+        cmd: &str
+    ) {
+        self._apply_resource(window, resource_str, kind, cmd);
+    }
+
+    #[tokio::main]
+    pub async fn _apply_resource(
+        &self,
+        window: &Window,
+        resource_str: &str,
+        kind: &str,
+        cmd: &str
+    ) -> bool  {
+        let client = self.init_client().await;
+
+        match client {
+            Some(cl) => {
+                let ar = ApiResource::from_gvk(&GroupVersionKind::gvk("", "v1", kind));
+                let createRequest: Api<DynamicObject> = Api::all_with(cl, &ar);
+
+                let params = PostParams::default();
+                let patch = serde_yaml::from_str(resource_str).unwrap();
+                let o_patched = createRequest.create(&params, &patch).await;
+                match o_patched {
+                    Ok(res) => {
+                        true
+                    },
+                    Err(e) => {
+                        println!("{:?}", e);
+                        false
+                    }
+                }
+            },
+            None => false
         }
     }
 

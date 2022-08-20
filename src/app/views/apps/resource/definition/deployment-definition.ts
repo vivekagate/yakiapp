@@ -9,6 +9,7 @@ import {Resource} from "../resource-data";
 import {ResourceEditComponent} from "./resource-edit.component";
 import {InstanceDialogComponent} from "./instancedialog/instance-dialog.component";
 import {ConfirmDialogComponent} from "./confirmdialog/confirm-dialog.component";
+import {NewResourceDialogComponent} from "./newresource-dialog/new-resource-dialog.component";
 
 
 @Injectable({
@@ -365,7 +366,7 @@ export class DeploymentDefinition {
 
     nsDef = [
         ['Name', 'metadata.name'],
-        ['Status', ''],
+        ['Status', 'status.phase'],
         ['Age', this.common.getAge],
     ];
 
@@ -617,6 +618,24 @@ export class DeploymentDefinition {
                 },
             ],
             name: "Namespaces",
+            resourceListActions: [
+                {
+                    name: 'addNs',
+                    displayName: 'Create New',
+                    icon: 'fa-plus',
+                    callback: (resource: any) => {
+                        this.beService.storage = Object.assign(this.beService.storage, {
+                            metadata: {
+                                kind: 'Namespace'
+                            }
+                        });
+                        return {
+                            ui: NewResourceDialogComponent,
+                            size: 'lg'
+                        }
+                    }
+                },
+            ],
             actions: [
                 {
                     name: 'edit',
@@ -640,8 +659,8 @@ export class DeploymentDefinition {
                     name: 'Overview',
                     attributes: [
                         {
-                            name: 'Image',
-                            resource_field: 'spec.template.spec.containers.0.image'
+                            name: 'Name',
+                            resource_field: 'metadata.name'
                         },
                     ]
                 },

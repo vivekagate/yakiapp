@@ -256,6 +256,20 @@ export class ResourceviewComponent implements EventListener {
         }
     }
 
+    onResourceListAction(name: string) {
+        const action = this.resource.resourceListActions?.filter(ac => ac.name === name)[0];
+        const {ui, size} = action?.callback(this.selectedapp);
+        if (ui) {
+            this.modalService.open(ui, {ariaLabelledBy: 'modal-basic-title', size: size || 'lg'}).result.then((result) => {
+                // this.beService.executeSyncCommand(this.beService.commands.eula_accepted, {}, () => {
+                //     console.log('EULA Accepted');
+                // });
+            }, (reason) => {
+                // this.closeResult = `Dismissed ${this.getDismissReason(reason)}`;
+            });
+        }
+    }
+
     getAttrValue(resource_field: any) {
         if (this.selectedapp) {
             if ((typeof resource_field) === 'function'){

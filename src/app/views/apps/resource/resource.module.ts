@@ -27,6 +27,7 @@ import {LogsModule} from "../logs/logs.module";
 import {InstanceDialogComponent} from "./definition/instancedialog/instance-dialog.component";
 import {AgGridModule} from "ag-grid-angular";
 import {ConfirmDialogComponent} from "./definition/confirmdialog/confirm-dialog.component";
+import {NewResourceDialogComponent} from "./definition/newresource-dialog/new-resource-dialog.component";
 
 @NgModule({
     imports: [
@@ -43,7 +44,7 @@ import {ConfirmDialogComponent} from "./definition/confirmdialog/confirm-dialog.
         FormsModule,
         AgGridModule,
     ],
-  declarations: [ResourceComponent, ResourceEditComponent, InstanceDialogComponent, ConfirmDialogComponent]
+  declarations: [ResourceComponent, ResourceEditComponent, InstanceDialogComponent, ConfirmDialogComponent, NewResourceDialogComponent]
 })
 export class ResourceModule {
 }

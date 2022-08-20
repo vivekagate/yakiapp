@@ -39,6 +39,7 @@ export interface Resource {
     columns: AgGridColumn[];
     command?: Command[];
     actions?: Action[];
+    resourceListActions?: Action[];
     sections?: Section[];
     sidebar?: SideBar;
 }

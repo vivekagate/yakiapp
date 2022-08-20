@@ -16,8 +16,10 @@ export class TauriAdapter {
     get_pods_for_deployment: 'get_pods_for_deployment',
     get_deployment: 'get_deployment',
     edit_resource: 'edit_resource',
+    apply_resource: 'apply_resource',
     save_preference: 'save_preference',
     get_preferences: 'get_preferences',
+    get_resource_template: 'get_resource_template',
 
     execute_command: 'execute_command',
     get_deployments: 'get_deployments',

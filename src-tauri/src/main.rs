@@ -85,6 +85,7 @@ fn execute_sync_command(
     const GET_PREFERENCES: &str = "get_preferences";
     const GET_DEPLOYMENT: &str = "get_deployment";
     const EDIT_RESOURCE: &str = "edit_resource";
+    const GET_RESOURCE_TEMPLATE: &str = "get_resource_template";
 
     let stateHolder = &mut appmanager.0.lock().unwrap();
 
@@ -93,6 +94,7 @@ fn execute_sync_command(
 
     let cmd_hldr: CommandHolder = serde_json::from_str(commandstr).unwrap();
     let mut res = CommandResult::new();
+    res.command = cmd_hldr.command.clone();
     if cmd_hldr.command == GET_PODS_FOR_DEPLOYMENT {
         let ns = cmd_hldr.args.get("ns").unwrap();
         let deployment = cmd_hldr.args.get("deployment").unwrap();
@@ -132,6 +134,11 @@ fn execute_sync_command(
         }else{
             utils::send_error(&window, "Failed to edit resource");
         }
+    } else if cmd_hldr.command == GET_RESOURCE_TEMPLATE {
+        let kind = cmd_hldr.args.get("kind").unwrap();
+        res.command = GET_RESOURCE_TEMPLATE.parse().unwrap();
+        let tx = include_str!("./kube/yaml/ns.yaml");
+        res.data = tx.to_string();
     } else if cmd_hldr.command == GET_ALL_CLUSTER_CONTEXTS {
         let clusters = kube::get_clusters(&window);
         res.data = serde_json::to_string(&clusters).unwrap();
@@ -198,6 +205,7 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
     const STOP_LIVE_TAIL: &str = "stop_live_tail";
     const STOP_ALL_METRICS_STREAMS: &str = "stop_all_metrics_streams";
     const APP_START: &str = "app_start";
+    const APPLY_RESOURCE: &str = "apply_resource";
 
     let stateHolder = &mut appmanager.0.lock().unwrap();
 
@@ -229,6 +237,15 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
             let kind = cmd_hldr.args.get("kind").unwrap();
             let _ = km.get_resource(&window, namespace, kind, GET_RESOURCE);
         });
+    } else if cmd_hldr.command == APPLY_RESOURCE {
+        let kubemanager = &stateHolder.kubemanager;
+        let km = kubemanager.clone();
+        let _ = thread::spawn(move || {
+            let resource_str = cmd_hldr.args.get("resource").unwrap();
+            let kind = cmd_hldr.args.get("kind").unwrap();
+            let _ = km.apply_resource(&window, resource_str, kind, APPLY_RESOURCE);
+        });
+
     } else if cmd_hldr.command == GET_RESOURCE_WITH_METRICS {
         let kubemanager = &stateHolder.kubemanager;
         let km = kubemanager.clone();
