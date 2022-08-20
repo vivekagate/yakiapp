@@ -70,6 +70,10 @@ export class TauriAdapter {
     app_metrics: 'app::metrics'
   }
 
+  public app_constants = {
+    all_namespaces: '*All*'
+  }
+
   private eventListeners: Map<any,Map<string, EventListener>>;
 
   public constructor(private cache: Cache) {
@@ -135,6 +139,10 @@ export class TauriAdapter {
       ns: this.storage.ns
     });
     this.executeCommand(cmd, nargs, force_refresh);
+  }
+
+  isNamespaceAll() {
+    return this.storage.ns && this.storage.ns === this.app_constants.all_namespaces;
   }
 
   executeCommand(cmd: string, args: object, force_refresh = false){

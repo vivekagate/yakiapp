@@ -363,6 +363,12 @@ export class DeploymentDefinition {
         return eGui;
     }
 
+    nsDef = [
+        ['Name', 'metadata.name'],
+        ['Status', ''],
+        ['Age', this.common.getAge],
+    ];
+
     podDef = [
         ['Name', 'metadata.name'],
         ['Namespace', 'metadata.namespace'],
@@ -598,6 +604,51 @@ export class DeploymentDefinition {
             ]
         }
     }
+
+    getNamespacesResourceDefinition(): Resource {
+        return {
+            columns: this.common.getColumnDef(this.nsDef),
+            command: [
+                {
+                    command: this.beService.commands.get_resource_with_metrics,
+                    arguments: {
+                        kind: 'namespace'
+                    }
+                },
+            ],
+            name: "Namespaces",
+            actions: [
+                {
+                    name: 'edit',
+                    displayName: 'Edit',
+                    icon: 'fa-term',
+                    callback: (resource: any) => {
+                        console.log('Delete');
+                    }
+                },
+                {
+                    name: 'delete',
+                    displayName: 'Delete',
+                    icon: 'fa-term',
+                    callback: (resource: any) => {
+                        console.log('Delete');
+                    }
+                },
+            ],
+            sections: [
+                {
+                    name: 'Overview',
+                    attributes: [
+                        {
+                            name: 'Image',
+                            resource_field: 'spec.template.spec.containers.0.image'
+                        },
+                    ]
+                },
+            ]
+        }
+    }
+
 
     getPodResourceDefinition(): Resource {
         return {

@@ -188,6 +188,8 @@ impl KubeClientManager {
             self._get_nodes_with_metrics(&window_copy1, &cmd);
         } else if kind == "deployment" {
             self._get_deployments_with_metrics(&window_copy1, &namespace, &cmd);
+        } else if kind == "namespace" {
+            self._get_namespaces_with_metrics(&window_copy1, &cmd);
         }
     }
 
@@ -338,6 +340,56 @@ impl KubeClientManager {
     fn is_metrics_available(&self) -> bool {
         return false;
     }
+
+    #[tokio::main]
+    async fn _get_namespaces_with_metrics(
+        &self,
+        window: &Window,
+        cmd: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let client = self.init_client().await;
+        match client {
+            Some(client) => {
+                let metrics_client = client.clone();
+                let pod_metrics_client = client.clone();
+                let pod_client = client.clone();
+                let kube_request: Api<Namespace> = self.get_api(client, "*All*");
+
+                let lp = ListParams::default();
+                let namespaces: ObjectList<Namespace> = kube_request.list(&lp).await?;
+
+                // let p_kube_request: Api<Pod> = Api::namespaced(pod_client, namespace);
+                // let lp = ListParams::default();
+                // let pods = p_kube_request.list(&lp).await?;
+
+                let mut metrics_val = "".to_string();
+                let mut metrics2 = None;
+                if self.is_metrics_available() {
+                    // let m_kube_request: Api<PodMetrics> = Api::namespaced(metrics_client, namespace);
+                    // let lp = ListParams::default();
+                    // let metrics = m_kube_request.list(&lp).await?;
+                    //
+                    // let mp_kube_request: Api<PodMetrics> = Api::namespaced(pod_metrics_client, namespace);
+                    // let lp = ListParams::default();
+                    // let pod_metrics = mp_kube_request.list(&lp).await?;
+                    //
+                    // metrics_val = serde_json::to_string(&metrics).unwrap();
+                    // metrics2 = Some(serde_json::to_string(&pod_metrics).unwrap());
+                }
+                let json = ResourceWithMetricsHolder {
+                    resource: serde_json::to_string(&namespaces).unwrap(),
+                    usage: None,
+                    ts: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis(),
+                    metrics: metrics_val,
+                    metrics2,
+                };
+                dispatch_to_frontend(window, cmd, serde_json::to_string(&json).unwrap());
+                Ok(())
+            },
+            None => {Ok(())}
+        }
+    }
+
 
     #[tokio::main]
     async fn _get_deployments_with_metrics(

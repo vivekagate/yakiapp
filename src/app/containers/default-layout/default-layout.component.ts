@@ -46,6 +46,12 @@ export class DefaultLayoutComponent {
       roles: [],
       children: [
         {
+          id: 'namespaces',
+          label: 'Namespaces',
+          route: '/namespaces',
+          iconClasses: 'fa fa-server'
+        },
+        {
           id: 'nodes',
           label: 'Nodes',
           route: '/nodes',
