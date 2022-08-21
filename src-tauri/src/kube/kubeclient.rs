@@ -20,7 +20,7 @@ use kube::{
 use kube::api::{LogParams, ObjectList, Patch, PatchParams};
 use kube::client::ConfigExt;
 use kube::client::middleware::BaseUriLayer;
-use kube::core::GroupVersionKind;
+use kube::core::{GroupVersionKind, Request};
 use kube::discovery::ApiResource;
 use tauri::http::Uri;
 use tauri::Window;
@@ -501,18 +501,18 @@ impl KubeClientManager {
 
         match client {
             Some(cl) => {
-                let deploy: Api<Deployment> = self.get_api(cl, ns);
+                let createRequest: Api<DynamicObject> = self._build_api(ns, kind, cl.clone());
 
                 let params = PatchParams::apply("yaki").force();
-                let patch: Deployment = serde_json::from_str(resource_str).unwrap();
+                let patch: DynamicObject = serde_yaml::from_str(resource_str).unwrap();
                 let patch = Patch::Apply(&patch);
-                let o_patched = deploy.patch(name, &params, &patch).await;
+                let o_patched = createRequest.patch(name, &params, &patch).await;
                 match o_patched {
                     Ok(res) => {
                         true
                     },
                     Err(e) => {
-                        println!("{}", e);
+                        println!("{:?}", e);
                         false
                     }
                 }
@@ -543,6 +543,33 @@ impl KubeClientManager {
                 }
             },
             None => {None}
+        }
+    }
+
+    #[tokio::main]
+    pub async fn get_resource_definition(
+        &self,
+        ns: &String,
+        name: &str,
+        kind: &str,
+    ) -> Option<DynamicObject> {
+        let client = self.init_client().await;
+        match client {
+            Some(cl) => {
+                let getRequest: Api<DynamicObject> = self._build_api(ns, kind, cl.clone());
+
+                let o_patched = getRequest.get(name).await;
+                match o_patched {
+                    Ok(mut res) => {
+                        res.managed_fields_mut().clear();
+                        Some(res)
+                    },
+                    Err(e) => {
+                        None
+                    }
+                }
+            },
+            None => None
         }
     }
 
@@ -591,17 +618,40 @@ impl KubeClientManager {
     pub fn delete_resource(
         &self,
         window: &Window,
+        ns: &str,
         resource_name: &str,
         kind: &str,
         cmd: &str
     ) {
-        self._delete_resource(window, resource_name, kind, cmd);
+        self._delete_resource(window, ns, resource_name, kind, cmd);
+    }
+
+    fn _build_api(
+        &self,
+        ns: &str,
+        kind: &str,
+        cl: Client
+    ) -> Api<DynamicObject> {
+        let mut version = "v1";
+        let mut group = "";
+        if kind.eq( "Deployment") {
+            println!("Change version");
+            group = "apps";
+        }
+        let ar = ApiResource::from_gvk(&GroupVersionKind::gvk(group, version, kind));
+
+        if !ns.is_empty() {
+            Api::namespaced_with(cl, ns, &ar)
+        }else{
+            Api::all_with(cl, &ar)
+        }
     }
 
     #[tokio::main]
     pub async fn _delete_resource(
         &self,
         window: &Window,
+        ns: &str,
         resource_name: &str,
         kind: &str,
         cmd: &str
@@ -610,8 +660,7 @@ impl KubeClientManager {
 
         match client {
             Some(cl) => {
-                let ar = ApiResource::from_gvk(&GroupVersionKind::gvk("", "v1", kind));
-                let deleteapi: Api<DynamicObject> = Api::all_with(cl, &ar);
+                let mut deleteapi: Api<DynamicObject> = self._build_api(ns, kind, cl.clone());
 
                 let params = DeleteParams::default();
                 let res = deleteapi.delete(resource_name, &params).await;

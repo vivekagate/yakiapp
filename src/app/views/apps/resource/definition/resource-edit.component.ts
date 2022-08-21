@@ -1,6 +1,7 @@
 import {Component} from "@angular/core";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {TauriAdapter} from "../../../../providers/data/tauri-adapter.service";
+import * as YAML from 'yaml';
 
 @Component({
     selector: 'app-resource-edit',
@@ -17,14 +18,22 @@ export class ResourceEditComponent {
     ngOnInit(): void {
         const deployment = this.beService.storage.metadata.metadata.name;
         setTimeout(() => {
-            this.beService.executeSyncCommandInCurrentNs(this.beService.commands.get_deployment, {
-                deployment
+            this.beService.executeSyncCommandInCurrentNs(this.beService.commands.get_resource_definition, {
+                kind: this.beService.storage.metadata.kind,
+                name: this.beService.storage.metadata.metadata.name
             }, (res) => {
-                const val = JSON.parse(JSON.parse(res).data);
-                delete val.metadata.managedFields;
-                const op = JSON.stringify(val, null, 4);
-                // const op = JSON.parse(res).data;
-                this.resourcedescription = `${op}`;
+                const data = JSON.parse(res).data;
+                try {
+                    const val = JSON.parse(data);
+                    delete val.metadata.managedFields;
+                    const op = JSON.stringify(val, null, 4);
+                    this.resourcedescription = `${op}`;
+                }catch(e) {
+                    const val = YAML.parse(data);
+                    delete val.metadata.managedFields;
+                    const op = YAML.stringify(val, null, 4);
+                    this.resourcedescription = `${op}`;
+                }
             });
         });
     }

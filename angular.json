@@ -45,7 +45,9 @@
             "scripts": [],
             "allowedCommonJsDependencies": [
               "chart.js",
-              "@coreui/chartjs/dist/js/coreui-chartjs.js"
+              "@coreui/chartjs/dist/js/coreui-chartjs.js",
+              "lodash",
+              "yaml"
             ]
           },
           "configurations": {

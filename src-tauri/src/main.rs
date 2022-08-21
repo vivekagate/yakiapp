@@ -84,6 +84,7 @@ fn execute_sync_command(
     const SAVE_PREFERENCE: &str = "save_preference";
     const GET_PREFERENCES: &str = "get_preferences";
     const GET_DEPLOYMENT: &str = "get_deployment";
+    const GET_RESOURCE_DEFINITION: &str = "get_resource_definition";
     const EDIT_RESOURCE: &str = "edit_resource";
     const GET_RESOURCE_TEMPLATE: &str = "get_resource_template";
 
@@ -99,7 +100,6 @@ fn execute_sync_command(
         let ns = cmd_hldr.args.get("ns").unwrap();
         let deployment = cmd_hldr.args.get("deployment").unwrap();
         let pods = &stateHolder.kubemanager.get_pods_for_deployment(ns, deployment);
-        res.command = GET_PODS_FOR_DEPLOYMENT.parse().unwrap();
         match pods {
             Ok(data) => {
                 res.data = serde_json::to_string(&data).unwrap();
@@ -112,7 +112,6 @@ fn execute_sync_command(
     }else if cmd_hldr.command == GET_DEPLOYMENT {
         let ns = cmd_hldr.args.get("ns").unwrap();
         let deployment = cmd_hldr.args.get("deployment").unwrap();
-        res.command = GET_DEPLOYMENT.parse().unwrap();
         let d = &stateHolder.kubemanager.get_deployment(ns, deployment);
         match d {
             Some(data) => {
@@ -122,12 +121,24 @@ fn execute_sync_command(
                 utils::send_error(&window, "Deployment not found");
             }
         }
+    }else if cmd_hldr.command == GET_RESOURCE_DEFINITION {
+        let ns = cmd_hldr.args.get("ns").unwrap();
+        let name = cmd_hldr.args.get("name").unwrap();
+        let kind = cmd_hldr.args.get("kind").unwrap();
+        let d = &stateHolder.kubemanager.get_resource_definition(ns, name, kind);
+        match d {
+            Some(data) => {
+                res.data = serde_yaml::to_string(&data).unwrap();
+            }
+            None => {
+                utils::send_error(&window, "Resource not found");
+            }
+        }
     }else if cmd_hldr.command == EDIT_RESOURCE {
         let ns = cmd_hldr.args.get("ns").unwrap();
         let kind = cmd_hldr.args.get("kind").unwrap();
         let name = cmd_hldr.args.get("name").unwrap();
         let resource_str = cmd_hldr.args.get("resource").unwrap();
-        res.command = EDIT_RESOURCE.parse().unwrap();
         let d = &stateHolder.kubemanager.edit_resource(ns, resource_str, name, kind);
         if *d {
             res.data = "Success".to_string();
@@ -136,7 +147,6 @@ fn execute_sync_command(
         }
     } else if cmd_hldr.command == GET_RESOURCE_TEMPLATE {
         let kind = cmd_hldr.args.get("kind").unwrap();
-        res.command = GET_RESOURCE_TEMPLATE.parse().unwrap();
         let tx = include_str!("./kube/yaml/ns.yaml");
         res.data = tx.to_string();
     } else if cmd_hldr.command == GET_ALL_CLUSTER_CONTEXTS {
@@ -252,8 +262,9 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
         let km = kubemanager.clone();
         let _ = thread::spawn(move || {
             let name = cmd_hldr.args.get("name").unwrap();
+            let ns = cmd_hldr.args.get("ns").unwrap();
             let kind = cmd_hldr.args.get("kind").unwrap();
-            let _ = km.delete_resource(&window, name, kind, DELETE_RESOURCE);
+            let _ = km.delete_resource(&window, ns, name, kind, DELETE_RESOURCE);
         });
 
     } else if cmd_hldr.command == GET_RESOURCE_WITH_METRICS {

@@ -115,6 +115,23 @@ export class DeploymentDefinition {
         return eGui;
     };
 
+
+    serviceDef = [
+        ['Name', 'metadata.name'],
+        ['Namespace', 'metadata.namespace'],
+        ['Age', (params: any) => {
+            let eGui = document.createElement('span');
+            eGui.innerHTML = `${params.data.metadata.creationTimestamp}`
+            return eGui;
+        }],
+        ['Age', this.common.getAge],
+        ['Type', 'spec.type'],
+        ['ClusterIP', 'spec.clusterIP'],
+        ['Port', 'spec.ports.0.port'],
+        ['Target Port', 'spec.ports.0.targetPort'],
+        ['Node Port', 'spec.ports.0.nodePort'],
+    ];
+
     applicationDef = [
         ['Name', 'metadata.name'],
         ['Namespace', 'metadata.namespace'],
@@ -287,6 +304,18 @@ export class DeploymentDefinition {
         eGui.innerHTML = `${value}%&nbsp;&nbsp;<i class='fa fa-battery-${battery_level} fa-rotate-270'></i>`
         return eGui;
     };
+
+    deleteResource = (resource: any) => {
+        this.beService.executeCommand(this.beService.commands.delete_resource, {
+            name: resource.metadata.name,
+            kind: resource.kind,
+            ns: resource.metadata.namespace || ''
+        }, true);
+        return {
+            ui: null,
+            size: null
+        }
+    }
 
     podMemory =  (params: any) => {
         let value = 0;
@@ -533,6 +562,28 @@ export class DeploymentDefinition {
         }],
     ];
 
+    getServicesResourceDefinition() {
+        return {
+            columns: this.common.getColumnDef(this.serviceDef),
+            command: [
+                {
+                    command: this.beService.commands.get_resource,
+                    arguments: {
+                        kind: 'service'
+                    }
+                }
+            ],
+            actions: [
+                {
+                    name: 'delete',
+                    displayName: 'Delete',
+                    icon: 'fa-term',
+                    callback: this.deleteResource
+                },
+            ],
+            name: "Services"
+        }
+    }
 
     getDeploymentResourceDefinition() {
         return {
@@ -582,6 +633,12 @@ export class DeploymentDefinition {
                             size: 'lg'
                         };
                     }
+                },
+                {
+                    name: 'delete',
+                    displayName: 'Delete',
+                    icon: 'fa-term',
+                    callback: this.deleteResource
                 },
             ],
             sections: [
@@ -638,14 +695,6 @@ export class DeploymentDefinition {
             ],
             actions: [
                 {
-                    name: 'edit',
-                    displayName: 'Edit',
-                    icon: 'fa-term',
-                    callback: (resource: any) => {
-                        console.log('Delete');
-                    }
-                },
-                {
                     name: 'delete',
                     displayName: 'Delete',
                     icon: 'fa-term',
@@ -655,6 +704,10 @@ export class DeploymentDefinition {
                             name: resource.metadata.name,
                             kind: resource.kind,
                         }, true);
+                        return {
+                            ui: null,
+                            size: null
+                        }
                     }
                 },
             ],

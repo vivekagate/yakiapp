@@ -77,7 +77,7 @@ export class ResourceData {
         this.resourceMap.set('configmaps', this.getConfigMapsResourceDefinition());
         this.resourceMap.set('cronjobs', this.getCronJobsResourceDefinition());
         this.resourceMap.set('daemonsets', this.getDaemonSetsResourceDefinition());
-        this.resourceMap.set('services', this.getServicesResourceDefinition());
+        this.resourceMap.set('services', deployDefinition.getServicesResourceDefinition());
         this.resourceMap.set('nodes', this.getNodeResourceDefinition());
         this.resourceMap.set('applications', deployDefinition.getApplicationResourceDefinition());
     }
@@ -230,22 +230,6 @@ export class ResourceData {
         ['Memory Allocatable', 'status.allocatable.memory'],
     ];
 
-    serviceDef = [
-        ['Name', 'metadata.name'],
-        ['Namespace', 'metadata.namespace'],
-        ['Age', (params: any) => {
-            let eGui = document.createElement('span');
-            eGui.innerHTML = `${params.data.metadata.creationTimestamp}`
-            return eGui;
-        }],
-        ['Age', this.common.getAge],
-        ['Type', 'spec.type'],
-        ['ClusterIP', 'spec.clusterIP'],
-        ['Port', 'spec.ports.0.port'],
-        ['Target Port', 'spec.ports.0.targetPort'],
-        ['Node Port', 'spec.ports.0.nodePort'],
-    ];
-
     daemonSetDef = [
         ['Name', 'metadata.name'],
         ['Namespace', 'metadata.namespace'],
@@ -345,18 +329,4 @@ export class ResourceData {
         }
     }
 
-    private getServicesResourceDefinition() {
-        return {
-            columns: this.common.getColumnDef(this.serviceDef),
-            command: [
-                {
-                    command: this.beService.commands.get_resource,
-                    arguments: {
-                        kind: 'service'
-                    }
-                }
-            ],
-            name: "Services"
-        }
-    }
 }
