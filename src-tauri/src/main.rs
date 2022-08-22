@@ -30,6 +30,7 @@ mod kube;
 mod store;
 mod task;
 mod utils;
+mod menu;
 
 #[macro_use]
 extern crate log;
@@ -65,6 +66,10 @@ fn init_tauri() {
             execute_command,
             execute_sync_command
         ])
+        // .menu(menu::build_menu())
+        // .on_menu_event(|event| {
+        //     menu::handle_menu_click(event)
+        // })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -84,6 +89,7 @@ fn execute_sync_command(
     const SAVE_PREFERENCE: &str = "save_preference";
     const GET_PREFERENCES: &str = "get_preferences";
     const GET_DEPLOYMENT: &str = "get_deployment";
+    const GET_RESOURCE_DEFINITION: &str = "get_resource_definition";
     const EDIT_RESOURCE: &str = "edit_resource";
     const GET_RESOURCE_TEMPLATE: &str = "get_resource_template";
 
@@ -99,7 +105,6 @@ fn execute_sync_command(
         let ns = cmd_hldr.args.get("ns").unwrap();
         let deployment = cmd_hldr.args.get("deployment").unwrap();
         let pods = &stateHolder.kubemanager.get_pods_for_deployment(ns, deployment);
-        res.command = GET_PODS_FOR_DEPLOYMENT.parse().unwrap();
         match pods {
             Ok(data) => {
                 res.data = serde_json::to_string(&data).unwrap();
@@ -112,7 +117,6 @@ fn execute_sync_command(
     }else if cmd_hldr.command == GET_DEPLOYMENT {
         let ns = cmd_hldr.args.get("ns").unwrap();
         let deployment = cmd_hldr.args.get("deployment").unwrap();
-        res.command = GET_DEPLOYMENT.parse().unwrap();
         let d = &stateHolder.kubemanager.get_deployment(ns, deployment);
         match d {
             Some(data) => {
@@ -122,12 +126,24 @@ fn execute_sync_command(
                 utils::send_error(&window, "Deployment not found");
             }
         }
+    }else if cmd_hldr.command == GET_RESOURCE_DEFINITION {
+        let ns = cmd_hldr.args.get("ns").unwrap();
+        let name = cmd_hldr.args.get("name").unwrap();
+        let kind = cmd_hldr.args.get("kind").unwrap();
+        let d = &stateHolder.kubemanager.get_resource_definition(ns, name, kind);
+        match d {
+            Some(data) => {
+                res.data = serde_yaml::to_string(&data).unwrap();
+            }
+            None => {
+                utils::send_error(&window, "Resource not found");
+            }
+        }
     }else if cmd_hldr.command == EDIT_RESOURCE {
         let ns = cmd_hldr.args.get("ns").unwrap();
         let kind = cmd_hldr.args.get("kind").unwrap();
         let name = cmd_hldr.args.get("name").unwrap();
         let resource_str = cmd_hldr.args.get("resource").unwrap();
-        res.command = EDIT_RESOURCE.parse().unwrap();
         let d = &stateHolder.kubemanager.edit_resource(ns, resource_str, name, kind);
         if *d {
             res.data = "Success".to_string();
@@ -136,8 +152,7 @@ fn execute_sync_command(
         }
     } else if cmd_hldr.command == GET_RESOURCE_TEMPLATE {
         let kind = cmd_hldr.args.get("kind").unwrap();
-        res.command = GET_RESOURCE_TEMPLATE.parse().unwrap();
-        let tx = include_str!("./kube/yaml/ns.yaml");
+        let tx = _get_template(kind);
         res.data = tx.to_string();
     } else if cmd_hldr.command == GET_ALL_CLUSTER_CONTEXTS {
         let clusters = kube::get_clusters(&window);
@@ -187,6 +202,24 @@ fn execute_sync_command(
     serde_json::to_string(&res).unwrap()
 }
 
+fn _get_template(kind: &str) -> &str {
+    if kind.to_lowercase().eq("namespace") {
+        include_str!("./kube/yaml/ns.yaml")
+    } else if kind.to_lowercase().eq("configmap") {
+        include_str!("./kube/yaml/configmap.yaml")
+    } else if kind.to_lowercase().eq("deployment") {
+        include_str!("./kube/yaml/deployment.yaml")
+    } else if kind.to_lowercase().eq("service") {
+        include_str!("./kube/yaml/service.yaml")
+    } else if kind.to_lowercase().eq("pod") {
+        include_str!("./kube/yaml/pod.yaml")
+    } else if kind.to_lowercase().eq("replicaset") {
+        include_str!("./kube/yaml/replicaset.yaml")
+    } else {
+        return ""
+    }
+}
+
 #[tauri::command]
 fn execute_command(window: Window, commandstr: &str, appmanager: State<SingletonHolder>) {
     const GET_ALL_NS: &str = "get_all_ns";
@@ -205,7 +238,8 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
     const STOP_LIVE_TAIL: &str = "stop_live_tail";
     const STOP_ALL_METRICS_STREAMS: &str = "stop_all_metrics_streams";
     const APP_START: &str = "app_start";
-    const APPLY_RESOURCE: &str = "apply_resource";
+    const CREATE_RESOURCE: &str = "apply_resource";
+    const DELETE_RESOURCE: &str = "delete_resource";
 
     let stateHolder = &mut appmanager.0.lock().unwrap();
 
@@ -237,13 +271,23 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
             let kind = cmd_hldr.args.get("kind").unwrap();
             let _ = km.get_resource(&window, namespace, kind, GET_RESOURCE);
         });
-    } else if cmd_hldr.command == APPLY_RESOURCE {
+    } else if cmd_hldr.command == CREATE_RESOURCE {
         let kubemanager = &stateHolder.kubemanager;
         let km = kubemanager.clone();
         let _ = thread::spawn(move || {
             let resource_str = cmd_hldr.args.get("resource").unwrap();
             let kind = cmd_hldr.args.get("kind").unwrap();
-            let _ = km.apply_resource(&window, resource_str, kind, APPLY_RESOURCE);
+            let _ = km.create_resource(&window, resource_str, kind, CREATE_RESOURCE);
+        });
+
+    } else if cmd_hldr.command == DELETE_RESOURCE {
+        let kubemanager = &stateHolder.kubemanager;
+        let km = kubemanager.clone();
+        let _ = thread::spawn(move || {
+            let name = cmd_hldr.args.get("name").unwrap();
+            let ns = cmd_hldr.args.get("ns").unwrap();
+            let kind = cmd_hldr.args.get("kind").unwrap();
+            let _ = km.delete_resource(&window, ns, name, kind, DELETE_RESOURCE);
         });
 
     } else if cmd_hldr.command == GET_RESOURCE_WITH_METRICS {

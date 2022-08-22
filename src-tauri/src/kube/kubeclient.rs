@@ -18,11 +18,8 @@ use kube::{
     },
 };
 use kube::api::{LogParams, ObjectList, Patch, PatchParams};
-use kube::client::ConfigExt;
-use kube::client::middleware::BaseUriLayer;
-use kube::core::GroupVersionKind;
+use kube::core::{GroupVersionKind};
 use kube::discovery::ApiResource;
-use tauri::http::Uri;
 use tauri::Window;
 use crate::{CommandResult, KNamespace};
 use crate::kube::common::dispatch_to_frontend;
@@ -37,14 +34,23 @@ pub struct KubeClientManager {
     cluster: String,
     kubeconfigfile: String,
     proxy_url: Option<String>,
+    is_metrics_server_running: bool
 }
 
 impl KubeClientManager {
+    pub fn set_metrics_server(
+        &mut self,
+        val: bool
+    ){
+        self.is_metrics_server_running = val;
+    }
+
     pub fn clone(&self) -> Self {
         KubeClientManager {
             cluster: self.cluster.clone(),
             kubeconfigfile: self.kubeconfigfile.clone(),
-            proxy_url: None
+            proxy_url: None,
+            is_metrics_server_running: self.is_metrics_server_running
         }
     }
 
@@ -52,20 +58,26 @@ impl KubeClientManager {
         KubeClientManager {
             cluster: "".to_string(),
             kubeconfigfile: "".to_string(),
-            proxy_url: Some("".to_string())
+            proxy_url: Some("".to_string()),
+            is_metrics_server_running: false
         }
     }
 
     pub fn initialize_from(file: String, proxy_url: Option<String>) -> KubeClientManager {
-        KubeClientManager {
+        let current_cluster = _get_current_cluster(&file);
+        let mut km = KubeClientManager {
             cluster: "".to_string(),
             kubeconfigfile: file,
+            is_metrics_server_running: false,
             proxy_url
-        }
+        };
+        km.set_cluster(&current_cluster);
+        km
     }
 
     pub fn set_cluster(&mut self, cl: &str) {
         self.cluster = cl.to_string();
+        self._check_metrics_server();
     }
 
     pub fn set_kubeconfig_file(&mut self, file: &str) {
@@ -77,6 +89,37 @@ impl KubeClientManager {
             return Api::all(client);
         }
         Api::namespaced(client, ns)
+    }
+
+    #[tokio::main]
+    async fn _check_metrics_server(&mut self) -> Result<(), Error>{
+        let client = self.init_client().await;
+        match client {
+            Some(client) => {
+                let kube_request: Api<Deployment> = self.get_api(client, "kube-system");
+
+                let lp = ListParams::default();
+                let deployments: ObjectList<Deployment> = kube_request.list(&lp).await?;
+                for deploy in deployments {
+                    if !deploy.name_any().contains("metrics-server") {
+                        continue;
+                    }
+                    if let Some(status) = deploy.status {
+                        if let Some(ready_replicas) = status.ready_replicas {
+                            if ready_replicas > 0 {
+                                self.is_metrics_server_running = true;
+                            }
+                        }
+                    }
+                }
+                Ok(())
+            },
+            None => {
+                println!("Failed to initialize client. No metrics available");
+                self.is_metrics_server_running = false;
+                Ok(())
+            }
+        }
     }
 
     async fn init_client(&self) -> Option<Client> {
@@ -340,7 +383,7 @@ impl KubeClientManager {
     }
 
     fn is_metrics_available(&self) -> bool {
-        return false;
+        return self.is_metrics_server_running;
     }
 
     #[tokio::main]
@@ -418,6 +461,7 @@ impl KubeClientManager {
                 let mut metrics_val = "".to_string();
                 let mut metrics2 = None;
                 if self.is_metrics_available() {
+                    println!("Retrieving metrics for deployment");
                     let m_kube_request: Api<PodMetrics> = self.get_api(metrics_client, namespace);
                     let lp = ListParams::default();
                     let metrics = m_kube_request.list(&lp).await?;
@@ -501,18 +545,18 @@ impl KubeClientManager {
 
         match client {
             Some(cl) => {
-                let deploy: Api<Deployment> = self.get_api(cl, ns);
+                let createRequest: Api<DynamicObject> = self._build_api(ns, kind, cl.clone());
 
                 let params = PatchParams::apply("yaki").force();
-                let patch: Deployment = serde_json::from_str(resource_str).unwrap();
+                let patch: DynamicObject = serde_yaml::from_str(resource_str).unwrap();
                 let patch = Patch::Apply(&patch);
-                let o_patched = deploy.patch(name, &params, &patch).await;
+                let o_patched = createRequest.patch(name, &params, &patch).await;
                 match o_patched {
                     Ok(res) => {
                         true
                     },
                     Err(e) => {
-                        println!("{}", e);
+                        println!("{:?}", e);
                         false
                     }
                 }
@@ -546,18 +590,45 @@ impl KubeClientManager {
         }
     }
 
-    pub fn apply_resource(
+    #[tokio::main]
+    pub async fn get_resource_definition(
+        &self,
+        ns: &String,
+        name: &str,
+        kind: &str,
+    ) -> Option<DynamicObject> {
+        let client = self.init_client().await;
+        match client {
+            Some(cl) => {
+                let getRequest: Api<DynamicObject> = self._build_api(ns, kind, cl.clone());
+
+                let o_patched = getRequest.get(name).await;
+                match o_patched {
+                    Ok(mut res) => {
+                        res.managed_fields_mut().clear();
+                        Some(res)
+                    },
+                    Err(e) => {
+                        None
+                    }
+                }
+            },
+            None => None
+        }
+    }
+
+    pub fn create_resource(
         &self,
         window: &Window,
         resource_str: &str,
         kind: &str,
         cmd: &str
     ) {
-        self._apply_resource(window, resource_str, kind, cmd);
+        self._create_resource(window, resource_str, kind, cmd);
     }
 
     #[tokio::main]
-    pub async fn _apply_resource(
+    pub async fn _create_resource(
         &self,
         window: &Window,
         resource_str: &str,
@@ -575,6 +646,68 @@ impl KubeClientManager {
                 let patch = serde_yaml::from_str(resource_str).unwrap();
                 let o_patched = createRequest.create(&params, &patch).await;
                 match o_patched {
+                    Ok(res) => {
+                        true
+                    },
+                    Err(e) => {
+                        println!("{:?}", e);
+                        false
+                    }
+                }
+            },
+            None => false
+        }
+    }
+
+    pub fn delete_resource(
+        &self,
+        window: &Window,
+        ns: &str,
+        resource_name: &str,
+        kind: &str,
+        cmd: &str
+    ) {
+        self._delete_resource(window, ns, resource_name, kind, cmd);
+    }
+
+    fn _build_api(
+        &self,
+        ns: &str,
+        kind: &str,
+        cl: Client
+    ) -> Api<DynamicObject> {
+        let mut version = "v1";
+        let mut group = "";
+        if kind.eq( "Deployment") {
+            group = "apps";
+        }
+        let ar = ApiResource::from_gvk(&GroupVersionKind::gvk(group, version, kind));
+
+        if !ns.is_empty() {
+            Api::namespaced_with(cl, ns, &ar)
+        }else{
+            Api::all_with(cl, &ar)
+        }
+    }
+
+    #[tokio::main]
+    pub async fn _delete_resource(
+        &self,
+        window: &Window,
+        ns: &str,
+        resource_name: &str,
+        kind: &str,
+        cmd: &str
+    ) -> bool  {
+        let client = self.init_client().await;
+
+        match client {
+            Some(cl) => {
+                let mut deleteapi: Api<DynamicObject> = self._build_api(ns, kind, cl.clone());
+
+                let params = DeleteParams::default();
+                let res = deleteapi.delete(resource_name, &params).await;
+                match res {
                     Ok(res) => {
                         true
                     },
@@ -944,6 +1077,22 @@ impl KubeClientManager {
                 Ok(())
             },
                 None => Ok(())
+        }
+    }
+}
+
+fn _get_current_cluster(filename: &String) -> String {
+    let kc = Kubeconfig::read_from(Path::new(filename));
+    match kc {
+        Ok(kc) => {
+            if let Some(cc) = kc.current_context {
+                cc
+            }else{
+                "".to_string()
+            }
+        },
+        _ => {
+            "".to_string()
         }
     }
 }

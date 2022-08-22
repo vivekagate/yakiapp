@@ -1,0 +1,9 @@
+apiVersion: v1
+data:
+  <CHANGEME>: <CHANGEME>
+  <CHANGEME>: |
+    <FILE_CONTENTS_CHANGEME>
+kind: ConfigMap
+metadata:
+  name: <CONFIG_NAME_CHANGEME>
+  namespace: <CHANGEME>

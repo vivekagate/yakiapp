@@ -10,19 +10,24 @@ export class TauriAdapter {
 
   public storage: any;
   public commands = {
+    // Synchronous
     execute_sync_command: 'execute_sync_command',
     eula_accepted: 'eula_accepted',
     add_license: 'add_license',
     get_pods_for_deployment: 'get_pods_for_deployment',
     get_deployment: 'get_deployment',
+    get_resource_definition: 'get_resource_definition',
     edit_resource: 'edit_resource',
-    apply_resource: 'apply_resource',
     save_preference: 'save_preference',
     get_preferences: 'get_preferences',
     get_resource_template: 'get_resource_template',
 
+
+    // Asynchronous
     execute_command: 'execute_command',
     get_deployments: 'get_deployments',
+    create_resource: 'apply_resource',
+    delete_resource: 'delete_resource',
     get_resource: 'get_resource',
     get_resource_with_metrics: 'get_resource_with_metrics',
     get_pods_for_deployment_async: 'get_pods_for_deployment_async',

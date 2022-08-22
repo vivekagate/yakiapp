@@ -115,6 +115,31 @@ export class DeploymentDefinition {
         return eGui;
     };
 
+
+    serviceDef = [
+        ['Name', 'metadata.name'],
+        ['Namespace', 'metadata.namespace'],
+        ['Age', (params: any) => {
+            let eGui = document.createElement('span');
+            eGui.innerHTML = `${params.data.metadata.creationTimestamp}`
+            return eGui;
+        }],
+        ['Age', this.common.getAge],
+        ['Type', 'spec.type'],
+        ['ClusterIP', 'spec.clusterIP'],
+        ['Port', 'spec.ports.0.port'],
+        ['Target Port', 'spec.ports.0.targetPort'],
+        ['Node Port', 'spec.ports.0.nodePort'],
+    ];
+
+
+    configMapDef = [
+        ['Name', 'metadata.name'],
+        ['Namespace', 'metadata.namespace'],
+        ['Type', 'kind'],
+        ['Age', this.common.getAge],
+    ];
+
     applicationDef = [
         ['Name', 'metadata.name'],
         ['Namespace', 'metadata.namespace'],
@@ -287,6 +312,18 @@ export class DeploymentDefinition {
         eGui.innerHTML = `${value}%&nbsp;&nbsp;<i class='fa fa-battery-${battery_level} fa-rotate-270'></i>`
         return eGui;
     };
+
+    deleteResource = (resource: any) => {
+        this.beService.executeCommand(this.beService.commands.delete_resource, {
+            name: resource.metadata.name,
+            kind: resource.kind,
+            ns: resource.metadata.namespace || ''
+        }, true);
+        return {
+            ui: null,
+            size: null
+        }
+    }
 
     podMemory =  (params: any) => {
         let value = 0;
@@ -474,6 +511,7 @@ export class DeploymentDefinition {
                         color = 'link-success';
                     }
                 }catch(e){
+                    console.error(e);
                     value = 0;
                 }
             }
@@ -533,6 +571,28 @@ export class DeploymentDefinition {
         }],
     ];
 
+    getServicesResourceDefinition() {
+        return {
+            columns: this.common.getColumnDef(this.serviceDef),
+            command: [
+                {
+                    command: this.beService.commands.get_resource,
+                    arguments: {
+                        kind: 'service'
+                    }
+                }
+            ],
+            actions: [
+                {
+                    name: 'delete',
+                    displayName: 'Delete',
+                    icon: 'fa-term',
+                    callback: this.deleteResource
+                },
+            ],
+            name: "Services"
+        }
+    }
 
     getDeploymentResourceDefinition() {
         return {
@@ -582,6 +642,12 @@ export class DeploymentDefinition {
                             size: 'lg'
                         };
                     }
+                },
+                {
+                    name: 'delete',
+                    displayName: 'Delete',
+                    icon: 'fa-term',
+                    callback: this.deleteResource
                 },
             ],
             sections: [
@@ -638,19 +704,19 @@ export class DeploymentDefinition {
             ],
             actions: [
                 {
-                    name: 'edit',
-                    displayName: 'Edit',
-                    icon: 'fa-term',
-                    callback: (resource: any) => {
-                        console.log('Delete');
-                    }
-                },
-                {
                     name: 'delete',
                     displayName: 'Delete',
                     icon: 'fa-term',
                     callback: (resource: any) => {
-                        console.log('Delete');
+                        console.log('Deleting resource');
+                        this.beService.executeCommand(this.beService.commands.delete_resource, {
+                            name: resource.metadata.name,
+                            kind: resource.kind,
+                        }, true);
+                        return {
+                            ui: null,
+                            size: null
+                        }
                     }
                 },
             ],
@@ -787,6 +853,58 @@ export class DeploymentDefinition {
             ]
         }
     }
+
+    getConfigMapsResourceDefinition() {
+        return {
+            columns: this.common.getColumnDef(this.configMapDef),
+            command: [
+                {
+                    command: this.beService.commands.get_resource,
+                    arguments: {
+                        kind: 'configmap'
+                    }
+                }
+            ],
+            resourceListActions: [
+                {
+                    name: 'addConfigmap',
+                    displayName: 'Create New',
+                    icon: 'fa-plus',
+                    callback: (resource: any) => {
+                        this.beService.storage = Object.assign(this.beService.storage, {
+                            metadata: {
+                                kind: 'Configmap'
+                            }
+                        });
+                        return {
+                            ui: NewResourceDialogComponent,
+                            size: 'lg'
+                        }
+                    }
+                },
+            ],
+            actions: [
+                {
+                    name: 'delete',
+                    displayName: 'Delete',
+                    icon: 'fa-term',
+                    callback: (resource: any) => {
+                        console.log('Deleting resource');
+                        this.beService.executeCommandInCurrentNs(this.beService.commands.delete_resource, {
+                            name: resource.metadata.name,
+                            kind: resource.kind,
+                        }, true);
+                        return {
+                            ui: null,
+                            size: null
+                        }
+                    }
+                },
+            ],
+            name: "Config Maps & Secrets"
+        }
+    }
+
 
     private getDefaultApplicationColumns() {
         return {

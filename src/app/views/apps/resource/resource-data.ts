@@ -4,6 +4,7 @@ import {TauriAdapter} from "../../../providers/data/tauri-adapter.service";
 import {ICellRendererParams} from "ag-grid-community";
 import {DeploymentDefinition} from "./definition/deployment-definition";
 import {ResourceDefinitionCommon} from "./definition/resource-definition-common";
+import {NewResourceDialogComponent} from "./definition/newresource-dialog/new-resource-dialog.component";
 
 export interface Command {
     command: string;
@@ -74,10 +75,10 @@ export class ResourceData {
         this.resourceMap.set('pods', deployDefinition.getPodResourceDefinition());
         this.resourceMap.set('namespaces', deployDefinition.getNamespacesResourceDefinition());
         this.resourceMap.set('deployments', deployDefinition.getDeploymentResourceDefinition());
-        this.resourceMap.set('configmaps', this.getConfigMapsResourceDefinition());
+        this.resourceMap.set('configmaps', deployDefinition.getConfigMapsResourceDefinition());
         this.resourceMap.set('cronjobs', this.getCronJobsResourceDefinition());
         this.resourceMap.set('daemonsets', this.getDaemonSetsResourceDefinition());
-        this.resourceMap.set('services', this.getServicesResourceDefinition());
+        this.resourceMap.set('services', deployDefinition.getServicesResourceDefinition());
         this.resourceMap.set('nodes', this.getNodeResourceDefinition());
         this.resourceMap.set('applications', deployDefinition.getApplicationResourceDefinition());
     }
@@ -208,13 +209,6 @@ export class ResourceData {
         }],
     ];
 
-    configMapDef = [
-        ['Name', 'metadata.name'],
-        ['Namespace', 'metadata.namespace'],
-        ['Type', 'kind'],
-        ['Age', this.common.getAge],
-    ];
-
     cronJobDef = [
         ['Name', 'metadata.name'],
         ['Namespace', 'metadata.namespace'],
@@ -228,22 +222,6 @@ export class ResourceData {
         ['CPU Allocatable', 'status.allocatable.cpu'],
         ['Memory Request', 'status.capacity.memory'],
         ['Memory Allocatable', 'status.allocatable.memory'],
-    ];
-
-    serviceDef = [
-        ['Name', 'metadata.name'],
-        ['Namespace', 'metadata.namespace'],
-        ['Age', (params: any) => {
-            let eGui = document.createElement('span');
-            eGui.innerHTML = `${params.data.metadata.creationTimestamp}`
-            return eGui;
-        }],
-        ['Age', this.common.getAge],
-        ['Type', 'spec.type'],
-        ['ClusterIP', 'spec.clusterIP'],
-        ['Port', 'spec.ports.0.port'],
-        ['Target Port', 'spec.ports.0.targetPort'],
-        ['Node Port', 'spec.ports.0.nodePort'],
     ];
 
     daemonSetDef = [
@@ -299,22 +277,6 @@ export class ResourceData {
         }
     }
 
-
-    private getConfigMapsResourceDefinition() {
-        return {
-            columns: this.common.getColumnDef(this.configMapDef),
-            command: [
-                {
-                    command: this.beService.commands.get_resource,
-                    arguments: {
-                        kind: 'configmap'
-                    }
-                }
-            ],
-            name: "Config Maps & Secrets"
-        }
-    }
-
     private getCronJobsResourceDefinition() {
         return {
             columns: this.common.getColumnDef(this.cronJobDef),
@@ -345,18 +307,4 @@ export class ResourceData {
         }
     }
 
-    private getServicesResourceDefinition() {
-        return {
-            columns: this.common.getColumnDef(this.serviceDef),
-            command: [
-                {
-                    command: this.beService.commands.get_resource,
-                    arguments: {
-                        kind: 'service'
-                    }
-                }
-            ],
-            name: "Services"
-        }
-    }
 }
