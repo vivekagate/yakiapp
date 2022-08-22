@@ -150,6 +150,20 @@ export class ResourceviewComponent implements EventListener {
             if (!results.items && results.resource) {
                 results.items = JSON.parse(results.resource).items;
             }
+
+            if (results.resource && results.metrics) {
+                const metrics = JSON.parse(results.metrics);
+                metrics.items.forEach((m: any) => {
+                    nameMetricMap.set(m.metadata.name, m);
+                })
+                if (results.metrics2) {
+                    const metrics2 = JSON.parse(results.metrics2);
+                    metrics2.items.forEach((m: any) => {
+                        nameMetric2Map.set(m.metadata.name, m);
+                    })
+                }
+            }
+
             if (results.usage) {
                 const md = JSON.parse(results.usage);
                 md.items.forEach((pod: any) => {
@@ -178,18 +192,6 @@ export class ResourceviewComponent implements EventListener {
                         }
                     }
                 })
-            }
-            if (results.resource && results.metrics) {
-                const metrics = JSON.parse(results.metrics);
-                metrics.items.forEach((m: any) => {
-                    nameMetricMap.set(m.metadata.name, m);
-                })
-                if (results.metrics2) {
-                    const metrics2 = JSON.parse(results.metrics2);
-                    metrics2.items.forEach((m: any) => {
-                        nameMetric2Map.set(m.metadata.name, m);
-                    })
-                }
             }
 
             if (results.items) {

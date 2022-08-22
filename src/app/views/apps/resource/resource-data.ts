@@ -4,6 +4,7 @@ import {TauriAdapter} from "../../../providers/data/tauri-adapter.service";
 import {ICellRendererParams} from "ag-grid-community";
 import {DeploymentDefinition} from "./definition/deployment-definition";
 import {ResourceDefinitionCommon} from "./definition/resource-definition-common";
+import {NewResourceDialogComponent} from "./definition/newresource-dialog/new-resource-dialog.component";
 
 export interface Command {
     command: string;
@@ -74,7 +75,7 @@ export class ResourceData {
         this.resourceMap.set('pods', deployDefinition.getPodResourceDefinition());
         this.resourceMap.set('namespaces', deployDefinition.getNamespacesResourceDefinition());
         this.resourceMap.set('deployments', deployDefinition.getDeploymentResourceDefinition());
-        this.resourceMap.set('configmaps', this.getConfigMapsResourceDefinition());
+        this.resourceMap.set('configmaps', deployDefinition.getConfigMapsResourceDefinition());
         this.resourceMap.set('cronjobs', this.getCronJobsResourceDefinition());
         this.resourceMap.set('daemonsets', this.getDaemonSetsResourceDefinition());
         this.resourceMap.set('services', deployDefinition.getServicesResourceDefinition());
@@ -208,13 +209,6 @@ export class ResourceData {
         }],
     ];
 
-    configMapDef = [
-        ['Name', 'metadata.name'],
-        ['Namespace', 'metadata.namespace'],
-        ['Type', 'kind'],
-        ['Age', this.common.getAge],
-    ];
-
     cronJobDef = [
         ['Name', 'metadata.name'],
         ['Namespace', 'metadata.namespace'],
@@ -280,22 +274,6 @@ export class ResourceData {
                     ]
                 }
             ]
-        }
-    }
-
-
-    private getConfigMapsResourceDefinition() {
-        return {
-            columns: this.common.getColumnDef(this.configMapDef),
-            command: [
-                {
-                    command: this.beService.commands.get_resource,
-                    arguments: {
-                        kind: 'configmap'
-                    }
-                }
-            ],
-            name: "Config Maps & Secrets"
         }
     }
 

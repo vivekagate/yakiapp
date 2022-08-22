@@ -30,6 +30,7 @@ mod kube;
 mod store;
 mod task;
 mod utils;
+mod menu;
 
 #[macro_use]
 extern crate log;
@@ -65,6 +66,10 @@ fn init_tauri() {
             execute_command,
             execute_sync_command
         ])
+        // .menu(menu::build_menu())
+        // .on_menu_event(|event| {
+        //     menu::handle_menu_click(event)
+        // })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -147,7 +152,7 @@ fn execute_sync_command(
         }
     } else if cmd_hldr.command == GET_RESOURCE_TEMPLATE {
         let kind = cmd_hldr.args.get("kind").unwrap();
-        let tx = include_str!("./kube/yaml/ns.yaml");
+        let tx = _get_template(kind);
         res.data = tx.to_string();
     } else if cmd_hldr.command == GET_ALL_CLUSTER_CONTEXTS {
         let clusters = kube::get_clusters(&window);
@@ -195,6 +200,24 @@ fn execute_sync_command(
         res.data = serde_json::to_string(&prefs).unwrap()
     }
     serde_json::to_string(&res).unwrap()
+}
+
+fn _get_template(kind: &str) -> &str {
+    if kind.to_lowercase().eq("namespace") {
+        include_str!("./kube/yaml/ns.yaml")
+    } else if kind.to_lowercase().eq("configmap") {
+        include_str!("./kube/yaml/configmap.yaml")
+    } else if kind.to_lowercase().eq("deployment") {
+        include_str!("./kube/yaml/deployment.yaml")
+    } else if kind.to_lowercase().eq("service") {
+        include_str!("./kube/yaml/service.yaml")
+    } else if kind.to_lowercase().eq("pod") {
+        include_str!("./kube/yaml/pod.yaml")
+    } else if kind.to_lowercase().eq("replicaset") {
+        include_str!("./kube/yaml/replicaset.yaml")
+    } else {
+        return ""
+    }
 }
 
 #[tauri::command]

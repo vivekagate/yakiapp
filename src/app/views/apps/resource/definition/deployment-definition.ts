@@ -132,6 +132,14 @@ export class DeploymentDefinition {
         ['Node Port', 'spec.ports.0.nodePort'],
     ];
 
+
+    configMapDef = [
+        ['Name', 'metadata.name'],
+        ['Namespace', 'metadata.namespace'],
+        ['Type', 'kind'],
+        ['Age', this.common.getAge],
+    ];
+
     applicationDef = [
         ['Name', 'metadata.name'],
         ['Namespace', 'metadata.namespace'],
@@ -503,6 +511,7 @@ export class DeploymentDefinition {
                         color = 'link-success';
                     }
                 }catch(e){
+                    console.error(e);
                     value = 0;
                 }
             }
@@ -844,6 +853,58 @@ export class DeploymentDefinition {
             ]
         }
     }
+
+    getConfigMapsResourceDefinition() {
+        return {
+            columns: this.common.getColumnDef(this.configMapDef),
+            command: [
+                {
+                    command: this.beService.commands.get_resource,
+                    arguments: {
+                        kind: 'configmap'
+                    }
+                }
+            ],
+            resourceListActions: [
+                {
+                    name: 'addConfigmap',
+                    displayName: 'Create New',
+                    icon: 'fa-plus',
+                    callback: (resource: any) => {
+                        this.beService.storage = Object.assign(this.beService.storage, {
+                            metadata: {
+                                kind: 'Configmap'
+                            }
+                        });
+                        return {
+                            ui: NewResourceDialogComponent,
+                            size: 'lg'
+                        }
+                    }
+                },
+            ],
+            actions: [
+                {
+                    name: 'delete',
+                    displayName: 'Delete',
+                    icon: 'fa-term',
+                    callback: (resource: any) => {
+                        console.log('Deleting resource');
+                        this.beService.executeCommandInCurrentNs(this.beService.commands.delete_resource, {
+                            name: resource.metadata.name,
+                            kind: resource.kind,
+                        }, true);
+                        return {
+                            ui: null,
+                            size: null
+                        }
+                    }
+                },
+            ],
+            name: "Config Maps & Secrets"
+        }
+    }
+
 
     private getDefaultApplicationColumns() {
         return {
