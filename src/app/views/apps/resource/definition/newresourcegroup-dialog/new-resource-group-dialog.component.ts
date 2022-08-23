@@ -11,7 +11,7 @@ import * as _ from "lodash";
 export class NewResourceGroupDialogComponent {
     resourcedescription: any;
     selectedNs: any;
-    namespaces: any;
+    namespaces = [];
 
     constructor(private modalService: NgbModal, private beService: TauriAdapter) {
 

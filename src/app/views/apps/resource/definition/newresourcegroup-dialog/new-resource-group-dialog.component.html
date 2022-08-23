@@ -1,6 +1,6 @@
 <div #modal_eula>
     <div class="modal-header">
-        <h4 class="modal-title" id="modal-basic-title">Edit</h4>
+        <h4 class="modal-title" id="modal-basic-title">Deploy YAML file</h4>
         <button type="button" class="close" aria-label="Close" (click)="onDismiss()">
             <span aria-hidden="true">×</span>
         </button>
@@ -12,11 +12,9 @@
     <div class="modal-body">
         <button class="button-app btn-sm" (click)="onApply()">
             <i class="fa fa-save"></i>&nbsp;
-            Save
+            Apply
         </button>
-        <div class="bg-general" style="width: 100%;height: 75vh;" disabled="false">
-            <input class="form-control" placeholder="https://acme.com/deploy/kube/app.yaml">
-        </div>
+        <input class="form-control" placeholder="https://acme.com/deploy/kube/app.yaml">
         OR
         <div class="bg-general" style="width: 100%;height: 75vh;" disabled="false">
             <textarea [(ngModel)]="resourcedescription" class="resource-descriptor bg-general"></textarea>

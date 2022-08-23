@@ -223,17 +223,18 @@ impl KubeClientManager {
         &self,
         window: &Window,
         namespace: String,
-        kind: String,
+        kind: &str,
         cmd: String,
     ) {
+        println!("Get namespaces");
         let window_copy1 = window.clone();
-        if kind == "pod" {
+        if kind.eq("pod")  {
             self._get_pods_with_metrics(&window_copy1, &namespace, &cmd);
-        } else if kind == "node" {
+        } else if kind.eq("node") {
             self._get_nodes_with_metrics(&window_copy1, &cmd);
-        } else if kind == "deployment" {
+        } else if kind.eq( "deployment") {
             self._get_deployments_with_metrics(&window_copy1, &namespace, &cmd);
-        } else if kind == "namespace" {
+        } else if kind.eq("namespace") {
             self._get_namespaces_with_metrics(&window_copy1, &cmd);
         }
     }
@@ -402,7 +403,7 @@ impl KubeClientManager {
 
                 let lp = ListParams::default();
                 let namespaces: ObjectList<Namespace> = kube_request.list(&lp).await?;
-
+                println!("{}", namespaces.items.len());
                 // let p_kube_request: Api<Pod> = Api::namespaced(pod_client, namespace);
                 // let lp = ListParams::default();
                 // let pods = p_kube_request.list(&lp).await?;

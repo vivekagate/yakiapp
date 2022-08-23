@@ -295,7 +295,7 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
             let _ = km.get_resource_with_metrics(
                 &window,
                 namespace,
-                kind,
+                &kind.to_lowercase().trim(),
                 GET_RESOURCE_WITH_METRICS.parse().unwrap(),
             );
         });

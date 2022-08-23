@@ -715,7 +715,7 @@ export class DeploymentDefinition {
                             }
                         });
                         return {
-                            ui: NewResourceGroupDialogComponent,
+                            ui: NewResourceDialogComponent,
                             size: 'lg'
                         }
                     }
@@ -731,7 +731,7 @@ export class DeploymentDefinition {
                             }
                         });
                         return {
-                            ui: NewResourceDialogComponent,
+                            ui: NewResourceGroupDialogComponent,
                             size: 'lg'
                         }
                     }
