@@ -226,7 +226,6 @@ impl KubeClientManager {
         kind: &str,
         cmd: String,
     ) {
-        println!("Get namespaces");
         let window_copy1 = window.clone();
         if kind.eq("pod")  {
             self._get_pods_with_metrics(&window_copy1, &namespace, &cmd);
@@ -403,13 +402,12 @@ impl KubeClientManager {
 
                 let lp = ListParams::default();
                 let namespaces: ObjectList<Namespace> = kube_request.list(&lp).await?;
-                println!("{}", namespaces.items.len());
                 // let p_kube_request: Api<Pod> = Api::namespaced(pod_client, namespace);
                 // let lp = ListParams::default();
                 // let pods = p_kube_request.list(&lp).await?;
 
-                let mut metrics_val = "".to_string();
-                let mut metrics2 = None;
+                let metrics_val = "".to_string();
+                let metrics2 = None;
                 if self.is_metrics_available() {
                     // let m_kube_request: Api<PodMetrics> = Api::namespaced(metrics_client, namespace);
                     // let lp = ListParams::default();
@@ -623,9 +621,10 @@ impl KubeClientManager {
         window: &Window,
         resource_str: &str,
         kind: &str,
+        ns: Option<&String>,
         cmd: &str
     ) {
-        self._create_resource(window, resource_str, kind, cmd);
+        self._create_resource(window, resource_str, kind, ns, cmd);
     }
 
     #[tokio::main]
@@ -634,31 +633,86 @@ impl KubeClientManager {
         window: &Window,
         resource_str: &str,
         kind: &str,
+        nso: Option<&String>,
         cmd: &str
     ) -> bool  {
         let client = self.init_client().await;
-
         match client {
             Some(cl) => {
-                let ar = ApiResource::from_gvk(&GroupVersionKind::gvk("", "v1", kind));
-                let createRequest: Api<DynamicObject> = Api::all_with(cl, &ar);
-
-                let params = PostParams::default();
-                let patch = serde_yaml::from_str(resource_str).unwrap();
-                let o_patched = createRequest.create(&params, &patch).await;
-                match o_patched {
-                    Ok(res) => {
-                        true
-                    },
-                    Err(e) => {
-                        println!("{:?}", e);
-                        false
+                let docs = self.multidoc_deserialize(resource_str);
+                println!("Docs length: {}", docs.len());
+                if docs.is_empty() {
+                    println!("No resource found");
+                    false
+                }else if docs.len() == 1 {
+                    println!("Creating a single resource");
+                    let patch = serde_yaml::from_str(resource_str).unwrap();
+                    let client = cl.clone();
+                    let params = PostParams::default();
+                    let ar = ApiResource::from_gvk(&GroupVersionKind::gvk("", "v1", kind));
+                    let mut createRequest: Api<DynamicObject> = Api::all_with(client.clone(), &ar);
+                    if let Some(ns) = nso {
+                        createRequest = Api::namespaced_with(client, ns, &ar)
                     }
+                    let o_patched = createRequest.create(&params, &patch).await;
+                    match o_patched {
+                        Ok(_res) => {
+                            true
+                        },
+                        Err(e) => {
+                            send_error(window, &e.to_string());
+                            false
+                        }
+                    }
+                }else{
+                    for doc in docs {
+                        let patch: Result<DynamicObject, serde_yaml::Error> = serde_yaml::from_value(doc);
+                        if let Ok(patch) = patch {
+                            let client = cl.clone();
+                            let params = PostParams::default();
+                            if let Some(tm) = &patch.types {
+                                let ar = ApiResource::from_gvk(&GroupVersionKind::gvk("", &tm.api_version, &tm.kind));
+                                let mut createRequest: Api<DynamicObject> = Api::all_with(client.clone(), &ar);
+                                if let Some(ns) = nso {
+                                    createRequest = Api::namespaced_with(client, ns, &ar)
+                                }
+                                let o_patched = createRequest.create(&params, &patch).await;
+                                match o_patched {
+                                    Ok(_res) => {
+
+                                    },
+                                    Err(e) => {
+                                        send_error(window, &e.to_string());
+                                    }
+                                }
+                            }else{
+                                println!("Skipping as invalid types");
+                            }
+                        }else{
+                            println!("Skipping: ");
+                        }
+                    }
+                    true
                 }
             },
             None => false
         }
     }
+
+    fn multidoc_deserialize(&self, data: &str) -> Vec<serde_yaml::Value> {
+        use serde::Deserialize;
+        let mut docs = vec![];
+        for de in serde_yaml::Deserializer::from_str(data) {
+            let doc = serde_yaml::Value::deserialize(de);
+            if let Ok(val) = doc {
+                docs.push(val);
+            }else{
+                println!("Skipping");
+            }
+        }
+        docs
+    }
+
 
     pub fn delete_resource(
         &self,
@@ -677,7 +731,7 @@ impl KubeClientManager {
         kind: &str,
         cl: Client
     ) -> Api<DynamicObject> {
-        let mut version = "v1";
+        let version = "v1";
         let mut group = "";
         if kind.eq( "Deployment") {
             group = "apps";
@@ -704,7 +758,7 @@ impl KubeClientManager {
 
         match client {
             Some(cl) => {
-                let mut deleteapi: Api<DynamicObject> = self._build_api(ns, kind, cl.clone());
+                let deleteapi: Api<DynamicObject> = self._build_api(ns, kind, cl.clone());
 
                 let params = DeleteParams::default();
                 let res = deleteapi.delete(resource_name, &params).await;

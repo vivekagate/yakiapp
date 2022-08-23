@@ -7,7 +7,7 @@
     </div>
     <label class="">Namespace: </label>&nbsp;
     <select class="form-control-sm form-select-sm" name="namespaces" [(ngModel)]="selectedNs">
-        <option *ngFor="let ns of namespaces" [ngValue]="ns">{{ns['name']}}</option>
+        <option *ngFor="let ns of namespaces" [ngValue]="ns">{{ns['metadata']['name']}}</option>
     </select>&nbsp;&nbsp;&nbsp;
     <div class="modal-body">
         <button class="button-app btn-sm" (click)="onApply()">

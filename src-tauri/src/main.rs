@@ -222,7 +222,6 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
     const GET_DEPLOYMENTS: &str = "get_deployments";
     const GET_RESOURCE: &str = "get_resource";
     const GET_RESOURCE_WITH_METRICS: &str = "get_resource_with_metrics";
-    const TYPE_METRICS: &str = "type_metrics";
     const GET_PODS_FOR_DEPLOYMENT: &str = "get_pods_for_deployment_async";
     const GET_METRICS_FOR_DEPLOYMENT: &str = "get_metrics_for_deployment";
     const RESTART_DEPLOYMENTS: &str = "restart_deployments";
@@ -273,7 +272,8 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
         let _ = thread::spawn(move || {
             let resource_str = cmd_hldr.args.get("resource").unwrap();
             let kind = cmd_hldr.args.get("kind").unwrap();
-            let _ = km.create_resource(&window, resource_str, kind, CREATE_RESOURCE);
+            let ns = cmd_hldr.args.get("ns");
+            let _ = km.create_resource(&window, resource_str, kind, ns, CREATE_RESOURCE);
         });
 
     } else if cmd_hldr.command == DELETE_RESOURCE {

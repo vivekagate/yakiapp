@@ -44,34 +44,16 @@ struct Payload {
     metadata: String,
 }
 
-impl Payload {
-    fn new() -> Self {
-        Default::default()
-    }
-}
-
 #[derive(Clone, serde::Serialize, Default)]
 pub struct EventHolder {
     pub(crate) event: String,
     pub(crate) data: String,
 }
 
-impl EventHolder {
-    pub(crate) fn new() -> Self {
-        Default::default()
-    }
-}
-
 #[derive(Serialize, Default)]
 pub struct KNamespace {
     pub name: String,
     pub creation_ts: Option<i64>,
-}
-
-impl KNamespace {
-    fn new() -> Self {
-        Default::default()
-    }
 }
 
 pub fn get_kubectl_raw() {
