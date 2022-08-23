@@ -6,11 +6,18 @@
         </button>
     </div>
     <label class="">Namespace: </label>&nbsp;
+    <select class="form-control-sm form-select-sm" name="namespaces" [(ngModel)]="selectedNs">
+        <option *ngFor="let ns of namespaces" [ngValue]="ns">{{ns['name']}}</option>
+    </select>&nbsp;&nbsp;&nbsp;
     <div class="modal-body">
         <button class="button-app btn-sm" (click)="onApply()">
             <i class="fa fa-save"></i>&nbsp;
             Save
         </button>
+        <div class="bg-general" style="width: 100%;height: 75vh;" disabled="false">
+            <input class="form-control" placeholder="https://acme.com/deploy/kube/app.yaml">
+        </div>
+        OR
         <div class="bg-general" style="width: 100%;height: 75vh;" disabled="false">
             <textarea [(ngModel)]="resourcedescription" class="resource-descriptor bg-general"></textarea>
         </div>

@@ -66,10 +66,6 @@ fn init_tauri() {
             execute_command,
             execute_sync_command
         ])
-        // .menu(menu::build_menu())
-        // .on_menu_event(|event| {
-        //     menu::handle_menu_click(event)
-        // })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

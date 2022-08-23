@@ -5,24 +5,30 @@ import * as _ from "lodash";
 
 @Component({
     selector: 'app-resource-edit',
-    templateUrl: './new-resource-dialog.component.html',
-    styleUrls: ['./new-resource-dialog.component.scss']
+    templateUrl: './new-resource-group-dialog.component.html',
+    styleUrls: ['./new-resource-group-dialog.component.scss']
 })
-export class NewResourceDialogComponent {
+export class NewResourceGroupDialogComponent {
     resourcedescription: any;
+    selectedNs: any;
+    namespaces: any;
+
     constructor(private modalService: NgbModal, private beService: TauriAdapter) {
 
     }
 
     ngOnInit(): void {
         console.log('Retrieve template');
-        this.beService.executeSyncCommand(this.beService.commands.get_resource_template, {
-            kind: this.beService.storage.metadata.kind,
-        }, (res: any) => {
-            const val = JSON.parse(res).data;
-            const op = JSON.stringify(val, null, 4);
-            this.resourcedescription = `${val}`;
-        });
+        setTimeout(() => {
+            this.beService.executeSyncCommandInCurrentNs(this.beService.commands.get_resource_with_metrics, {
+                kind: 'Namespace',
+            }, (res: any) => {
+                const val = JSON.parse(res).data;
+                console.log(val);
+                // const op = JSON.stringify(val, null, 4);
+                // this.resourcedescription = `${val}`;
+            });
+        })
     }
 
     onDismiss() {

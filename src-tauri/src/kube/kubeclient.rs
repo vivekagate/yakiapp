@@ -461,7 +461,7 @@ impl KubeClientManager {
                 let mut metrics_val = "".to_string();
                 let mut metrics2 = None;
                 if self.is_metrics_available() {
-                    println!("Retrieving metrics for deployment");
+                    debug!("Retrieving metrics for deployment");
                     let m_kube_request: Api<PodMetrics> = self.get_api(metrics_client, namespace);
                     let lp = ListParams::default();
                     let metrics = m_kube_request.list(&lp).await?;

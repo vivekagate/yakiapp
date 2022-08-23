@@ -10,6 +10,7 @@ import {ResourceEditComponent} from "./resource-edit.component";
 import {InstanceDialogComponent} from "./instancedialog/instance-dialog.component";
 import {ConfirmDialogComponent} from "./confirmdialog/confirm-dialog.component";
 import {NewResourceDialogComponent} from "./newresource-dialog/new-resource-dialog.component";
+import {NewResourceGroupDialogComponent} from "./newresourcegroup-dialog/new-resource-group-dialog.component";
 
 
 @Injectable({
@@ -606,6 +607,24 @@ export class DeploymentDefinition {
                 }
             ],
             name: "Deployments",
+            resourceListActions: [
+                {
+                    name: 'addNs',
+                    displayName: 'Create',
+                    icon: 'fa-plus',
+                    callback: (resource: any) => {
+                        this.beService.storage = Object.assign(this.beService.storage, {
+                            metadata: {
+                                kind: 'Deployment'
+                            }
+                        });
+                        return {
+                            ui: NewResourceDialogComponent,
+                            size: 'lg'
+                        }
+                    }
+                },
+            ],
             actions: [
                 {
                     name: 'logs',
@@ -687,7 +706,23 @@ export class DeploymentDefinition {
             resourceListActions: [
                 {
                     name: 'addNs',
-                    displayName: 'Create New',
+                    displayName: 'Create',
+                    icon: 'fa-plus',
+                    callback: (resource: any) => {
+                        this.beService.storage = Object.assign(this.beService.storage, {
+                            metadata: {
+                                kind: 'Namespace'
+                            }
+                        });
+                        return {
+                            ui: NewResourceGroupDialogComponent,
+                            size: 'lg'
+                        }
+                    }
+                },
+                {
+                    name: 'deployToNs',
+                    displayName: 'Deploy',
                     icon: 'fa-plus',
                     callback: (resource: any) => {
                         this.beService.storage = Object.assign(this.beService.storage, {
@@ -868,7 +903,7 @@ export class DeploymentDefinition {
             resourceListActions: [
                 {
                     name: 'addConfigmap',
-                    displayName: 'Create New',
+                    displayName: 'Create',
                     icon: 'fa-plus',
                     callback: (resource: any) => {
                         this.beService.storage = Object.assign(this.beService.storage, {
