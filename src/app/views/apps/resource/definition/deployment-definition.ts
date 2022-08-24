@@ -577,7 +577,12 @@ export class DeploymentDefinition {
         ['Namespace', 'metadata.namespace'],
         ['Reference', 'spec.scaleTargetRef.name'],
         ['Age', this.common.getAge],
-        ['Targets', 'spec.targetCPUUtilizatinPercentage'],
+        ['Targets', (params: any) => {
+            let eGui = document.createElement('span');
+            let target = `${params.data.spec.targetCPUUtilizationPercentage}%`;
+            eGui.innerHTML = `${target}`
+            return eGui;
+        }],
         ['MinPods', 'spec.minReplicas'],
         ['MaxPods', 'spec.maxReplicas'],
         ['Replicas', 'status.currentReplicas'],
