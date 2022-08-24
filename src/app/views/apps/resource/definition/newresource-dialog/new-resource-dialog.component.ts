@@ -30,7 +30,7 @@ export class NewResourceDialogComponent {
     }
 
     onApply() {
-        this.beService.executeCommand(this.beService.commands.create_resource, {
+        this.beService.executeCommandInCurrentNs(this.beService.commands.create_resource, {
             resource: this.resourcedescription,
             kind: this.beService.storage.metadata.kind,
         }, true);

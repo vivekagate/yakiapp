@@ -271,7 +271,10 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
         let km = kubemanager.clone();
         let _ = thread::spawn(move || {
             let resource_str = cmd_hldr.args.get("resource").unwrap();
-            let kind = cmd_hldr.args.get("kind").unwrap();
+            let mut kind = "";
+            if let Some(skind) = cmd_hldr.args.get("kind") {
+                kind = skind;
+            }
             let ns = cmd_hldr.args.get("ns");
             let _ = km.create_resource(&window, resource_str, kind, ns, CREATE_RESOURCE);
         });
@@ -281,7 +284,10 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
         let km = kubemanager.clone();
         let _ = thread::spawn(move || {
             let name = cmd_hldr.args.get("name").unwrap();
-            let ns = cmd_hldr.args.get("ns").unwrap();
+            let mut ns = "";
+            if let Some(sns) = cmd_hldr.args.get("ns") {
+                ns = sns;
+            }
             let kind = cmd_hldr.args.get("kind").unwrap();
             let _ = km.delete_resource(&window, ns, name, kind, DELETE_RESOURCE);
         });

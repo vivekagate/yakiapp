@@ -34,7 +34,7 @@ export class NewResourceGroupDialogComponent implements EventListener{
     onApply() {
         this.beService.executeCommand(this.beService.commands.create_resource, {
             resource: this.resourcedescription,
-            kind: this.beService.storage.metadata.kind,
+            ns: this.selectedNs.metadata.name,
         }, true);
         this.modalService.dismissAll();
     }

@@ -636,6 +636,10 @@ impl KubeClientManager {
         nso: Option<&String>,
         cmd: &str
     ) -> bool  {
+        let mut ns = "";
+        if let Some(sns) = nso {
+            ns = sns;
+        }
         let client = self.init_client().await;
         match client {
             Some(cl) => {
@@ -647,13 +651,8 @@ impl KubeClientManager {
                 }else if docs.len() == 1 {
                     println!("Creating a single resource");
                     let patch = serde_yaml::from_str(resource_str).unwrap();
-                    let client = cl.clone();
                     let params = PostParams::default();
-                    let ar = ApiResource::from_gvk(&GroupVersionKind::gvk("", "v1", kind));
-                    let mut createRequest: Api<DynamicObject> = Api::all_with(client.clone(), &ar);
-                    if let Some(ns) = nso {
-                        createRequest = Api::namespaced_with(client, ns, &ar)
-                    }
+                    let createRequest: Api<DynamicObject> = self._build_api(ns, kind, cl.clone());
                     let o_patched = createRequest.create(&params, &patch).await;
                     match o_patched {
                         Ok(_res) => {
@@ -671,15 +670,11 @@ impl KubeClientManager {
                             let client = cl.clone();
                             let params = PostParams::default();
                             if let Some(tm) = &patch.types {
-                                let ar = ApiResource::from_gvk(&GroupVersionKind::gvk("", &tm.api_version, &tm.kind));
-                                let mut createRequest: Api<DynamicObject> = Api::all_with(client.clone(), &ar);
-                                if let Some(ns) = nso {
-                                    createRequest = Api::namespaced_with(client, ns, &ar)
-                                }
+                                let createRequest: Api<DynamicObject> = self._build_api(ns, &tm.kind, cl.clone());
                                 let o_patched = createRequest.create(&params, &patch).await;
                                 match o_patched {
                                     Ok(_res) => {
-
+                                        
                                     },
                                     Err(e) => {
                                         send_error(window, &e.to_string());
@@ -731,6 +726,7 @@ impl KubeClientManager {
         kind: &str,
         cl: Client
     ) -> Api<DynamicObject> {
+        println!("NS: {}, Kind: {}", ns, kind);
         let version = "v1";
         let mut group = "";
         if kind.eq( "Deployment") {
@@ -738,7 +734,7 @@ impl KubeClientManager {
         }
         let ar = ApiResource::from_gvk(&GroupVersionKind::gvk(group, version, kind));
 
-        if !ns.is_empty() {
+        if !ns.is_empty() && !kind.to_lowercase().trim().eq("namespace") {
             Api::namespaced_with(cl, ns, &ar)
         }else{
             Api::all_with(cl, &ar)
