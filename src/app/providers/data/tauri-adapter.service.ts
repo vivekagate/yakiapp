@@ -147,8 +147,6 @@ export class TauriAdapter {
         ns: this.storage.ns
       });
       this.executeCommand(cmd, nargs, force_refresh);
-    }else{
-      this.executeCommand(cmd, args, force_refresh);
     }
   }
 

@@ -577,7 +577,7 @@ export class DeploymentDefinition {
             columns: this.common.getColumnDef(this.serviceDef),
             command: [
                 {
-                    command: this.beService.commands.get_resource,
+                    command: this.beService.commands.get_resource_with_metrics,
                     arguments: {
                         kind: 'service'
                     }
