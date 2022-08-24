@@ -52,7 +52,9 @@ export class DebugComponent implements EventListener{
     console.log('Stop all streams');
     this.beService.executeCommand(this.beService.commands.stop_all_metrics_streams, {});
     this.beService.executeCommand(this.beService.commands.stop_live_tail, {});
+    this.beService.unRegisterListener(this);
   }
+
   ngOnInit(): void {
     this.aggrid.api.setRowData([]);
 

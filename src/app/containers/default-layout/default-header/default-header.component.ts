@@ -68,6 +68,9 @@ export class DefaultHeaderComponent extends HeaderComponent implements EventList
     this.getAllClusters();
   }
 
+  ngOnDestroy(): void {
+    this.beService.unRegisterListener(this);
+  }
 
   getAllNamespaces(refresh = false) {
     this.beService.executeCommand(this.beService.commands.get_all_ns, {}, refresh);

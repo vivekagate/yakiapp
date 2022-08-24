@@ -665,7 +665,6 @@ impl KubeClientManager {
                     for doc in docs {
                         let patch: Result<DynamicObject, serde_yaml::Error> = serde_yaml::from_value(doc);
                         if let Ok(patch) = patch {
-                            let client = cl.clone();
                             let params = PostParams::default();
                             if let Some(tm) = &patch.types {
                                 let createRequest: Api<DynamicObject> = self._build_api(ns, &tm.kind, cl.clone());

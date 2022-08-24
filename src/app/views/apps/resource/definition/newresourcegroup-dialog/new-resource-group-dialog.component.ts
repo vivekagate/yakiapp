@@ -27,6 +27,10 @@ export class NewResourceGroupDialogComponent implements EventListener{
         })
     }
 
+    ngOnDestroy(): void {
+        this.beService.unRegisterListener(this);
+    }
+
     onDismiss() {
         this.modalService.dismissAll();
     }
