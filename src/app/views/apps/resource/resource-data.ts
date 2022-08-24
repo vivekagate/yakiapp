@@ -76,6 +76,7 @@ export class ResourceData {
         this.resourceMap.set('namespaces', deployDefinition.getNamespacesResourceDefinition());
         this.resourceMap.set('deployments', deployDefinition.getDeploymentResourceDefinition());
         this.resourceMap.set('configmaps', deployDefinition.getConfigMapsResourceDefinition());
+        this.resourceMap.set('hpas', deployDefinition.getHpasResourceDefinition());
         this.resourceMap.set('cronjobs', this.getCronJobsResourceDefinition());
         this.resourceMap.set('daemonsets', this.getDaemonSetsResourceDefinition());
         this.resourceMap.set('services', deployDefinition.getServicesResourceDefinition());
@@ -94,8 +95,6 @@ export class ResourceData {
         }
         return resource;
     }
-
-
 
     nodeDef = [
         ['Name', 'metadata.name'],
