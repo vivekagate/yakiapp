@@ -644,12 +644,10 @@ impl KubeClientManager {
         match client {
             Some(cl) => {
                 let docs = self.multidoc_deserialize(resource_str);
-                println!("Docs length: {}", docs.len());
                 if docs.is_empty() {
-                    println!("No resource found");
+                    send_error(window, "No resource found. Check if Yaml is valid");
                     false
                 }else if docs.len() == 1 {
-                    println!("Creating a single resource");
                     let patch = serde_yaml::from_str(resource_str).unwrap();
                     let params = PostParams::default();
                     let createRequest: Api<DynamicObject> = self._build_api(ns, kind, cl.clone());
@@ -674,7 +672,7 @@ impl KubeClientManager {
                                 let o_patched = createRequest.create(&params, &patch).await;
                                 match o_patched {
                                     Ok(_res) => {
-                                        
+
                                     },
                                     Err(e) => {
                                         send_error(window, &e.to_string());
@@ -701,8 +699,6 @@ impl KubeClientManager {
             let doc = serde_yaml::Value::deserialize(de);
             if let Ok(val) = doc {
                 docs.push(val);
-            }else{
-                println!("Skipping");
             }
         }
         docs
