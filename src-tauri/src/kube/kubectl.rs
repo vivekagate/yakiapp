@@ -197,7 +197,7 @@ async fn _exec_kubectl() -> Result<()> {
         if let Some(label) = &app.selector {
             lp = lp.labels(label);
         }
-        let api = dynamic_api(ar, caps, client, &app.namespace, app.all);
+        let _api = dynamic_api(ar, caps, client, &app.namespace, app.all);
 
         tracing::info!(?app.verb, ?resource, name = ?app.name.clone().unwrap_or_default(), "requested objects");
     } else if app.verb == Verb::Apply {
@@ -219,7 +219,7 @@ pub fn get_metrics() {
 async fn _get_metrics() -> Result<()> {
     let client = Client::try_default().await?;
     let pod_metrics: Api<crate::kube::metrics::PodMetrics> = Api::default_namespaced(client);
-    let mut lp = ListParams::default();
+    let lp = ListParams::default();
     let metrics = pod_metrics.list(&lp).await;
     match metrics {
         Ok(pmetric) => {

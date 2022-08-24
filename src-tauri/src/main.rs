@@ -66,10 +66,6 @@ fn init_tauri() {
             execute_command,
             execute_sync_command
         ])
-        // .menu(menu::build_menu())
-        // .on_menu_event(|event| {
-        //     menu::handle_menu_click(event)
-        // })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -226,7 +222,6 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
     const GET_DEPLOYMENTS: &str = "get_deployments";
     const GET_RESOURCE: &str = "get_resource";
     const GET_RESOURCE_WITH_METRICS: &str = "get_resource_with_metrics";
-    const TYPE_METRICS: &str = "type_metrics";
     const GET_PODS_FOR_DEPLOYMENT: &str = "get_pods_for_deployment_async";
     const GET_METRICS_FOR_DEPLOYMENT: &str = "get_metrics_for_deployment";
     const RESTART_DEPLOYMENTS: &str = "restart_deployments";
@@ -276,8 +271,12 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
         let km = kubemanager.clone();
         let _ = thread::spawn(move || {
             let resource_str = cmd_hldr.args.get("resource").unwrap();
-            let kind = cmd_hldr.args.get("kind").unwrap();
-            let _ = km.create_resource(&window, resource_str, kind, CREATE_RESOURCE);
+            let mut kind = "";
+            if let Some(skind) = cmd_hldr.args.get("kind") {
+                kind = skind;
+            }
+            let ns = cmd_hldr.args.get("ns");
+            let _ = km.create_resource(&window, resource_str, kind, ns, CREATE_RESOURCE);
         });
 
     } else if cmd_hldr.command == DELETE_RESOURCE {
@@ -285,7 +284,10 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
         let km = kubemanager.clone();
         let _ = thread::spawn(move || {
             let name = cmd_hldr.args.get("name").unwrap();
-            let ns = cmd_hldr.args.get("ns").unwrap();
+            let mut ns = "";
+            if let Some(sns) = cmd_hldr.args.get("ns") {
+                ns = sns;
+            }
             let kind = cmd_hldr.args.get("kind").unwrap();
             let _ = km.delete_resource(&window, ns, name, kind, DELETE_RESOURCE);
         });
@@ -299,7 +301,7 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
             let _ = km.get_resource_with_metrics(
                 &window,
                 namespace,
-                kind,
+                &kind.to_lowercase().trim(),
                 GET_RESOURCE_WITH_METRICS.parse().unwrap(),
             );
         });

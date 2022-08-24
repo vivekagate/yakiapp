@@ -6,8 +6,8 @@ pub struct TaskManager {
 }
 
 pub fn intialize() -> TaskManager {
-    let mut mtasklist = Vec::new();
-    let mut ltasklist = Vec::new();
+    let mtasklist = Vec::new();
+    let ltasklist = Vec::new();
     let tm = TaskManager {
         m_streamtasklist: mtasklist,
         l_streamtasklist: ltasklist,

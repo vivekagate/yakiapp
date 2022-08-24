@@ -10,8 +10,6 @@ import * as _ from "lodash";
 })
 export class NewResourceDialogComponent {
     resourcedescription: any;
-
-
     constructor(private modalService: NgbModal, private beService: TauriAdapter) {
 
     }
@@ -32,7 +30,7 @@ export class NewResourceDialogComponent {
     }
 
     onApply() {
-        this.beService.executeCommand(this.beService.commands.create_resource, {
+        this.beService.executeCommandInCurrentNs(this.beService.commands.create_resource, {
             resource: this.resourcedescription,
             kind: this.beService.storage.metadata.kind,
         }, true);

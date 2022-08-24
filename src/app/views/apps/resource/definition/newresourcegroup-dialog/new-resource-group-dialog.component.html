@@ -1,16 +1,21 @@
 <div #modal_eula>
     <div class="modal-header">
-        <h4 class="modal-title" id="modal-basic-title">Edit</h4>
+        <h4 class="modal-title" id="modal-basic-title">Deploy YAML file</h4>
         <button type="button" class="close" aria-label="Close" (click)="onDismiss()">
             <span aria-hidden="true">×</span>
         </button>
     </div>
     <label class="">Namespace: </label>&nbsp;
+    <select class="form-control-sm form-select-sm" name="namespaces" [(ngModel)]="selectedNs">
+        <option *ngFor="let ns of namespaces" [ngValue]="ns">{{ns['metadata']['name']}}</option>
+    </select>&nbsp;&nbsp;&nbsp;
     <div class="modal-body">
         <button class="button-app btn-sm" (click)="onApply()">
             <i class="fa fa-save"></i>&nbsp;
-            Save
+            Apply
         </button>
+        <input class="form-control" placeholder="https://acme.com/deploy/kube/app.yaml">
+        OR
         <div class="bg-general" style="width: 100%;height: 75vh;" disabled="false">
             <textarea [(ngModel)]="resourcedescription" class="resource-descriptor bg-general"></textarea>
         </div>

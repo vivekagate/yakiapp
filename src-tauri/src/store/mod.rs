@@ -47,7 +47,7 @@ impl DataStoreManager {
         let key_copy = pref.key.clone();
         let exist = self.query(pref.key, None);
         match exist {
-            Some(val) => {
+            Some(_val) => {
                 let status = self.connection.execute(
                     "UPDATE preferences set value = ?1 where key = ?2",
                     (&pref.value, &key_copy),
@@ -141,14 +141,14 @@ impl DataStoreManager {
 
         match pref_iter {
             Some(mut pref_iter) => {
-                let mut result = pref_iter.next();
+                let result = pref_iter.next();
                 let res = match result {
                     Some(val) => {
                         match val {
                             Ok(pref) => {
                                 Some(pref.value)
                             },
-                            Err(e) => {
+                            Err(_e) => {
                                 default
                             }
                         }
@@ -181,6 +181,14 @@ fn create_dir_if_absent() {
     folder_path.push(PathBuf::from(".nirops"));
     let folder_name = folder_path.into_os_string().into_string().unwrap();
     let res = fs::create_dir_all(folder_name);
+    match res {
+        Ok(()) => {
+            debug!("Created new directory: ~/.nirops");
+        },
+        Err(e) => {
+            error!("Failed to create the directory: ~/.nirops");
+        }
+    }
 }
 
 fn create_file_if_absent() {

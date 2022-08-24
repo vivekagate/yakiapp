@@ -223,17 +223,17 @@ impl KubeClientManager {
         &self,
         window: &Window,
         namespace: String,
-        kind: String,
+        kind: &str,
         cmd: String,
     ) {
         let window_copy1 = window.clone();
-        if kind == "pod" {
+        if kind.eq("pod")  {
             self._get_pods_with_metrics(&window_copy1, &namespace, &cmd);
-        } else if kind == "node" {
+        } else if kind.eq("node") {
             self._get_nodes_with_metrics(&window_copy1, &cmd);
-        } else if kind == "deployment" {
+        } else if kind.eq( "deployment") {
             self._get_deployments_with_metrics(&window_copy1, &namespace, &cmd);
-        } else if kind == "namespace" {
+        } else if kind.eq("namespace") {
             self._get_namespaces_with_metrics(&window_copy1, &cmd);
         }
     }
@@ -402,13 +402,12 @@ impl KubeClientManager {
 
                 let lp = ListParams::default();
                 let namespaces: ObjectList<Namespace> = kube_request.list(&lp).await?;
-
                 // let p_kube_request: Api<Pod> = Api::namespaced(pod_client, namespace);
                 // let lp = ListParams::default();
                 // let pods = p_kube_request.list(&lp).await?;
 
-                let mut metrics_val = "".to_string();
-                let mut metrics2 = None;
+                let metrics_val = "".to_string();
+                let metrics2 = None;
                 if self.is_metrics_available() {
                     // let m_kube_request: Api<PodMetrics> = Api::namespaced(metrics_client, namespace);
                     // let lp = ListParams::default();
@@ -461,7 +460,7 @@ impl KubeClientManager {
                 let mut metrics_val = "".to_string();
                 let mut metrics2 = None;
                 if self.is_metrics_available() {
-                    println!("Retrieving metrics for deployment");
+                    debug!("Retrieving metrics for deployment");
                     let m_kube_request: Api<PodMetrics> = self.get_api(metrics_client, namespace);
                     let lp = ListParams::default();
                     let metrics = m_kube_request.list(&lp).await?;
@@ -622,9 +621,10 @@ impl KubeClientManager {
         window: &Window,
         resource_str: &str,
         kind: &str,
+        ns: Option<&String>,
         cmd: &str
     ) {
-        self._create_resource(window, resource_str, kind, cmd);
+        self._create_resource(window, resource_str, kind, ns, cmd);
     }
 
     #[tokio::main]
@@ -633,31 +633,81 @@ impl KubeClientManager {
         window: &Window,
         resource_str: &str,
         kind: &str,
+        nso: Option<&String>,
         cmd: &str
     ) -> bool  {
+        let mut ns = "";
+        if let Some(sns) = nso {
+            ns = sns;
+        }
         let client = self.init_client().await;
-
         match client {
             Some(cl) => {
-                let ar = ApiResource::from_gvk(&GroupVersionKind::gvk("", "v1", kind));
-                let createRequest: Api<DynamicObject> = Api::all_with(cl, &ar);
-
-                let params = PostParams::default();
-                let patch = serde_yaml::from_str(resource_str).unwrap();
-                let o_patched = createRequest.create(&params, &patch).await;
-                match o_patched {
-                    Ok(res) => {
-                        true
-                    },
-                    Err(e) => {
-                        println!("{:?}", e);
-                        false
+                let docs = self.multidoc_deserialize(resource_str);
+                println!("Docs length: {}", docs.len());
+                if docs.is_empty() {
+                    println!("No resource found");
+                    false
+                }else if docs.len() == 1 {
+                    println!("Creating a single resource");
+                    let patch = serde_yaml::from_str(resource_str).unwrap();
+                    let params = PostParams::default();
+                    let createRequest: Api<DynamicObject> = self._build_api(ns, kind, cl.clone());
+                    let o_patched = createRequest.create(&params, &patch).await;
+                    match o_patched {
+                        Ok(_res) => {
+                            true
+                        },
+                        Err(e) => {
+                            send_error(window, &e.to_string());
+                            false
+                        }
                     }
+                }else{
+                    for doc in docs {
+                        let patch: Result<DynamicObject, serde_yaml::Error> = serde_yaml::from_value(doc);
+                        if let Ok(patch) = patch {
+                            let client = cl.clone();
+                            let params = PostParams::default();
+                            if let Some(tm) = &patch.types {
+                                let createRequest: Api<DynamicObject> = self._build_api(ns, &tm.kind, cl.clone());
+                                let o_patched = createRequest.create(&params, &patch).await;
+                                match o_patched {
+                                    Ok(_res) => {
+                                        
+                                    },
+                                    Err(e) => {
+                                        send_error(window, &e.to_string());
+                                    }
+                                }
+                            }else{
+                                println!("Skipping as invalid types");
+                            }
+                        }else{
+                            println!("Skipping: ");
+                        }
+                    }
+                    true
                 }
             },
             None => false
         }
     }
+
+    fn multidoc_deserialize(&self, data: &str) -> Vec<serde_yaml::Value> {
+        use serde::Deserialize;
+        let mut docs = vec![];
+        for de in serde_yaml::Deserializer::from_str(data) {
+            let doc = serde_yaml::Value::deserialize(de);
+            if let Ok(val) = doc {
+                docs.push(val);
+            }else{
+                println!("Skipping");
+            }
+        }
+        docs
+    }
+
 
     pub fn delete_resource(
         &self,
@@ -676,14 +726,15 @@ impl KubeClientManager {
         kind: &str,
         cl: Client
     ) -> Api<DynamicObject> {
-        let mut version = "v1";
+        println!("NS: {}, Kind: {}", ns, kind);
+        let version = "v1";
         let mut group = "";
         if kind.eq( "Deployment") {
             group = "apps";
         }
         let ar = ApiResource::from_gvk(&GroupVersionKind::gvk(group, version, kind));
 
-        if !ns.is_empty() {
+        if !ns.is_empty() && !kind.to_lowercase().trim().eq("namespace") {
             Api::namespaced_with(cl, ns, &ar)
         }else{
             Api::all_with(cl, &ar)
@@ -703,7 +754,7 @@ impl KubeClientManager {
 
         match client {
             Some(cl) => {
-                let mut deleteapi: Api<DynamicObject> = self._build_api(ns, kind, cl.clone());
+                let deleteapi: Api<DynamicObject> = self._build_api(ns, kind, cl.clone());
 
                 let params = DeleteParams::default();
                 let res = deleteapi.delete(resource_name, &params).await;
