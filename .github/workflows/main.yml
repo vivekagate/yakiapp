@@ -44,7 +44,7 @@ jobs:
 
       - name: Build the Windows app
         if: matrix.platform == 'windows-latest'
-        run: yarn tauri build ./src-tauri/tauri.win.conf.json
+        run: yarn tauri build -c ./src-tauri/tauri.win.conf.json
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
