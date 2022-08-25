@@ -42,10 +42,6 @@ jobs:
         if: matrix.platform == 'macos-latest'
         uses: tauri-apps/tauri-action@v0
 
-      - name: Build the Windows app
-        if: matrix.platform == 'windows-latest'
-        run: yarn tauri build -c ./src-tauri/tauri.win.conf.json
-
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
