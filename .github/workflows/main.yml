@@ -34,8 +34,17 @@ jobs:
       - name: Install app dependencies and build web
         run: yarn && yarn build
 
-      - name: Build the app
+      - name: Build the Linux app
+        if: matrix.platform == 'ubuntu-latest'
         uses: tauri-apps/tauri-action@v0
+
+      - name: Build the Mac app
+        if: matrix.platform == 'macos-latest'
+        uses: tauri-apps/tauri-action@v0
+
+      - name: Build the Windows app
+        if: matrix.platform == 'windows-latest'
+        run: yarn tauri build ./src-tauri/tauri.win.conf.json
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
