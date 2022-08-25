@@ -756,8 +756,8 @@ impl KubeClientManager {
                 }else if docs.len() == 1 {
                     let patch = serde_yaml::from_str(resource_str).unwrap();
                     let params = PostParams::default();
-                    let createRequest: Api<DynamicObject> = self._build_api(ns, kind, cl.clone());
-                    let o_patched = createRequest.create(&params, &patch).await;
+                    let create_request: Api<DynamicObject> = self._build_api(ns, kind, cl.clone());
+                    let o_patched = create_request.create(&params, &patch).await;
                     match o_patched {
                         Ok(_res) => {
                             true
@@ -773,8 +773,8 @@ impl KubeClientManager {
                         if let Ok(patch) = patch {
                             let params = PostParams::default();
                             if let Some(tm) = &patch.types {
-                                let createRequest: Api<DynamicObject> = self._build_api(ns, &tm.kind, cl.clone());
-                                let o_patched = createRequest.create(&params, &patch).await;
+                                let create_request: Api<DynamicObject> = self._build_api(ns, &tm.kind, cl.clone());
+                                let o_patched = create_request.create(&params, &patch).await;
                                 match o_patched {
                                     Ok(_res) => {
 
