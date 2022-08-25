@@ -34,12 +34,7 @@ jobs:
       - name: Install app dependencies and build web
         run: yarn && yarn build
 
-      - name: Build the Linux app
-        if: matrix.platform == 'ubuntu-latest'
-        uses: tauri-apps/tauri-action@v0
-
-      - name: Build the Mac app
-        if: matrix.platform == 'macos-latest'
+      - name: Build the app
         uses: tauri-apps/tauri-action@v0
 
         env:
