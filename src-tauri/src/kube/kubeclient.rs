@@ -9,6 +9,7 @@ use k8s_openapi::api::core::v1::{
     ConfigMap, Namespace, Node, PersistentVolume, Pod, Secret, Service,
 };
 use k8s_openapi::api::apps::v1::{DaemonSet, Deployment, ReplicaSet, StatefulSet};
+use k8s_openapi::api::autoscaling::v1::{HorizontalPodAutoscaler};
 use k8s_openapi::{NamespaceResourceScope, Resource};
 use k8s_openapi::api::batch::v1::CronJob;
 use kube::{api::{Api, ListParams, ResourceExt, DynamicObject}, Client, Config, Discovery, Error};
@@ -235,6 +236,10 @@ impl KubeClientManager {
             self._get_deployments_with_metrics(&window_copy1, &namespace, &cmd);
         } else if kind.eq("namespace") {
             self._get_namespaces_with_metrics(&window_copy1, &cmd);
+        } else if kind.eq("service") {
+            self._get_services_with_metrics(&window_copy1, &namespace, &cmd);
+        } else if kind.eq("hpa") {
+            self._get_hpas_with_metrics(&window_copy1, &namespace, &cmd);
         }
     }
 
@@ -434,6 +439,107 @@ impl KubeClientManager {
         }
     }
 
+    #[tokio::main]
+    async fn _get_services_with_metrics(
+        &self,
+        window: &Window,
+        namespace: &String,
+        cmd: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let client = self.init_client().await;
+        match client {
+            Some(client) => {
+                let metrics_client = client.clone();
+                let pod_metrics_client = client.clone();
+                let pod_client = client.clone();
+                let kube_request: Api<Service> = self.get_api(client, namespace);
+
+                let lp = ListParams::default();
+                let services: ObjectList<Service> = kube_request.list(&lp).await?;
+
+                // let p_kube_request: Api<Pod> = self.get_api(pod_client, namespace);
+                // let lp = ListParams::default();
+                // let pods = p_kube_request.list(&lp).await?;
+
+                let mut metrics_val = "".to_string();
+                let mut metrics2 = None;
+                if self.is_metrics_available() {
+                    // debug!("Retrieving metrics for deployment");
+                    // let m_kube_request: Api<PodMetrics> = self.get_api(metrics_client, namespace);
+                    // let lp = ListParams::default();
+                    // let metrics = m_kube_request.list(&lp).await?;
+                    //
+                    // let mp_kube_request: Api<PodMetrics> = self.get_api(pod_metrics_client, namespace);
+                    // let lp = ListParams::default();
+                    // let pod_metrics = mp_kube_request.list(&lp).await?;
+                    //
+                    // metrics_val = serde_json::to_string(&metrics).unwrap();
+                    // metrics2 = Some(serde_json::to_string(&pod_metrics).unwrap());
+                }
+                let json = ResourceWithMetricsHolder {
+                    resource: serde_json::to_string(&services).unwrap(),
+                    usage: None,
+                    ts: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis(),
+                    metrics: metrics_val,
+                    metrics2,
+                };
+                dispatch_to_frontend(window, cmd, serde_json::to_string(&json).unwrap());
+                Ok(())
+            },
+            None => {Ok(())}
+        }
+    }
+
+    #[tokio::main]
+    async fn _get_hpas_with_metrics(
+        &self,
+        window: &Window,
+        namespace: &String,
+        cmd: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let client = self.init_client().await;
+        match client {
+            Some(client) => {
+                let metrics_client = client.clone();
+                let pod_metrics_client = client.clone();
+                let pod_client = client.clone();
+                let kube_request: Api<HorizontalPodAutoscaler> = self.get_api(client, namespace);
+
+                let lp = ListParams::default();
+                let services: ObjectList<HorizontalPodAutoscaler> = kube_request.list(&lp).await?;
+
+                // let p_kube_request: Api<Pod> = self.get_api(pod_client, namespace);
+                // let lp = ListParams::default();
+                // let pods = p_kube_request.list(&lp).await?;
+
+                let mut metrics_val = "".to_string();
+                let mut metrics2 = None;
+                if self.is_metrics_available() {
+                    // debug!("Retrieving metrics for deployment");
+                    // let m_kube_request: Api<PodMetrics> = self.get_api(metrics_client, namespace);
+                    // let lp = ListParams::default();
+                    // let metrics = m_kube_request.list(&lp).await?;
+                    //
+                    // let mp_kube_request: Api<PodMetrics> = self.get_api(pod_metrics_client, namespace);
+                    // let lp = ListParams::default();
+                    // let pod_metrics = mp_kube_request.list(&lp).await?;
+                    //
+                    // metrics_val = serde_json::to_string(&metrics).unwrap();
+                    // metrics2 = Some(serde_json::to_string(&pod_metrics).unwrap());
+                }
+                let json = ResourceWithMetricsHolder {
+                    resource: serde_json::to_string(&services).unwrap(),
+                    usage: None,
+                    ts: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis(),
+                    metrics: metrics_val,
+                    metrics2,
+                };
+                dispatch_to_frontend(window, cmd, serde_json::to_string(&json).unwrap());
+                Ok(())
+            },
+            None => {Ok(())}
+        }
+    }
 
     #[tokio::main]
     async fn _get_deployments_with_metrics(
@@ -644,16 +750,14 @@ impl KubeClientManager {
         match client {
             Some(cl) => {
                 let docs = self.multidoc_deserialize(resource_str);
-                println!("Docs length: {}", docs.len());
                 if docs.is_empty() {
-                    println!("No resource found");
+                    send_error(window, "No resource found. Check if Yaml is valid");
                     false
                 }else if docs.len() == 1 {
-                    println!("Creating a single resource");
                     let patch = serde_yaml::from_str(resource_str).unwrap();
                     let params = PostParams::default();
-                    let createRequest: Api<DynamicObject> = self._build_api(ns, kind, cl.clone());
-                    let o_patched = createRequest.create(&params, &patch).await;
+                    let create_request: Api<DynamicObject> = self._build_api(ns, kind, cl.clone());
+                    let o_patched = create_request.create(&params, &patch).await;
                     match o_patched {
                         Ok(_res) => {
                             true
@@ -667,14 +771,13 @@ impl KubeClientManager {
                     for doc in docs {
                         let patch: Result<DynamicObject, serde_yaml::Error> = serde_yaml::from_value(doc);
                         if let Ok(patch) = patch {
-                            let client = cl.clone();
                             let params = PostParams::default();
                             if let Some(tm) = &patch.types {
-                                let createRequest: Api<DynamicObject> = self._build_api(ns, &tm.kind, cl.clone());
-                                let o_patched = createRequest.create(&params, &patch).await;
+                                let create_request: Api<DynamicObject> = self._build_api(ns, &tm.kind, cl.clone());
+                                let o_patched = create_request.create(&params, &patch).await;
                                 match o_patched {
                                     Ok(_res) => {
-                                        
+
                                     },
                                     Err(e) => {
                                         send_error(window, &e.to_string());
@@ -701,8 +804,6 @@ impl KubeClientManager {
             let doc = serde_yaml::Value::deserialize(de);
             if let Ok(val) = doc {
                 docs.push(val);
-            }else{
-                println!("Skipping");
             }
         }
         docs
@@ -726,7 +827,6 @@ impl KubeClientManager {
         kind: &str,
         cl: Client
     ) -> Api<DynamicObject> {
-        println!("NS: {}, Kind: {}", ns, kind);
         let version = "v1";
         let mut group = "";
         if kind.eq( "Deployment") {

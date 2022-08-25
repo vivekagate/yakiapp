@@ -88,6 +88,14 @@ const routes: Routes = [
             import('./views/apps/resource/resource.module').then((m) => m.ResourceModule)
       },
       {
+        path: 'hpas',
+        data: {
+          resource: 'hpas'
+        },
+        loadChildren: () =>
+            import('./views/apps/resource/resource.module').then((m) => m.ResourceModule)
+      },
+      {
         path: 'preferences',
         loadChildren: () =>
             import('./views/apps/preferences/preferences.module').then((m) => m.PreferencesModule)

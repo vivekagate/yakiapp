@@ -34,12 +34,47 @@ Yaki can be installed on the following platforms:
 
 ### Prerequisites
 
-Node 14+
-Rust
-Angular
-Tauri
+#### Node 14+
+You can install nvm to manage different node versions. 
+Install NVM
+```
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+```
+Install Node 14
+```
+nvm install 14
+nvm use 14 # If already installed
+```
 
+#### Rust
+```
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
 
+#### Git
+```
+apt install git-all
+```
+
+#### Yarn
+```
+npm install --global yarn
+```
+
+### Building
+#### Clone the repo
+```
+git clone git@github.com:nirops/yakiapp
+```
+#### Install dependencies
+```
+cd yakiapp
+yarn install
+```
+#### Build Tauri
+```
+yarn tauri build
+```
 
 ### Infrastructure
 

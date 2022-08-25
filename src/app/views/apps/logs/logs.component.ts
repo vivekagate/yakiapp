@@ -143,6 +143,7 @@ export class LogsComponent implements EventListener{
   ngOnDestroy(): void {
     console.debug('Stop all streams');
     this.data.executeCommand(this.data.commands.stop_live_tail, {});
+    this.data.unRegisterListener(this);
   }
 
   addTerminal(name: string) {

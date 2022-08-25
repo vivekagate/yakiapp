@@ -142,14 +142,16 @@ export class TauriAdapter {
   }
 
   executeCommandInCurrentNs(cmd: string, args: object, force_refresh = false) {
-    const nargs = Object.assign(args, {
-      ns: this.storage.ns
-    });
-    this.executeCommand(cmd, nargs, force_refresh);
+    if (this.storage && this.storage.ns) {
+      const nargs = Object.assign(args, {
+        ns: this.storage.ns
+      });
+      this.executeCommand(cmd, nargs, force_refresh);
+    }
   }
 
   isNamespaceAll() {
-    return this.storage.ns && this.storage.ns === this.app_constants.all_namespaces;
+    return this.storage && this.storage.ns && this.storage.ns === this.app_constants.all_namespaces;
   }
 
   executeCommand(cmd: string, args: object, force_refresh = false){

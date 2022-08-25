@@ -31,6 +31,10 @@ export class DefaultFooterComponent extends FooterComponent implements EventList
     this.beService.registerListener(this.beService.events.app_events_channel, this);
   }
 
+  ngOnDestroy(): void {
+    this.beService.unRegisterListener(this);
+  }
+
   getName(): string {
     return 'default-footer.component.ts';
   }

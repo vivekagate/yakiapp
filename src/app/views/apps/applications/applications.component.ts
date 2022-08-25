@@ -86,6 +86,10 @@ export class ApplicationsComponent implements EventListener{
     });
   }
 
+  ngOnDestroy(): void {
+    this.beService.unRegisterListener(this);
+  }
+
   async initListener() {
     await appWindow.listen("dashboard::error", ({event, payload}) => {
       console.log('Received event: ' + event);

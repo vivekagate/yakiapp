@@ -572,12 +572,28 @@ export class DeploymentDefinition {
         }],
     ];
 
+    hpaDef = [
+        ['Name', 'metadata.name'],
+        ['Namespace', 'metadata.namespace'],
+        ['Reference', 'spec.scaleTargetRef.name'],
+        ['Age', this.common.getAge],
+        ['Targets', (params: any) => {
+            let eGui = document.createElement('span');
+            let target = `${params.data.spec.targetCPUUtilizationPercentage}%`;
+            eGui.innerHTML = `${target}`
+            return eGui;
+        }],
+        ['MinPods', 'spec.minReplicas'],
+        ['MaxPods', 'spec.maxReplicas'],
+        ['Replicas', 'status.currentReplicas'],
+    ];
+
     getServicesResourceDefinition() {
         return {
             columns: this.common.getColumnDef(this.serviceDef),
             command: [
                 {
-                    command: this.beService.commands.get_resource,
+                    command: this.beService.commands.get_resource_with_metrics,
                     arguments: {
                         kind: 'service'
                     }
@@ -769,6 +785,39 @@ export class DeploymentDefinition {
         }
     }
 
+    getHpasResourceDefinition() {
+        return {
+            columns: this.common.getColumnDef(this.hpaDef),
+            command: [
+                {
+                    command: this.beService.commands.get_resource_with_metrics,
+                    arguments: {
+                        kind: 'hpa'
+                    }
+                }
+            ],
+            name: "Hpas",
+            sections: [
+                {
+                    name: 'Overview',
+                    attributes: [
+                        {
+                            name: 'Image',
+                            resource_field: 'spec.template.spec.containers.0.image'
+                        },
+                        {
+                            name: 'CPU Max',
+                            resource_field: 'spec.template.spec.containers.0.resources.limits.cpu'
+                        },
+                        {
+                            name: 'Memory Max',
+                            resource_field: 'spec.template.spec.containers.0.resources.limits.memory'
+                        },
+                    ]
+                },
+            ]
+        }
+    }
 
     getPodResourceDefinition(): Resource {
         return {
