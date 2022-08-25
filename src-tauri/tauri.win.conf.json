@@ -2,8 +2,8 @@
   "tauri": {
     "bundle": {
       "resources": [
-        "./libcrypto-3-x64.dll",
-	"./libssl-3-x64.dll"
+        "./src-tauri/libcrypto-3-x64.dll",
+	"./src-tauri/libssl-3-x64.dll"
       ]
     }
   }
