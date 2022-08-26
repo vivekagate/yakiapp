@@ -8,7 +8,8 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "tauri": "tauri",
-    "tauriwin": "tauri build -c ./src-tauri/tauri.win.conf.json"
+    "tauriwin": "tauri build -c ./src-tauri/tauri.win.conf.json",
+    "taurim1": "tauri build --target aarch64-apple-darwin"
   },
   "private": true,
   "dependencies": {
