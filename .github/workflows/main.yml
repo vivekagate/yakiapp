@@ -34,28 +34,6 @@ jobs:
       - name: Install app dependencies and build web
         run: yarn && yarn build
 
-      - name: Build the app for Linux
-        if: matrix.platform == 'ubuntu-latest'
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tagName: v__VERSION__ # tauri-action replaces \_\_VERSION\_\_ with the app version
-          releaseName: 'v__VERSION__'
-          releaseBody: 'See the assets to download this version and install.'
-          releaseDraft: true
-          prerelease: false
-      - name: Build the app for MacOS
-        if: matrix.platform == 'macos-latest'
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tagName: v__VERSION__ # tauri-action replaces \_\_VERSION\_\_ with the app version
-          releaseName: 'v__VERSION__'
-          releaseBody: 'See the assets to download this version and install.'
-          releaseDraft: true
-          prerelease: false
       - name: Build the app for Windows
         if: matrix.platform == 'windows-latest'
         uses: tauri-apps/tauri-action@v0
@@ -67,4 +45,4 @@ jobs:
           releaseBody: 'See the assets to download this version and install.'
           releaseDraft: true
           prerelease: false
-          configPath: 'src-tauri/tauri.win.conf.json'
+          configPath: 'tauri.win.conf.json'
