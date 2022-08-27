@@ -34,7 +34,7 @@ jobs:
       - name: Install app dependencies and build web
         run: yarn && yarn build
 
-      - name: Build the app for Windows
+      - name: Build the app for Intel Mac
         if: matrix.platform == 'macos-latest'
         uses: tauri-apps/tauri-action@v0.2.0
         env:
@@ -46,7 +46,7 @@ jobs:
           releaseDraft: true
           prerelease: false
 
-      - name: Build the app for Windows
+      - name: Build the app for Linux
         if: matrix.platform == 'ubuntu-latest'
         uses: tauri-apps/tauri-action@v0.2.0
         env:
