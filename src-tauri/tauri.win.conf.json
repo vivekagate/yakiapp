@@ -1,10 +1,66 @@
 {
+  "$schema": "../node_modules/@tauri-apps/cli/schema.json",
+  "build": {
+    "beforeBuildCommand": "yarn build",
+    "beforeDevCommand": "yarn start",
+    "devPath": "http://localhost:4200",
+    "distDir": "../dist/yaki"
+  },
+  "package": {
+    "productName": "yaki",
+    "version": "1.1.3"
+  },
   "tauri": {
+    "allowlist": {
+      "all": true
+    },
     "bundle": {
-      "resources": [
-        "./src-tauri/libcrypto-3-x64.dll",
-	"./src-tauri/libssl-3-x64.dll"
-      ]
-    }
+      "active": true,
+      "category": "DeveloperTool",
+      "copyright": "",
+      "deb": {
+        "depends": []
+      },
+      "externalBin": [],
+      "icon": [
+        "icons/32x32.png",
+        "icons/128x128.png",
+        "icons/128x128@2x.png",
+        "icons/icon.icns",
+        "icons/icon.ico"
+      ],
+      "identifier": "com.nirops.yaki",
+      "longDescription": "",
+      "macOS": {
+        "entitlements": null,
+        "exceptionDomain": "",
+        "frameworks": [],
+        "providerShortName": null,
+        "signingIdentity": null
+      },
+      "resources": ["./libcrypto-3-x64.dll","./libssl-3-x64.dll"],
+      "shortDescription": "",
+      "targets": "all",
+      "windows": {
+        "certificateThumbprint": null,
+        "digestAlgorithm": "sha256",
+        "timestampUrl": ""
+      }
+    },
+    "security": {
+      "csp": null
+    },
+    "updater": {
+      "active": false
+    },
+    "windows": [
+      {
+        "fullscreen": false,
+        "height": 800,
+        "resizable": true,
+        "title": "Yet Another Kubernetes IDE",
+        "width": 1280
+      }
+    ]
   }
 }
