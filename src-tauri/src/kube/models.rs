@@ -1,8 +1,14 @@
 use std::collections::HashMap;
+use std::pin::Pin;
 use k8s_openapi::{ClusterResourceScope, NamespaceResourceScope};
 use kube::api::{ListParams, ObjectList, ObjectMeta};
 use k8s_openapi::apimachinery::pkg::api::resource::Quantity;
-
+use tokio::io;
+use std::task::Context;
+use std::task::Poll;
+use tauri::Window;
+use tokio::io::{AsyncRead, AsyncWrite};
+use crate::kube::Payload;
 
 #[derive(Clone, serde::Serialize, Default)]
 pub struct CommandResult {
@@ -78,5 +84,75 @@ pub struct Metric {
 impl Metric {
     pub(crate) fn new() -> Self {
         Default::default()
+    }
+}
+
+// pub struct Stdin {
+//     value: String
+// }
+//
+// impl Stdid {
+//     pub(crate) fn stdin() -> Stdin {
+//         let std = io::stdin();
+//         Stdin {
+//             value: "".to_string()
+//         }
+//     }
+//
+//     pub(crate) fn set_value(&self, val: &str) {
+//         self.value = val;
+//     }
+// }
+//
+// impl AsyncRead for Stdin {
+//     fn poll_read(
+//         mut self: Pin<&mut Self>,
+//         cx: &mut Context<'_>,
+//         buf: &mut ReadBuf<'_>,
+//     ) -> Poll<io::Result<()>> {
+//         Pin::new(&mut self.value).poll_read(cx, buf)
+//     }
+// }
+
+#[derive(Clone)]
+pub struct Stdout<'a> {
+    std: String,
+    window: &'a Window
+}
+
+pub fn stdout(window: &Window) -> Stdout
+{
+    let std = io::stdout();
+    Stdout {
+        std: "".to_string(),
+        window
+    }
+}
+
+impl AsyncWrite for Stdout<'_> {
+    fn poll_write(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &[u8],
+    ) -> Poll<io::Result<usize>> {
+        let data = std::str::from_utf8(buf).unwrap();
+        println!("Writing::: {:?}", data);
+        Pin::new(&mut self.std).to_lowercase();
+        Poll::Ready(Ok(buf.len()))
+    }
+
+    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), io::Error>> {
+        println!("Flushing...");
+        Pin::new(&mut self.std).to_lowercase();
+        Poll::Ready(Ok(()))
+    }
+
+    fn poll_shutdown(
+    mut self: Pin<&mut Self>,
+    cx: &mut Context<'_>,
+    ) -> Poll<Result<(), io::Error>> {
+        println!("Shutting down...");
+        Pin::new(&mut self.std).to_lowercase();
+        Poll::Ready(Ok(()))
     }
 }

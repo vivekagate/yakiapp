@@ -6,7 +6,7 @@
 use crate::appmanager::AppManager;
 use crate::cache::CacheManager;
 use crate::kube::models::CommandResult;
-use crate::kube::{EventHolder, KNamespace, kubeclient};
+use crate::kube::{EventHolder, KNamespace, kubeclient, models};
 use crate::store::{DataStoreManager, PKEY_KUBECONFIG_FILE_LOCATION, Preference};
 use crate::task::TaskManager;
 use ::kube::api::Object;
@@ -231,6 +231,8 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
     const STREAM_METRICS_FOR_POD: &str = "stream_metrics_for_pod";
     const STREAM_METRICS_FOR_DEPLOYMENT: &str = "stream_metrics_for_deployment";
     const STOP_LIVE_TAIL: &str = "stop_live_tail";
+    const OPEN_SHELL: &str = "open_shell";
+    const SEND_TO_SHELL: &str = "send_to_shell";
     const STOP_ALL_METRICS_STREAMS: &str = "stop_all_metrics_streams";
     const APP_START: &str = "app_start";
     const CREATE_RESOURCE: &str = "apply_resource";
@@ -351,6 +353,23 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
             debug!("Tail of logs initiated");
         });
         stateHolder.taskmanager.add_logs_stream(tx);
+    }  else if cmd_hldr.command == OPEN_SHELL {
+        let (tx, rx): (Sender<String>, mpsc::Receiver<String>) = mpsc::channel();
+        let kubemanager = &stateHolder.kubemanager;
+        let km = kubemanager.clone();
+        let _ = thread::spawn(move || {
+            let ns = cmd_hldr.args.get("ns").unwrap();
+            let podname = cmd_hldr.args.get("pod").unwrap();
+            km.open_shell(&window, &podname, &ns, &rx);
+            debug!("Pod shell initiated");
+        });
+        stateHolder.taskmanager.add_shell_stream(tx);
+    }  else if cmd_hldr.command == SEND_TO_SHELL {
+        let (tx, rx): (Sender<String>, mpsc::Receiver<String>) = mpsc::channel();
+        let ns = cmd_hldr.args.get("ns").unwrap();
+        let podname = cmd_hldr.args.get("pod").unwrap();
+        let command = cmd_hldr.args.get("command").unwrap();
+        stateHolder.taskmanager.send_to_shell(command);
     } else if cmd_hldr.command == GET_LOGS_FOR_POD {
         let _ = thread::spawn(move || {
             let ns = cmd_hldr.args.get("ns").unwrap();

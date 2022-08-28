@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::env;
 use std::path::Path;
+use std::pin::Pin;
 use std::sync::mpsc::Receiver;
 use std::time::{SystemTime, UNIX_EPOCH};
 use futures::{StreamExt, TryStreamExt};
@@ -22,14 +23,19 @@ use kube::api::{LogParams, ObjectList, Patch, PatchParams};
 use kube::core::{GroupVersionKind};
 use kube::discovery::ApiResource;
 use tauri::Window;
-use crate::{CommandResult, KNamespace};
+use tokio::io::{AsyncWrite, AsyncWriteExt};
+use crate::{CommandResult, KNamespace, utils};
 use crate::kube::common::dispatch_to_frontend;
 use crate::kube::metrics::{PodMetrics};
 use crate::kube::models::{Metric, NodeMetrics, ResourceWithMetricsHolder};
-use crate::kube::{Payload};
+use crate::kube::{models, Payload};
 use tokio::time::{sleep, Duration};
 use crate::utils::send_error;
-
+use tokio::io;
+use std::task::Context;
+use std::task::Poll;
+use tokio::io::{AsyncRead};
+use crate::models::Stdout;
 
 pub struct KubeClientManager {
     cluster: String,
@@ -930,6 +936,66 @@ impl KubeClientManager {
                 Ok(())
             },
                 None => Ok(())
+        }
+    }
+
+    pub fn open_shell(
+        &self,
+        window: &Window,
+        pod: &str,
+        ns: &str,
+        rx: &Receiver<String>,
+    ) {
+        self._open_shell(window,  pod, ns, rx);
+    }
+
+    #[tokio::main]
+    async fn _open_shell(
+        &self,
+        window: &Window,
+        pod: &str,
+        ns: &str,
+        rx: &Receiver<String>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        info!("Fetching logs for {:?}", pod);
+        let client = self.init_client().await;
+        match client {
+            Some(client) => {
+                let pods: Api<Pod> = self.get_api(client, ns);
+
+                let ap = AttachParams::interactive_tty();
+
+                let mut attached = pods.exec(pod, vec!["sh"], &ap).await?;
+
+                let mut stdin_writer = attached.stdin().unwrap();
+                let mut stdout_reader = attached.stdout().unwrap();
+
+                debug!("Spin new thread");
+                let mut stdout_stream = tokio_util::io::ReaderStream::new(stdout_reader);
+                let cl = window.clone();
+                tokio::spawn(async move {
+                    while let mut next_stdout = stdout_stream.next(){
+                        let data = String::from_utf8(next_stdout.await.unwrap().unwrap().to_vec()).unwrap();
+                        println!("next() returned something: {}", &data);
+                        utils::dispatch_event_to_frontend_with_data(&cl, "shell::output", &data);
+                    }
+                });
+                println!("Spawning task");
+                while let Ok(line) = rx.recv() {
+                    println!("Executing command: {}", line);
+                    let command = line.as_bytes();
+                    stdin_writer.write_all(command).await?;
+                    debug!("Command sent for execution");
+                    if line == "exit\n" {
+                        debug!("Work is done: {:?}", line);
+                        break;
+                    }
+                }
+                attached.join();
+                debug!("Shell execution completed.");
+                Ok(())
+            },
+            None => Ok(())
         }
     }
 

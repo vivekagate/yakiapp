@@ -833,6 +833,22 @@ export class DeploymentDefinition {
             name: "Pods",
             actions: [
                 {
+                    name: 'shell',
+                    displayName: 'Shell',
+                    icon: 'fa-term',
+                    callback: (resource: any) => {
+                        const podname = _.get(resource, 'metadata.name');
+                        console.log('Requesting shell for: ' + podname);
+                        this.beService.storage = Object.assign(this.beService.storage, {
+                            metadata: resource
+                        })
+                        this.router.navigateByUrl('/shell');
+                        return {
+                            ui: null
+                        };
+                    }
+                },
+                {
                     name: 'logs',
                     displayName: 'Logs',
                     icon: 'fa-file-code-o',

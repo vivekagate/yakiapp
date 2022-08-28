@@ -1,0 +1,9 @@
+<c-row ngPreserveWhitespaces>
+  <div>Connected to {{name}}</div>
+  <c-col xs="12">
+    <div class="text bg-general ag-hidden" [innerHTML]="content"></div>
+    <textarea [(ngModel)]="content" #terminalholder  class="bg-general text" style="width: 100%;height: 75vh;overflow-y: scroll;"
+    (keydown)="keyDown($event)">
+    </textarea>
+  </c-col>
+</c-row>
