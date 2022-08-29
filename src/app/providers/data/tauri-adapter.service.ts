@@ -43,6 +43,8 @@ export class TauriAdapter {
     stream_metrics_for_pod: 'stream_metrics_for_pod',
     stream_metrics_for_deployment: 'stream_metrics_for_deployment',
     stop_live_tail: 'stop_live_tail',
+    open_shell: 'open_shell',
+    send_to_shell: 'send_to_shell',
     app_start: 'app_start',
     stop_all_metrics_streams: 'stop_all_metrics_streams'
   }
@@ -73,6 +75,7 @@ export class TauriAdapter {
     app_command_result: 'app::command_result',
     dashboard_error: 'dashboard::error',
     dashboard_logs: 'dashboard::logs',
+    shell_output: 'shell::output',
     app_status_update: 'app::status_update',
     app_metrics: 'app::metrics'
   }

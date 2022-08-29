@@ -106,6 +106,11 @@ const routes: Routes = [
           import('./views/apps/logs/logs.module').then((m) => m.LogsModule)
       },
       {
+        path: 'shell',
+        loadChildren: () =>
+            import('./views/apps/shell/shell.module').then((m) => m.ShellModule)
+      },
+      {
         path: 'environment',
         loadChildren: () =>
           import('./views/apps/environment/environment.module').then((m) => m.EnvironmentModule)

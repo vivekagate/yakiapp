@@ -1,8 +1,14 @@
 use std::collections::HashMap;
+use std::pin::Pin;
 use k8s_openapi::{ClusterResourceScope, NamespaceResourceScope};
 use kube::api::{ListParams, ObjectList, ObjectMeta};
 use k8s_openapi::apimachinery::pkg::api::resource::Quantity;
-
+use tokio::io;
+use std::task::Context;
+use std::task::Poll;
+use tauri::Window;
+use tokio::io::{AsyncRead, AsyncWrite};
+use crate::kube::Payload;
 
 #[derive(Clone, serde::Serialize, Default)]
 pub struct CommandResult {
@@ -80,3 +86,30 @@ impl Metric {
         Default::default()
     }
 }
+
+// pub struct Stdin {
+//     value: String
+// }
+//
+// impl Stdid {
+//     pub(crate) fn stdin() -> Stdin {
+//         let std = io::stdin();
+//         Stdin {
+//             value: "".to_string()
+//         }
+//     }
+//
+//     pub(crate) fn set_value(&self, val: &str) {
+//         self.value = val;
+//     }
+// }
+//
+// impl AsyncRead for Stdin {
+//     fn poll_read(
+//         mut self: Pin<&mut Self>,
+//         cx: &mut Context<'_>,
+//         buf: &mut ReadBuf<'_>,
+//     ) -> Poll<io::Result<()>> {
+//         Pin::new(&mut self.value).poll_read(cx, buf)
+//     }
+// }
