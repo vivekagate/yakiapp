@@ -35,7 +35,6 @@ use tokio::io;
 use std::task::Context;
 use std::task::Poll;
 use tokio::io::{AsyncRead};
-use crate::models::Stdout;
 
 pub struct KubeClientManager {
     cluster: String,
@@ -968,16 +967,28 @@ impl KubeClientManager {
                 let mut attached = pods.exec(pod, vec!["sh"], &ap).await?;
 
                 let mut stdin_writer = attached.stdin().unwrap();
-                let mut stdout_reader = attached.stdout().unwrap();
+                let stdout_reader = attached.stdout().unwrap();
 
                 debug!("Spin new thread");
                 let mut stdout_stream = tokio_util::io::ReaderStream::new(stdout_reader);
                 let cl = window.clone();
                 tokio::spawn(async move {
-                    while let mut next_stdout = stdout_stream.next(){
-                        let data = String::from_utf8(next_stdout.await.unwrap().unwrap().to_vec()).unwrap();
-                        println!("next() returned something: {}", &data);
-                        utils::dispatch_event_to_frontend_with_data(&cl, "shell::output", &data);
+                    while let next_stdout = stdout_stream.next(){
+                        if let Some(val) = next_stdout.await {
+                            if let Ok(res) = val {
+                                let resVec = res.to_vec();
+                                // let mut result = u16![resVec.len()];
+                                // for (pos, ch) in resVec.iter().enumerate() {
+                                //     if pos == 0 && *ch == 27 {
+                                //     }else if pos == 1 && *ch == 91 {
+                                //     }else{
+                                //         result.push(*ch);
+                                //     }
+                                // }
+                                let data = String::from_utf8(resVec).unwrap();
+                                utils::dispatch_event_to_frontend_with_data(&cl, "shell::output", &data);
+                            }
+                        }
                     }
                 });
                 println!("Spawning task");

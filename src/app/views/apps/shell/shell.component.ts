@@ -49,10 +49,16 @@ export class ShellComponent implements EventListener{
     const event = ev.event;
     const data = ev.payload.data;
     this.ngZone.run(() => {
-        if (data === 'clear\r') {
+        console.log(data);
+        let ndata = data.replace(
+            /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
+
+        if (ndata === '::clear_screen::') {
             this.content = '';
         }else{
-            this.content += data.replace(this.command, '');
+            if (ndata !== this.command) {
+                this.content += ndata.replace(this.command, '');
+            }
         }
         this.command = '';
     });
@@ -82,7 +88,7 @@ export class ShellComponent implements EventListener{
     }
 
     private isKeyIgnore(key: string) {
-        return key === 'Alt' || key === 'Shift' || key === 'ArrowLeft' || key === 'ArrowRight' || key === 'ArrowUp' || key === 'ArrowDown';
+        return key === 'Alt' || key === 'Shift' || key === 'ArrowLeft' || key === 'ArrowRight' || key === 'ArrowUp' || key === 'ArrowDown' || key === 'Control';
     }
 
 
