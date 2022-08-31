@@ -113,3 +113,5 @@ Application
 
 MIT or MIT/Apache 2.0 where applicable.
 
+## Support my work
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/vivekdev){:target="_blank"}
