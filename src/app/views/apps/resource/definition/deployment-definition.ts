@@ -141,6 +141,12 @@ export class DeploymentDefinition {
         ['Age', this.common.getAge],
     ];
 
+    crdDef = [
+        ['Name', 'spec.names.singular'],
+        ['CRD Name', 'metadata.name'],
+        ['Age', this.common.getAge],
+    ];
+
     applicationDef = [
         ['Name', 'metadata.name'],
         ['Namespace', 'metadata.namespace'],
@@ -1005,6 +1011,38 @@ export class DeploymentDefinition {
         }
     }
 
+    getCustomResourceDefinition() {
+        return {
+            columns: this.common.getColumnDef(this.crdDef),
+            command: [
+                {
+                    command: this.beService.commands.get_resource_with_metrics,
+                    arguments: {
+                        kind: 'CustomResourceDefinition'
+                    }
+                }
+            ],
+            actions: [
+                {
+                    name: 'delete',
+                    displayName: 'Delete',
+                    icon: 'fa-term',
+                    callback: (resource: any) => {
+                        console.log('Deleting resource');
+                        this.beService.executeCommandInCurrentNs(this.beService.commands.delete_resource, {
+                            name: resource.metadata.name,
+                            kind: resource.kind,
+                        }, true);
+                        return {
+                            ui: null,
+                            size: null
+                        }
+                    }
+                },
+            ],
+            name: "Custom Resource Definitions"
+        }
+    }
 
     private getDefaultApplicationColumns() {
         return {

@@ -82,6 +82,7 @@ export class ResourceData {
         this.resourceMap.set('services', deployDefinition.getServicesResourceDefinition());
         this.resourceMap.set('nodes', this.getNodeResourceDefinition());
         this.resourceMap.set('applications', deployDefinition.getApplicationResourceDefinition());
+        this.resourceMap.set('crds', deployDefinition.getCustomResourceDefinition());
     }
 
     public resourceMap: Map<string, Resource> | undefined;

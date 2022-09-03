@@ -92,6 +92,11 @@ export class DefaultLayoutComponent {
           label: 'HPAs & Replica Sets',
           route: '/hpas',
         },
+        {
+          id: 'crd',
+          label: 'Custom Resource Def.',
+          route: '/crds',
+        },
       ],
     },
     {
