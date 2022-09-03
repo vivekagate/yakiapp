@@ -23,6 +23,8 @@ use std::sync::{mpsc, Mutex, MutexGuard};
 use std::{env, io, thread};
 use tauri::{State, Window};
 use tracing_subscriber::registry::Data;
+use crate::license::Profile;
+
 
 mod appmanager;
 mod cache;
@@ -31,6 +33,7 @@ mod store;
 mod task;
 mod utils;
 mod menu;
+mod license;
 
 #[macro_use]
 extern crate log;
@@ -166,10 +169,13 @@ fn execute_sync_command(
         stateHolder.dsmanager.upsert(pref);
     } else if cmd_hldr.command == ADD_LICENSE {
         let cl = cmd_hldr.args.get("license").unwrap();
-        //TODO Check is license is valid
-        let pref = Preference{key: store::LICENSE_STRING_KEY.to_string(), value: cl.to_string()};
-        stateHolder.dsmanager.upsert(pref);
-        check_license(&window, Some(cl.to_string()));
+        if let Some(profile) = verify_license(&window, Some(cl.to_string())){
+            let pref = Preference{key: store::LICENSE_STRING_KEY.to_string(), value: cl.to_string()};
+            stateHolder.dsmanager.upsert(pref);
+            res.data = serde_json::to_string(&profile).unwrap();
+        } else {
+            res.data = "Invalid license".to_string();
+        }
     } else if cmd_hldr.command == SAVE_PREFERENCE {
         let key = cmd_hldr.args.get("key").unwrap();
         let value = cmd_hldr.args.get("value").unwrap();
@@ -426,8 +432,7 @@ fn execute_command(window: Window, commandstr: &str, appmanager: State<Singleton
                 utils::dispatch_event_to_frontend(&window, "cluster_found");
                 debug!("Clusters found");
             }
-
-            check_license(&window, license);
+            verify_license(&window, license);
             check_eula(&window, eula);
         });
     } else {
@@ -453,13 +458,24 @@ fn get_custom_ns_list(ns_string: Option<String>) -> Vec<KNamespace>{
     custom_ns
 }
 
-fn check_license(window: &Window, license: Option<String>) {
+fn verify_license(window: &Window, license: Option<String>) -> Option<Profile>{
     match license {
         Some(license) => {
-            utils::dispatch_event_to_frontend(window, "valid_license_found");
+            let lic_res = license::verify_license_key(&license);
+            match lic_res {
+                Ok(profile) => {
+                    utils::dispatch_event_to_frontend(window, "valid_license_found");
+                    Some(profile)
+                },
+                Err(e) => {
+                    utils::dispatch_event_to_frontend(window, "no_license_found");
+                    None
+                }
+            }
         },
         None => {
             utils::dispatch_event_to_frontend(window, "no_license_found");
+            None
         }
     }
 }
